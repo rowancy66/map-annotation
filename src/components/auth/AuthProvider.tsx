@@ -10,7 +10,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signInWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUpWithEmail: (email: string, password: string, nickname: string) => Promise<{ error: string | null }>;
+  signUpWithEmail: (email: string, password: string, nickname: string) => Promise<{ error: string | null; needsConfirmation: boolean }>;
   signOut: () => Promise<void>;
 }
 
@@ -55,12 +55,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password,
       options: {
         data: { nickname },
+        emailRedirectTo: `${window.location.origin}/auth/login`,
       },
     });
     if (error) return { error: error.message };
 
     // 应用层兜底：注册成功后确保用户有默认地图
-    // （即使数据库触发器已创建地图，这里检查后仅在没有地图时才创建）
     if (data.user) {
       try {
         const { data: existingMaps, error: mapError } = await supabase
@@ -68,7 +68,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .select('id')
           .eq('user_id', data.user.id)
           .limit(1);
-        // 仅当查询成功且用户尚无地图时才创建
         if (!mapError && (!existingMaps || existingMaps.length === 0)) {
           await supabase
             .from('maps')
@@ -83,8 +82,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    router.push('/dashboard');
-    return { error: null };
+    // 不直接跳转，让 RegisterForm 控制流程
+    // 如果 session 存在，说明邮箱确认已关闭，用户已自动登录
+    const needsConfirmation = !data.session;
+    if (!needsConfirmation) {
+      router.push('/dashboard');
+    }
+    return { error: null, needsConfirmation };
   }, [router]);
 
   const signOut = useCallback(async () => {

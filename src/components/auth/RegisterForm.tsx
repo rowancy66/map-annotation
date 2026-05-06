@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from './AuthProvider';
-import { Mail, Lock, User, UserPlus } from 'lucide-react';
+import { Mail, Lock, User, UserPlus, CheckCircle2 } from 'lucide-react';
 
 export default function RegisterForm() {
   const { signUpWithEmail } = useAuth();
@@ -12,6 +12,9 @@ export default function RegisterForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const [success, setSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -20,14 +23,18 @@ export default function RegisterForm() {
       return;
     }
     setLoading(true);
-    const { error } = await signUpWithEmail(email, password, nickname);
+    const { error, needsConfirmation } = await signUpWithEmail(email, password, nickname);
     if (error) {
       if (error.includes('already registered')) {
         setError('该邮箱已被注册');
       } else {
         setError(error);
       }
+    } else if (needsConfirmation) {
+      setRegisteredEmail(email);
+      setSuccess(true);
     }
+    // 如果 !needsConfirmation，AuthProvider 已自动跳转到 dashboard
     setLoading(false);
   };
 
@@ -46,7 +53,25 @@ export default function RegisterForm() {
           <p className="text-gray-500 mt-2">注册后即可开始使用地图标注</p>
         </div>
 
-        {/* 注册表单 */}
+        {/* 注册表单 / 成功提示 */}
+        {success ? (
+          <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+            <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-900 mb-2">注册成功！</h2>
+            <p className="text-gray-600 mb-4">
+              确认邮件已发送至 <strong>{registeredEmail}</strong>
+            </p>
+            <p className="text-gray-400 text-sm mb-6">
+              请前往邮箱点击确认链接，然后即可登录
+            </p>
+            <a
+              href="/auth/login"
+              className="inline-flex px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
+            >
+              去登录
+            </a>
+          </div>
+        ) : (
         <div className="bg-white rounded-2xl shadow-lg p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
@@ -115,6 +140,7 @@ export default function RegisterForm() {
             </a>
           </p>
         </div>
+        )}
       </div>
     </div>
   );

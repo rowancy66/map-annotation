@@ -9,15 +9,22 @@ export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setEmailNotConfirmed(false);
     setLoading(true);
     const { error } = await signInWithEmail(email, password);
     if (error) {
-      setError(error === 'Invalid login credentials' ? '邮箱或密码错误' : error);
+      if (error === 'Email not confirmed') {
+        setEmailNotConfirmed(true);
+        setError('');
+      } else {
+        setError(error === 'Invalid login credentials' ? '邮箱或密码错误' : error);
+      }
     }
     setLoading(false);
   };
@@ -72,6 +79,20 @@ export default function LoginForm() {
 
             {error && (
               <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">{error}</div>
+            )}
+
+            {emailNotConfirmed && (
+              <div className="text-amber-700 text-sm bg-amber-50 border border-amber-200 p-4 rounded-lg">
+                <p className="font-medium mb-1">📧 邮箱尚未确认</p>
+                <p className="text-amber-600 mb-2">请前往注册邮箱点击确认链接后再登录。</p>
+                <p className="text-amber-500 text-xs">
+                  没有收到邮件？检查垃圾邮件，或在
+                  <a href="https://supabase.com/dashboard/project/dybmtnyiiynfgjzzeljt/auth/users"
+                     target="_blank" rel="noopener noreferrer"
+                     className="text-blue-600 underline mx-1">Supabase 控制台</a>
+                  手动确认用户。
+                </p>
+              </div>
             )}
 
             <button
