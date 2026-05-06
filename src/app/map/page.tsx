@@ -110,6 +110,19 @@ export default function MapEditorPage() {
       map = maps[0] as unknown as MapProject;
     }
 
+    // 回填：如果地图缺少字段模板（旧用户），自动补上
+    if (map.field_templates && Array.isArray(map.field_templates) && map.field_templates.length === 0) {
+      const { data: updated } = await supabase
+        .from('maps')
+        .update({ field_templates: DEFAULT_LAND_FIELD_TEMPLATES })
+        .eq('id', map.id)
+        .select()
+        .single();
+      if (updated) {
+        map = updated as unknown as MapProject;
+      }
+    }
+
     setMapProject(map);
 
     const { data: annos } = await supabase

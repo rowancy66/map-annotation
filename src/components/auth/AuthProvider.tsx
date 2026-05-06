@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { DEFAULT_LAND_FIELD_TEMPLATES } from '@/lib/constants';
 import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
@@ -60,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     if (error) return { error: error.message };
 
-    // 应用层兜底：注册成功后确保用户有默认地图
+    // 应用层兜底：注册成功后确保用户有带土地出让数据模板的默认地图
     if (data.user) {
       try {
         const { data: existingMaps, error: mapError } = await supabase
@@ -73,8 +74,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .from('maps')
             .insert({
               user_id: data.user.id,
-              name: '我的地图',
-              description: '默认地图项目',
+              name: '土地出让数据',
+              description: '李沧区土地出让标注地图',
+              center: [120.43, 36.16],
+              zoom: 13,
+              field_templates: DEFAULT_LAND_FIELD_TEMPLATES,
             });
         }
       } catch {

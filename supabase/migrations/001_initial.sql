@@ -102,7 +102,7 @@ CREATE TRIGGER update_annotations_updated_at
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================
--- 6. 新用户注册时自动创建默认地图
+-- 6. 新用户注册时自动创建默认地图（含土地出让数据字段模板）
 -- ============================================
 -- 注意：必须使用 SECURITY DEFINER SET search_path = '' 以绕过 RLS
 -- 异常处理确保即使地图创建失败，用户注册也不会被阻塞
@@ -112,12 +112,26 @@ SECURITY DEFINER SET search_path = ''
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  INSERT INTO public.maps (user_id, name, description)
-  VALUES (NEW.id, '我的地图', '默认地图项目');
+  INSERT INTO public.maps (user_id, name, description, center, zoom, field_templates)
+  VALUES (
+    NEW.id,
+    '土地出让数据',
+    '李沧区土地出让标注地图',
+    '[120.43, 36.16]'::jsonb,
+    13,
+    '[
+      {"id":"f0000001-0001-0001-0001-000000000001","name":"面积(㎡)","type":"number","required":false,"sort_order":0},
+      {"id":"f0000001-0001-0001-0001-000000000002","name":"容积率","type":"number","required":false,"sort_order":1},
+      {"id":"f0000001-0001-0001-0001-000000000003","name":"成交价格(万元)","type":"number","required":false,"sort_order":2},
+      {"id":"f0000001-0001-0001-0001-000000000004","name":"土地使用权人","type":"text","required":false,"sort_order":3},
+      {"id":"f0000001-0001-0001-0001-000000000005","name":"合同签订日期","type":"date","required":false,"sort_order":4},
+      {"id":"f0000001-0001-0001-0001-000000000006","name":"楼面地价(元/㎡)","type":"number","required":false,"sort_order":5},
+      {"id":"f0000001-0001-0001-0001-000000000007","name":"主要股东","type":"text","required":false,"sort_order":6}
+    ]'::jsonb
+  );
   RETURN NEW;
 EXCEPTION
   WHEN OTHERS THEN
-    -- 地图创建失败不应阻塞用户注册
     RETURN NEW;
 END;
 $$;
