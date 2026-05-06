@@ -190,13 +190,13 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
 
   if (!open) return null;
 
-  // 构建映射选项
+  // 构建映射选项 — 自定义字段直接显示字段名，与 Excel 表头一致
   const mappingOptions = [
     { value: '_lat', label: '纬度 (Latitude)' },
     { value: '_lng', label: '经度 (Longitude)' },
     { value: 'name', label: '名称' },
     { value: 'description', label: '描述' },
-    ...fieldTemplates.map((f) => ({ value: `custom_${f.id}`, label: `[自定义] ${f.name}` })),
+    ...fieldTemplates.map((f) => ({ value: `custom_${f.id}`, label: f.name })),
   ];
 
   return (

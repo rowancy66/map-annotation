@@ -645,7 +645,8 @@ export default function MapEditorPage() {
           />
 
           {/* 右侧面板 — 工具栏 + 信息卡片垂直堆叠，避免重叠 */}
-          <div className="absolute right-4 top-4 z-[1000] flex flex-col gap-3 items-end">
+          {/* top-16 避开天地图右上角控件（矢量/影像切换按钮） */}
+          <div className="absolute right-4 top-16 z-[1000] flex flex-col gap-3 items-end">
             <DrawingToolbar
               drawMode={drawMode}
               onDrawModeChange={setDrawMode}
