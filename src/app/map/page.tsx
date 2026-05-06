@@ -645,11 +645,16 @@ export default function MapEditorPage() {
           />
 
           {/* 绘制工具栏 */}
-          <DrawingToolbar
-            drawMode={drawMode}
-            onDrawModeChange={setDrawMode}
-            annotationCount={annotationCount}
-          />
+          <div
+            className="absolute top-4 z-[1000] transition-all duration-300"
+            style={{ left: sidebarOpen ? '336px' : '16px' }}
+          >
+            <DrawingToolbar
+              drawMode={drawMode}
+              onDrawModeChange={setDrawMode}
+              annotationCount={annotationCount}
+            />
+          </div>
 
           {/* 移动提示 */}
           <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 backdrop-blur text-gray-600 px-3 py-1.5 rounded-lg shadow text-xs flex items-center gap-1.5">

@@ -18,7 +18,7 @@ export default function DrawingToolbar({ drawMode, onDrawModeChange, annotationC
   ];
 
   return (
-    <div className="absolute left-4 top-4 z-[1000] bg-white rounded-xl shadow-lg p-1.5 flex flex-col gap-1">
+    <div className="bg-white rounded-xl shadow-lg p-1.5 flex flex-col gap-1">
       {tools.map((tool) => (
         <button
           key={tool.mode}
