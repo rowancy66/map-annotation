@@ -85,8 +85,8 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
 
       // 自动映射
       const lower = header.toLowerCase().trim();
-      if (lower === '名称' || lower === 'name' || lower === '标题') mappedField = 'name';
-      else if (lower === '描述' || lower === 'description' || lower === '备注') mappedField = 'description';
+      if (lower === '名称' || lower === 'name' || lower === '标题' || lower === '编号') mappedField = 'name';
+      else if (lower === '描述' || lower === 'description' || lower === '备注' || lower === '位置') mappedField = 'description';
       else if (lower === '纬度' || lower === 'lat' || lower === 'latitude') mappedField = '_lat';
       else if (lower === '经度' || lower === 'lng' || lower === 'lon' || lower === 'longitude') mappedField = '_lng';
 

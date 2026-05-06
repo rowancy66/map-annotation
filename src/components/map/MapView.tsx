@@ -23,6 +23,7 @@ interface MapViewProps {
   onMapClick?: (latlng: L.LatLng) => void;
   onMapDrawComplete?: (type: AnnotationType, latlngs: L.LatLng[]) => void;
   onAnnotationClick?: (annotation: Annotation) => void;
+  onAnnotationMove?: (annotation: Annotation, newLatLng: L.LatLng) => void;
   drawMode: DrawMode;
   onDrawModeChange: (mode: DrawMode) => void;
   selectedAnnotation?: Annotation | null;
@@ -34,6 +35,7 @@ export default function MapView({
   onMapClick,
   onMapDrawComplete,
   onAnnotationClick,
+  onAnnotationMove,
   drawMode,
   onDrawModeChange,
   selectedAnnotation,
@@ -116,31 +118,75 @@ export default function MapView({
   useEffect(() => {
     if (!annotationsLayerRef.current || !mapReady) return;
     const layer = annotationsLayerRef.current;
-    layer.clearLayers();
 
+    // 记录当前已有的 marker（避免拖拽中被重建）
+    const existingLayers = new Map<string, L.Layer>();
+    layer.eachLayer((l) => {
+      const anno = (l as L.Layer & { _annotationId?: string })._annotationId;
+      if (anno) existingLayers.set(anno, l);
+    });
+
+    // 当前标注 ID 集合
+    const currentIds = new Set(annotations.map((a) => a.id));
+
+    // 移除已不存在的标注
+    existingLayers.forEach((l, annoId) => {
+      if (!currentIds.has(annoId)) {
+        layer.removeLayer(l);
+      }
+    });
+
+    // 添加或更新标注
     annotations.forEach((annotation) => {
-      let leafletLayer: L.Layer;
+      // 如果标注已存在且位置没变（非拖拽导致），跳过重建
+      const existing = existingLayers.get(annotation.id);
+      if (existing) {
+        // 更新选中高亮
+        if (existing instanceof L.Polyline) {
+          const isSelected = selectedAnnotation?.id === annotation.id;
+          (existing as L.Polyline).setStyle({
+            weight: isSelected ? 4 : 3,
+            opacity: isSelected ? 1 : 0.8,
+          });
+        }
+        return; // 跳过重建，保留拖拽状态
+      }
+
+      let leafletLayer: L.Layer & { _annotationId?: string };
 
       if (annotation.type === 'point') {
         const geom = annotation.geometry as { type: string; coordinates: [number, number] };
         const style = annotation.style as PointStyle;
         const icon = createCustomIcon(style);
-        leafletLayer = L.marker([geom.coordinates[1], geom.coordinates[0]], { icon });
+        const isDraggable = drawMode === 'none';
+        leafletLayer = L.marker([geom.coordinates[1], geom.coordinates[0]], { icon, draggable: isDraggable });
+
+        if (isDraggable) {
+          (leafletLayer as L.Marker).on('dragend', (e: L.DragEndEvent) => {
+            const marker = e.target as L.Marker;
+            const newPos = marker.getLatLng();
+            onAnnotationMove?.(annotation, newPos);
+          });
+        }
       } else if (annotation.type === 'line') {
         const geom = annotation.geometry as { type: string; coordinates: [number, number][] };
         const style = annotation.style as LineStyle;
+        const isSelected = selectedAnnotation?.id === annotation.id;
         leafletLayer = L.polyline(
           geom.coordinates.map(([lng, lat]) => [lat, lng]),
-          { color: style.color, weight: style.width, dashArray: style.dashArray }
+          { color: style.color, weight: isSelected ? 4 : style.width, dashArray: style.dashArray, opacity: isSelected ? 1 : 0.8 }
         );
       } else {
         const geom = annotation.geometry as { type: string; coordinates: [number, number][] };
         const style = annotation.style as PolygonStyle;
+        const isSelected = selectedAnnotation?.id === annotation.id;
         leafletLayer = L.polygon(
           geom.coordinates.map(([lng, lat]) => [lat, lng]),
-          { color: style.color, fillColor: style.fillColor, fillOpacity: style.fillOpacity, weight: style.width }
+          { color: style.color, fillColor: style.fillColor, fillOpacity: style.fillOpacity, weight: isSelected ? 4 : style.width }
         );
       }
+
+      leafletLayer._annotationId = annotation.id;
 
       // 点击事件
       leafletLayer.on('click', (e) => {
@@ -148,18 +194,9 @@ export default function MapView({
         onAnnotationClick?.(annotation);
       });
 
-      // 高亮选中
-      if (selectedAnnotation?.id === annotation.id) {
-        if (leafletLayer instanceof L.Marker) {
-          // 标记选中的点
-        } else if (leafletLayer instanceof L.Polyline) {
-          (leafletLayer as L.Polyline).setStyle({ weight: 4, opacity: 1 });
-        }
-      }
-
       layer.addLayer(leafletLayer);
     });
-  }, [annotations, mapReady, selectedAnnotation, onAnnotationClick]);
+  }, [annotations, mapReady, selectedAnnotation, onAnnotationClick, onAnnotationMove, drawMode]);
 
   // 绘制模式下的地图交互
   useEffect(() => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/lib/supabase';
@@ -19,6 +19,7 @@ import {
   PolygonStyle,
   CustomFieldValue,
 } from '@/lib/types';
+import { DEFAULT_LAND_FIELD_TEMPLATES } from '@/lib/constants';
 import {
   Upload,
   Download,
@@ -28,6 +29,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Search,
+  Trash2,
+  CheckSquare,
+  Square,
+  X,
+  Move,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
@@ -43,6 +50,9 @@ const MapView = dynamic(() => import('@/components/map/MapView'), {
   ),
 });
 
+// 导出表头顺序（对齐 Excel 模板）
+const EXPORT_HEADERS = ['编号', '位置', '经度', '纬度', '面积(㎡)', '容积率', '成交价格(万元)', '土地使用权人', '合同签订日期', '楼面地价(元/㎡)', '主要股东'];
+
 export default function MapEditorPage() {
   const { user, signOut, loading: authLoading } = useAuth();
   const [mapProject, setMapProject] = useState<MapProject | null>(null);
@@ -54,6 +64,11 @@ export default function MapEditorPage() {
   const [loading, setLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
 
+  // 搜索 & 批量选择
+  const [searchQuery, setSearchQuery] = useState('');
+  const [batchMode, setBatchMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
   // 加载地图项目和标注数据
   useEffect(() => {
     if (!user) return;
@@ -64,7 +79,6 @@ export default function MapEditorPage() {
     if (!user) return;
     setLoading(true);
 
-    // 获取或创建地图项目
     let { data: maps } = await supabase
       .from('maps')
       .select('*')
@@ -73,16 +87,15 @@ export default function MapEditorPage() {
 
     let map: MapProject;
     if (!maps || maps.length === 0) {
-      // 创建默认地图
       const { data: newMap, error } = await supabase
         .from('maps')
         .insert({
           user_id: user.id,
-          name: '我的地图',
-          description: '',
-          center: [116.4074, 39.9042],
-          zoom: 12,
-          field_templates: [],
+          name: '土地出让数据',
+          description: '李沧区土地出让标注地图',
+          center: [120.43, 36.16],
+          zoom: 13,
+          field_templates: DEFAULT_LAND_FIELD_TEMPLATES,
         })
         .select()
         .single();
@@ -99,7 +112,6 @@ export default function MapEditorPage() {
 
     setMapProject(map);
 
-    // 加载标注
     const { data: annos } = await supabase
       .from('annotations')
       .select('*')
@@ -142,7 +154,7 @@ export default function MapEditorPage() {
       map_id: mapProject.id,
       type: 'point',
       geometry: { type: 'Point', coordinates: [latlng.lng, latlng.lat] },
-      name: '新标注点',
+      name: '',
       description: '',
       style: { color: '#EF4444', icon: 'map-pin', size: 3 } as PointStyle,
       custom_fields: [],
@@ -198,8 +210,36 @@ export default function MapEditorPage() {
 
   // 点击标注
   const handleAnnotationClick = useCallback((annotation: Annotation) => {
-    setSelectedAnnotation(annotation);
-  }, []);
+    if (batchMode) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(annotation.id)) {
+          next.delete(annotation.id);
+        } else {
+          next.add(annotation.id);
+        }
+        return next;
+      });
+    } else {
+      setSelectedAnnotation(annotation);
+    }
+  }, [batchMode]);
+
+  // 拖拽移动点位
+  const handleAnnotationMove = useCallback(async (annotation: Annotation, newLatLng: L.LatLng) => {
+    const updated: Annotation = {
+      ...annotation,
+      geometry: { type: 'Point', coordinates: [newLatLng.lng, newLatLng.lat] },
+      updated_at: new Date().toISOString(),
+    };
+    // 乐观更新本地状态
+    setAnnotations((prev) => prev.map((a) => (a.id === annotation.id ? updated : a)));
+    if (selectedAnnotation?.id === annotation.id) {
+      setSelectedAnnotation(updated);
+    }
+    // 异步保存
+    await saveAnnotation(updated);
+  }, [selectedAnnotation]);
 
   // 保存编辑
   const handleSaveAnnotation = useCallback(async (updated: Annotation) => {
@@ -217,6 +257,37 @@ export default function MapEditorPage() {
     setSelectedAnnotation(null);
   }, []);
 
+  // 搜索过滤
+  const filteredAnnotations = useMemo(() => {
+    if (!searchQuery.trim()) return annotations;
+    const q = searchQuery.toLowerCase().trim();
+    return annotations.filter((a) => {
+      if (a.name.toLowerCase().includes(q)) return true;
+      if (a.description.toLowerCase().includes(q)) return true;
+      if (a.custom_fields.some((cf) => String(cf.value ?? '').toLowerCase().includes(q))) return true;
+      return false;
+    });
+  }, [annotations, searchQuery]);
+
+  // 全选/取消全选
+  const handleSelectAll = useCallback(() => {
+    if (selectedIds.size === filteredAnnotations.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredAnnotations.map((a) => a.id)));
+    }
+  }, [selectedIds, filteredAnnotations]);
+
+  // 批量删除
+  const handleBatchDelete = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    await supabase.from('annotations').delete().in('id', ids);
+    setAnnotations((prev) => prev.filter((a) => !selectedIds.has(a.id)));
+    setSelectedIds(new Set());
+    setBatchMode(false);
+  }, [selectedIds]);
+
   // 批量导入
   const handleImport = useCallback(async (items: Omit<Annotation, 'id' | 'created_at' | 'updated_at'>[]) => {
     const newAnnotations: Annotation[] = items.map((item) => ({
@@ -226,7 +297,6 @@ export default function MapEditorPage() {
       updated_at: new Date().toISOString(),
     }));
 
-    // 批量保存到 Supabase
     const { data } = await supabase
       .from('annotations')
       .insert(newAnnotations)
@@ -239,7 +309,7 @@ export default function MapEditorPage() {
     }
   }, []);
 
-  // 导出 Excel/CSV
+  // 导出 Excel/CSV — 对齐 Excel 表头
   const handleExport = useCallback((format: 'xlsx' | 'csv') => {
     const pointAnnotations = annotations.filter((a) => a.type === 'point');
     if (pointAnnotations.length === 0) {
@@ -251,36 +321,39 @@ export default function MapEditorPage() {
 
     const rows = pointAnnotations.map((a) => {
       const geom = a.geometry as { type: string; coordinates: [number, number] };
-      const row: Record<string, string | number> = {
-        名称: a.name,
-        描述: a.description,
-        经度: geom.coordinates[0],
-        纬度: geom.coordinates[1],
-        类型: '点',
-        创建时间: a.created_at,
+      const getFieldValue = (fieldId: string) => {
+        const val = a.custom_fields.find((cf) => cf.fieldId === fieldId)?.value;
+        return val?.toString() || '';
       };
 
-      // 添加自定义字段
+      // 按 EXPORT_HEADERS 顺序输出
+      const row: Record<string, string | number> = {
+        '编号': a.name,
+        '位置': a.description,
+        '经度': geom.coordinates[0],
+        '纬度': geom.coordinates[1],
+      };
+
+      // 自定义字段按模板顺序追加
       templates.forEach((field) => {
-        const val = a.custom_fields.find((cf) => cf.fieldId === field.id)?.value;
-        row[field.name] = val?.toString() || '';
+        row[field.name] = getFieldValue(field.id);
       });
 
       return row;
     });
 
     if (format === 'xlsx') {
-      const ws = XLSX.utils.json_to_sheet(rows);
+      const ws = XLSX.utils.json_to_sheet(rows, { header: EXPORT_HEADERS });
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, '标注数据');
-      XLSX.writeFile(wb, `地图标注_${new Date().toLocaleDateString('zh-CN')}.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, '土地出让数据');
+      XLSX.writeFile(wb, `土地出让数据_${new Date().toLocaleDateString('zh-CN')}.xlsx`);
     } else {
-      const csv = Papa.unparse(rows);
+      const csv = Papa.unparse(rows, { columns: EXPORT_HEADERS });
       const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `地图标注_${new Date().toLocaleDateString('zh-CN')}.csv`;
+      a.download = `土地出让数据_${new Date().toLocaleDateString('zh-CN')}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     }
@@ -398,34 +471,115 @@ export default function MapEditorPage() {
         {/* 侧边栏 */}
         <div
           className={`absolute left-0 top-0 bottom-0 z-40 bg-white border-r transition-all duration-300 ${
-            sidebarOpen ? 'w-72' : 'w-0'
+            sidebarOpen ? 'w-80' : 'w-0'
           } overflow-hidden`}
         >
-          <div className="w-72 h-full flex flex-col">
+          <div className="w-80 h-full flex flex-col">
             {/* 侧边栏标题 */}
             <div className="px-4 py-3 border-b flex items-center justify-between">
               <h2 className="text-sm font-semibold text-gray-900">标注列表</h2>
-              <span className="text-xs text-gray-400">{annotations.length} 个</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400">{annotations.length} 个</span>
+                <button
+                  onClick={() => {
+                    setBatchMode(!batchMode);
+                    setSelectedIds(new Set());
+                  }}
+                  className={`p-1 rounded transition ${
+                    batchMode ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'
+                  }`}
+                  title="批量操作"
+                >
+                  <CheckSquare className="w-4 h-4" />
+                </button>
+              </div>
             </div>
+
+            {/* 搜索框 */}
+            <div className="px-3 py-2 border-b">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="搜索编号、位置..."
+                  className="w-full pl-9 pr-8 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+              {searchQuery && (
+                <p className="text-xs text-gray-400 mt-1">找到 {filteredAnnotations.length} 条结果</p>
+              )}
+            </div>
+
+            {/* 批量操作栏 */}
+            {batchMode && (
+              <div className="px-3 py-2 border-b bg-blue-50 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <button onClick={handleSelectAll} className="text-xs text-blue-600 hover:text-blue-800">
+                    {selectedIds.size === filteredAnnotations.length ? '取消全选' : '全选'}
+                  </button>
+                  <span className="text-xs text-gray-500">已选 {selectedIds.size} 个</span>
+                </div>
+                {selectedIds.size > 0 && (
+                  <button
+                    onClick={handleBatchDelete}
+                    className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded text-xs font-medium hover:bg-red-700 transition"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    批量删除
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* 标注列表 */}
             <div className="flex-1 overflow-y-auto">
-              {annotations.length === 0 ? (
+              {filteredAnnotations.length === 0 ? (
                 <div className="p-6 text-center text-sm text-gray-400">
-                  暂无标注<br />点击左侧工具在地图上添加
+                  {searchQuery ? '没有找到匹配的标注' : '暂无标注'}<br />
+                  {!searchQuery && '点击左侧工具在地图上添加'}
                 </div>
               ) : (
                 <div className="divide-y">
-                  {annotations.map((anno) => (
-                    <button
+                  {filteredAnnotations.map((anno) => (
+                    <div
                       key={anno.id}
-                      onClick={() => setSelectedAnnotation(anno)}
-                      className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition ${
+                      onClick={() => {
+                        if (batchMode) {
+                          setSelectedIds((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(anno.id)) next.delete(anno.id);
+                            else next.add(anno.id);
+                            return next;
+                          });
+                        } else {
+                          setSelectedAnnotation(anno);
+                        }
+                      }}
+                      className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition cursor-pointer ${
                         selectedAnnotation?.id === anno.id ? 'bg-blue-50 border-l-2 border-l-blue-600' : ''
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${
+                        {batchMode && (
+                          <span className="shrink-0">
+                            {selectedIds.has(anno.id) ? (
+                              <CheckSquare className="w-4 h-4 text-blue-600" />
+                            ) : (
+                              <Square className="w-4 h-4 text-gray-400" />
+                            )}
+                          </span>
+                        )}
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${
                           anno.type === 'point' ? 'bg-red-500' :
                           anno.type === 'line' ? 'bg-blue-500' : 'bg-purple-500'
                         }`} />
@@ -436,7 +590,21 @@ export default function MapEditorPage() {
                       {anno.description && (
                         <p className="text-xs text-gray-500 mt-1 truncate pl-4">{anno.description}</p>
                       )}
-                    </button>
+                      {/* 显示关键字段预览 */}
+                      {anno.type === 'point' && anno.custom_fields.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1.5 pl-6">
+                          {anno.custom_fields.slice(0, 3).map((cf) => {
+                            const field = mapProject?.field_templates.find((t) => t.id === cf.fieldId);
+                            if (!field || cf.value == null) return null;
+                            return (
+                              <span key={cf.fieldId} className="px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px]">
+                                {field.name}: {String(cf.value)}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
@@ -458,7 +626,7 @@ export default function MapEditorPage() {
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className="absolute top-2 z-40 bg-white shadow rounded-r-lg p-1 border border-l-0 hover:bg-gray-50 transition"
-          style={{ left: sidebarOpen ? '288px' : '0' }}
+          style={{ left: sidebarOpen ? '320px' : '0' }}
         >
           {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         </button>
@@ -470,6 +638,7 @@ export default function MapEditorPage() {
             onMapClick={handleMapClick}
             onMapDrawComplete={handleDrawComplete}
             onAnnotationClick={handleAnnotationClick}
+            onAnnotationMove={handleAnnotationMove}
             drawMode={drawMode}
             onDrawModeChange={setDrawMode}
             selectedAnnotation={selectedAnnotation}
@@ -482,8 +651,14 @@ export default function MapEditorPage() {
             annotationCount={annotationCount}
           />
 
+          {/* 移动提示 */}
+          <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 backdrop-blur text-gray-600 px-3 py-1.5 rounded-lg shadow text-xs flex items-center gap-1.5">
+            <Move className="w-3.5 h-3.5" />
+            选择模式下可直接拖拽点位移动
+          </div>
+
           {/* 信息卡片 */}
-          {selectedAnnotation && mapProject && (
+          {selectedAnnotation && mapProject && !batchMode && (
             <InfoCard
               annotation={selectedAnnotation}
               fieldTemplates={mapProject.field_templates}
