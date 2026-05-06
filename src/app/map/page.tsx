@@ -1,25 +1,21 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation'; // 修复 #13: 使用 router
 import { useAuth } from '@/components/auth/AuthProvider';
-import { supabase } from '@/lib/supabase';
 import DrawingToolbar from '@/components/map/DrawingToolbar';
 import InfoCard from '@/components/map/InfoCard';
 import FieldTemplateManager from '@/components/map/FieldTemplateManager';
 import ImportDialog from '@/components/import/ImportDialog';
+import { useMapData } from '@/hooks/useMapData';
+import { useAnnotationActions } from '@/hooks/useAnnotationActions';
 import {
   Annotation,
   DrawMode,
   AnnotationType,
-  MapProject,
   FieldTemplate,
-  PointStyle,
-  LineStyle,
-  PolygonStyle,
-  CustomFieldValue,
 } from '@/lib/types';
-import { DEFAULT_LAND_FIELD_TEMPLATES } from '@/lib/constants';
 import {
   Upload,
   Download,
@@ -35,6 +31,7 @@ import {
   Square,
   X,
   Move,
+  AlertTriangle,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
@@ -50,113 +47,60 @@ const MapView = dynamic(() => import('@/components/map/MapView'), {
   ),
 });
 
-// 导出表头顺序（对齐 Excel 模板）
-const EXPORT_HEADERS = ['编号', '位置', '经度', '纬度', '面积(㎡)', '容积率', '成交价格(万元)', '土地使用权人', '合同签订日期', '楼面地价(元/㎡)', '主要股东'];
-
 export default function MapEditorPage() {
   const { user, signOut, loading: authLoading } = useAuth();
-  const [mapProject, setMapProject] = useState<MapProject | null>(null);
-  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const router = useRouter(); // 修复 #13
+
+  // 数据加载 hook
+  const {
+    mapProject,
+    setMapProject,
+    annotations,
+    setAnnotations,
+    loading,
+    saveAnnotation,
+    deleteAnnotation,
+    batchDeleteAnnotations,
+    importAnnotations,
+    updateFieldTemplates,
+  } = useMapData(user);
+
+  // 标注交互 hook
+  const {
+    selectedAnnotation,
+    setSelectedAnnotation,
+    searchQuery,
+    setSearchQuery,
+    batchMode,
+    setBatchMode,
+    selectedIds,
+    setSelectedIds,
+    filteredAnnotations,
+    annotationCount,
+    fieldTemplateMap,
+    feedbackMessage,
+    handleSaveAnnotation,
+    handleDeleteAnnotation,
+    handleAnnotationMove,
+    handleSelectAll,
+    handleBatchDelete,
+    handleAnnotationClick,
+  } = useAnnotationActions(
+    annotations,
+    mapProject?.field_templates || [],
+    saveAnnotation,
+    deleteAnnotation,
+    batchDeleteAnnotations,
+    setAnnotations,
+  );
+
   const [drawMode, setDrawMode] = useState<DrawMode>('none');
-  const [selectedAnnotation, setSelectedAnnotation] = useState<Annotation | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [importOpen, setImportOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
 
-  // 搜索 & 批量选择
-  const [searchQuery, setSearchQuery] = useState('');
-  const [batchMode, setBatchMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
-  // 加载地图项目和标注数据
-  useEffect(() => {
-    if (!user) return;
-    loadData();
-  }, [user]);
-
-  const loadData = async () => {
-    if (!user) return;
-    setLoading(true);
-
-    let { data: maps } = await supabase
-      .from('maps')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-
-    let map: MapProject;
-    if (!maps || maps.length === 0) {
-      const { data: newMap, error } = await supabase
-        .from('maps')
-        .insert({
-          user_id: user.id,
-          name: '土地出让数据',
-          description: '李沧区土地出让标注地图',
-          center: [120.43, 36.16],
-          zoom: 13,
-          field_templates: DEFAULT_LAND_FIELD_TEMPLATES,
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('创建地图失败:', error);
-        setLoading(false);
-        return;
-      }
-      map = newMap as unknown as MapProject;
-    } else {
-      map = maps[0] as unknown as MapProject;
-    }
-
-    // 回填：如果地图缺少字段模板（旧用户），自动补上
-    if (map.field_templates && Array.isArray(map.field_templates) && map.field_templates.length === 0) {
-      const { data: updated } = await supabase
-        .from('maps')
-        .update({ field_templates: DEFAULT_LAND_FIELD_TEMPLATES })
-        .eq('id', map.id)
-        .select()
-        .single();
-      if (updated) {
-        map = updated as unknown as MapProject;
-      }
-    }
-
-    setMapProject(map);
-
-    const { data: annos } = await supabase
-      .from('annotations')
-      .select('*')
-      .eq('map_id', map.id)
-      .order('created_at', { ascending: true });
-
-    setAnnotations((annos as unknown as Annotation[]) || []);
-    setLoading(false);
-  };
-
-  // 保存标注到 Supabase
-  const saveAnnotation = async (annotation: Annotation) => {
-    const { data, error } = await supabase
-      .from('annotations')
-      .upsert({
-        id: annotation.id,
-        map_id: annotation.map_id,
-        type: annotation.type,
-        geometry: annotation.geometry,
-        name: annotation.name,
-        description: annotation.description,
-        style: annotation.style,
-        custom_fields: annotation.custom_fields,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('保存标注失败:', error);
-    }
-    return data;
-  };
+  // 修复 #1: 批量删除确认
+  const [batchDeleteConfirm, setBatchDeleteConfirm] = useState(false);
 
   // 地图点击 - 添加点
   const handleMapClick = useCallback(async (latlng: L.LatLng) => {
@@ -169,25 +113,26 @@ export default function MapEditorPage() {
       geometry: { type: 'Point', coordinates: [latlng.lng, latlng.lat] },
       name: '',
       description: '',
-      style: { color: '#EF4444', icon: 'map-pin', size: 3 } as PointStyle,
+      style: { color: '#EF4444', icon: 'map-pin', size: 3 },
       custom_fields: [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
 
-    const saved = await saveAnnotation(annotation);
-    setAnnotations((prev) => [...prev, saved ? (saved as unknown as Annotation) : annotation]);
-    setSelectedAnnotation(saved ? (saved as unknown as Annotation) : annotation);
+    const { data } = await saveAnnotation(annotation);
+    const saved = data || annotation;
+    setAnnotations((prev) => [...prev, saved]);
+    setSelectedAnnotation(saved);
     setDrawMode('none');
-  }, [drawMode, mapProject]);
+  }, [drawMode, mapProject, saveAnnotation, setAnnotations, setSelectedAnnotation]);
 
   // 绘制完成 - 线/面
   const handleDrawComplete = useCallback(async (type: AnnotationType, latlngs: L.LatLng[]) => {
     if (!mapProject) return;
 
     const coordinates = latlngs.map((ll) => [ll.lng, ll.lat] as [number, number]);
-
     let annotation: Annotation;
+
     if (type === 'line') {
       annotation = {
         id: crypto.randomUUID(),
@@ -196,7 +141,7 @@ export default function MapEditorPage() {
         geometry: { type: 'LineString', coordinates },
         name: '新线路',
         description: '',
-        style: { color: '#3B82F6', width: 3 } as LineStyle,
+        style: { color: '#3B82F6', width: 3 },
         custom_fields: [],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -209,128 +154,47 @@ export default function MapEditorPage() {
         geometry: { type: 'Polygon', coordinates },
         name: '新区域',
         description: '',
-        style: { color: '#8B5CF6', fillColor: '#8B5CF6', fillOpacity: 0.3, width: 2 } as PolygonStyle,
+        style: { color: '#8B5CF6', fillColor: '#8B5CF6', fillOpacity: 0.3, width: 2 },
         custom_fields: [],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
     }
 
-    const saved = await saveAnnotation(annotation);
-    setAnnotations((prev) => [...prev, saved ? (saved as unknown as Annotation) : annotation]);
-    setSelectedAnnotation(saved ? (saved as unknown as Annotation) : annotation);
-  }, [mapProject]);
-
-  // 点击标注
-  const handleAnnotationClick = useCallback((annotation: Annotation) => {
-    if (batchMode) {
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(annotation.id)) {
-          next.delete(annotation.id);
-        } else {
-          next.add(annotation.id);
-        }
-        return next;
-      });
-    } else {
-      setSelectedAnnotation(annotation);
-    }
-  }, [batchMode]);
-
-  // 拖拽移动点位
-  const handleAnnotationMove = useCallback(async (annotation: Annotation, newLatLng: L.LatLng) => {
-    const updated: Annotation = {
-      ...annotation,
-      geometry: { type: 'Point', coordinates: [newLatLng.lng, newLatLng.lat] },
-      updated_at: new Date().toISOString(),
-    };
-    // 乐观更新本地状态
-    setAnnotations((prev) => prev.map((a) => (a.id === annotation.id ? updated : a)));
-    if (selectedAnnotation?.id === annotation.id) {
-      setSelectedAnnotation(updated);
-    }
-    // 异步保存
-    await saveAnnotation(updated);
-  }, [selectedAnnotation]);
-
-  // 保存编辑
-  const handleSaveAnnotation = useCallback(async (updated: Annotation) => {
-    const saved = await saveAnnotation(updated);
-    setAnnotations((prev) =>
-      prev.map((a) => (a.id === updated.id ? (saved ? (saved as unknown as Annotation) : updated) : a))
-    );
-    setSelectedAnnotation(saved ? (saved as unknown as Annotation) : updated);
-  }, []);
-
-  // 删除标注
-  const handleDeleteAnnotation = useCallback(async (id: string) => {
-    await supabase.from('annotations').delete().eq('id', id);
-    setAnnotations((prev) => prev.filter((a) => a.id !== id));
-    setSelectedAnnotation(null);
-  }, []);
-
-  // 搜索过滤
-  const filteredAnnotations = useMemo(() => {
-    if (!searchQuery.trim()) return annotations;
-    const q = searchQuery.toLowerCase().trim();
-    return annotations.filter((a) => {
-      if (a.name.toLowerCase().includes(q)) return true;
-      if (a.description.toLowerCase().includes(q)) return true;
-      if (a.custom_fields.some((cf) => String(cf.value ?? '').toLowerCase().includes(q))) return true;
-      return false;
-    });
-  }, [annotations, searchQuery]);
-
-  // 全选/取消全选
-  const handleSelectAll = useCallback(() => {
-    if (selectedIds.size === filteredAnnotations.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(filteredAnnotations.map((a) => a.id)));
-    }
-  }, [selectedIds, filteredAnnotations]);
-
-  // 批量删除
-  const handleBatchDelete = useCallback(async () => {
-    if (selectedIds.size === 0) return;
-    const ids = Array.from(selectedIds);
-    await supabase.from('annotations').delete().in('id', ids);
-    setAnnotations((prev) => prev.filter((a) => !selectedIds.has(a.id)));
-    setSelectedIds(new Set());
-    setBatchMode(false);
-  }, [selectedIds]);
+    const { data } = await saveAnnotation(annotation);
+    const saved = data || annotation;
+    setAnnotations((prev) => [...prev, saved]);
+    setSelectedAnnotation(saved);
+  }, [mapProject, saveAnnotation, setAnnotations, setSelectedAnnotation]);
 
   // 批量导入
   const handleImport = useCallback(async (items: Omit<Annotation, 'id' | 'created_at' | 'updated_at'>[]) => {
-    const newAnnotations: Annotation[] = items.map((item) => ({
-      ...item,
-      id: crypto.randomUUID(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }));
-
-    const { data } = await supabase
-      .from('annotations')
-      .insert(newAnnotations)
-      .select();
-
-    if (data) {
-      setAnnotations((prev) => [...prev, ...(data as unknown as Annotation[])]);
-    } else {
-      setAnnotations((prev) => [...prev, ...newAnnotations]);
+    const { error } = await importAnnotations(items);
+    if (error) {
+      alert(`导入失败: ${error}`);
     }
-  }, []);
+  }, [importAnnotations]);
 
-  // 导出 Excel/CSV — 对齐 Excel 表头
+  // 修复 #9: 导出表头从 field_templates 动态生成
   const handleExport = useCallback((format: 'xlsx' | 'csv') => {
     const pointAnnotations = annotations.filter((a) => a.type === 'point');
+    // 修复 #10: 如果有线/面数据，给用户提示
+    const nonPointCount = annotations.length - pointAnnotations.length;
     if (pointAnnotations.length === 0) {
       alert('没有可导出的点标注');
       return;
     }
+    if (nonPointCount > 0) {
+      const confirmed = window.confirm(`当前有 ${nonPointCount} 条线/面标注不会被导出，仅导出 ${pointAnnotations.length} 条点标注，是否继续？`);
+      if (!confirmed) return;
+    }
 
     const templates = mapProject?.field_templates || [];
+
+    // 修复 #9: 动态生成表头
+    const baseHeaders = ['编号', '位置', '经度', '纬度'];
+    const customHeaders = templates.map((t) => t.name);
+    const allHeaders = [...baseHeaders, ...customHeaders];
 
     const rows = pointAnnotations.map((a) => {
       const geom = a.geometry as { type: string; coordinates: [number, number] };
@@ -339,7 +203,6 @@ export default function MapEditorPage() {
         return val?.toString() || '';
       };
 
-      // 按 EXPORT_HEADERS 顺序输出
       const row: Record<string, string | number> = {
         '编号': a.name,
         '位置': a.description,
@@ -347,7 +210,6 @@ export default function MapEditorPage() {
         '纬度': geom.coordinates[1],
       };
 
-      // 自定义字段按模板顺序追加
       templates.forEach((field) => {
         row[field.name] = getFieldValue(field.id);
       });
@@ -356,36 +218,49 @@ export default function MapEditorPage() {
     });
 
     if (format === 'xlsx') {
-      const ws = XLSX.utils.json_to_sheet(rows, { header: EXPORT_HEADERS });
+      const ws = XLSX.utils.json_to_sheet(rows, { header: allHeaders });
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, '土地出让数据');
       XLSX.writeFile(wb, `土地出让数据_${new Date().toLocaleDateString('zh-CN')}.xlsx`);
     } else {
-      const csv = Papa.unparse(rows, { columns: EXPORT_HEADERS });
+      const csv = Papa.unparse(rows, { columns: allHeaders });
       const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `土地出让数据_${new Date().toLocaleDateString('zh-CN')}.csv`;
       a.click();
-      URL.revokeObjectURL(url);
+      // 修复 #16: 延迟 revoke，确保下载完成
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
     }
   }, [annotations, mapProject]);
 
   // 更新字段模板
   const handleFieldTemplatesChange = useCallback(async (templates: FieldTemplate[]) => {
     if (!mapProject) return;
-    const updated = { ...mapProject, field_templates: templates };
-    await supabase.from('maps').update({ field_templates: templates }).eq('id', mapProject.id);
-    setMapProject(updated);
-  }, [mapProject]);
+    const { error } = await updateFieldTemplates(templates, mapProject.id);
+    if (error) {
+      alert(`更新字段模板失败: ${error}`);
+      return;
+    }
+    setMapProject({ ...mapProject, field_templates: templates });
+  }, [mapProject, updateFieldTemplates, setMapProject]);
 
-  // 标注统计
-  const annotationCount = {
-    point: annotations.filter((a) => a.type === 'point').length,
-    line: annotations.filter((a) => a.type === 'line').length,
-    polygon: annotations.filter((a) => a.type === 'polygon').length,
-  };
+  // 批量删除带确认
+  const onBatchDeleteClick = useCallback(() => {
+    if (selectedIds.size === 0) return;
+    setBatchDeleteConfirm(true);
+  }, [selectedIds]);
+
+  const confirmBatchDelete = useCallback(async () => {
+    setBatchDeleteConfirm(false);
+    await handleBatchDelete();
+  }, [handleBatchDelete]);
+
+  // 修复 #13: 使用 router.replace 替代 window.location.href
+  if (!user && !authLoading && !loading) {
+    router.replace('/auth/login');
+  }
 
   // 未登录或加载中
   if (authLoading || loading) {
@@ -396,12 +271,7 @@ export default function MapEditorPage() {
     );
   }
 
-  if (!user) {
-    if (typeof window !== 'undefined') {
-      window.location.href = '/auth/login';
-    }
-    return null;
-  }
+  if (!user) return null;
 
   return (
     <div className="h-screen flex flex-col">
@@ -479,6 +349,47 @@ export default function MapEditorPage() {
         </div>
       </header>
 
+      {/* 反馈消息 */}
+      {feedbackMessage && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[9999] bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm animate-fade-in">
+          {feedbackMessage}
+        </div>
+      )}
+
+      {/* 批量删除确认对话框 */}
+      {batchDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/40 z-[9999] flex items-center justify-center">
+          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-sm mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">确认批量删除</h3>
+                <p className="text-xs text-gray-500">此操作不可撤销</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-700 mb-4">
+              确定要删除选中的 <strong>{selectedIds.size}</strong> 个标注吗？
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setBatchDeleteConfirm(false)}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition"
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmBatchDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition"
+              >
+                确认删除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 主体 */}
       <div className="flex-1 flex relative overflow-hidden">
         {/* 侧边栏 */}
@@ -538,13 +449,13 @@ export default function MapEditorPage() {
               <div className="px-3 py-2 border-b bg-blue-50 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <button onClick={handleSelectAll} className="text-xs text-blue-600 hover:text-blue-800">
-                    {selectedIds.size === filteredAnnotations.length ? '取消全选' : '全选'}
+                    {selectedIds.size === filteredAnnotations.length && filteredAnnotations.length > 0 ? '取消全选' : '全选'}
                   </button>
                   <span className="text-xs text-gray-500">已选 {selectedIds.size} 个</span>
                 </div>
                 {selectedIds.size > 0 && (
                   <button
-                    onClick={handleBatchDelete}
+                    onClick={onBatchDeleteClick}
                     className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded text-xs font-medium hover:bg-red-700 transition"
                   >
                     <Trash2 className="w-3 h-3" />
@@ -559,25 +470,15 @@ export default function MapEditorPage() {
               {filteredAnnotations.length === 0 ? (
                 <div className="p-6 text-center text-sm text-gray-400">
                   {searchQuery ? '没有找到匹配的标注' : '暂无标注'}<br />
-                  {!searchQuery && '点击左侧工具在地图上添加'}
+                  {/* 修复 #14: 工具栏在右侧 */}
+                  {!searchQuery && '点击右侧工具在地图上添加'}
                 </div>
               ) : (
                 <div className="divide-y">
                   {filteredAnnotations.map((anno) => (
                     <div
                       key={anno.id}
-                      onClick={() => {
-                        if (batchMode) {
-                          setSelectedIds((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(anno.id)) next.delete(anno.id);
-                            else next.add(anno.id);
-                            return next;
-                          });
-                        } else {
-                          setSelectedAnnotation(anno);
-                        }
-                      }}
+                      onClick={() => handleAnnotationClick(anno)}
                       className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition cursor-pointer ${
                         selectedAnnotation?.id === anno.id ? 'bg-blue-50 border-l-2 border-l-blue-600' : ''
                       }`}
@@ -603,11 +504,11 @@ export default function MapEditorPage() {
                       {anno.description && (
                         <p className="text-xs text-gray-500 mt-1 truncate pl-4">{anno.description}</p>
                       )}
-                      {/* 显示关键字段预览 */}
+                      {/* 显示关键字段预览 - 使用预构建的 Map */}
                       {anno.type === 'point' && anno.custom_fields.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1.5 pl-6">
                           {anno.custom_fields.slice(0, 3).map((cf) => {
-                            const field = mapProject?.field_templates.find((t) => t.id === cf.fieldId);
+                            const field = fieldTemplateMap.get(cf.fieldId);
                             if (!field || cf.value == null) return null;
                             return (
                               <span key={cf.fieldId} className="px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px]">
@@ -657,8 +558,7 @@ export default function MapEditorPage() {
             selectedAnnotation={selectedAnnotation}
           />
 
-          {/* 右侧面板 — 工具栏 + 信息卡片垂直堆叠，避免重叠 */}
-          {/* top-16 避开天地图右上角控件（矢量/影像切换按钮） */}
+          {/* 右侧面板 */}
           <div className="absolute right-4 top-16 z-[1000] flex flex-col gap-3 items-end">
             <DrawingToolbar
               drawMode={drawMode}

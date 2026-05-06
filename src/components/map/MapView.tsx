@@ -18,6 +18,23 @@ const DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
+// 修复 #3: 白名单验证，防止 XSS
+const ALLOWED_ICONS = new Set(PRESET_ICONS.map((i) => i.value));
+const ALLOWED_COLORS = new Set(PRESET_COLORS.map((c) => c.value));
+function sanitizeColor(color: string): string {
+  // 只允许十六进制颜色
+  if (/^#[0-9A-Fa-f]{6}$/.test(color)) return color;
+  // 也允许预设颜色名
+  if (ALLOWED_COLORS.has(color)) return color;
+  return '#EF4444'; // 默认红色
+}
+function sanitizeIcon(icon: string): string {
+  return ALLOWED_ICONS.has(icon) ? icon : 'map-pin';
+}
+function sanitizeSize(size: number): number {
+  return Math.max(1, Math.min(5, Math.round(size)));
+}
+
 interface MapViewProps {
   annotations: Annotation[];
   onMapClick?: (latlng: L.LatLng) => void;
@@ -50,6 +67,10 @@ export default function MapView({
   const [mapReady, setMapReady] = useState(false);
   const [mapType, setMapType] = useState<'vec' | 'img'>('vec');
 
+  // 修复 #17: 保留图层引用，切换时复用而非销毁重建
+  const vecLayersRef = useRef<L.TileLayer[]>([]);
+  const imgLayersRef = useRef<L.TileLayer[]>([]);
+
   // 初始化地图
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -64,16 +85,16 @@ export default function MapView({
     // 添加缩放控件到右下角
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // 天地图矢量底图
-    const vecLayer = L.tileLayer(TIANDITU_LAYERS.vec, {
-      subdomains: TIANDITU_SUBDOMAINS,
-      maxZoom: 18,
-    });
-    const cvaLayer = L.tileLayer(TIANDITU_LAYERS.cva, {
-      subdomains: TIANDITU_SUBDOMAINS,
-      maxZoom: 18,
-    });
+    // 修复 #17: 预创建所有图层，切换时只 add/remove
+    const vecLayer = L.tileLayer(TIANDITU_LAYERS.vec, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
+    const cvaLayer = L.tileLayer(TIANDITU_LAYERS.cva, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
+    const imgLayer = L.tileLayer(TIANDITU_LAYERS.img, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
+    const ciaLayer = L.tileLayer(TIANDITU_LAYERS.cia, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
 
+    vecLayersRef.current = [vecLayer, cvaLayer];
+    imgLayersRef.current = [imgLayer, ciaLayer];
+
+    // 默认显示矢量
     vecLayer.addTo(map);
     cvaLayer.addTo(map);
 
@@ -93,24 +114,19 @@ export default function MapView({
     };
   }, []);
 
-  // 地图类型切换
+  // 修复 #17: 地图类型切换 — 复用已有图层，只做 add/remove
   useEffect(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
 
-    // 移除所有底图
-    map.eachLayer((layer) => {
-      if (layer instanceof L.TileLayer && !(layer instanceof L.LayerGroup)) {
-        map.removeLayer(layer);
-      }
-    });
-
     if (mapType === 'vec') {
-      L.tileLayer(TIANDITU_LAYERS.vec, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 }).addTo(map);
-      L.tileLayer(TIANDITU_LAYERS.cva, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 }).addTo(map);
+      // 移除影像图层，添加矢量图层
+      imgLayersRef.current.forEach((l) => { if (map.hasLayer(l)) map.removeLayer(l); });
+      vecLayersRef.current.forEach((l) => { if (!map.hasLayer(l)) l.addTo(map); });
     } else {
-      L.tileLayer(TIANDITU_LAYERS.img, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 }).addTo(map);
-      L.tileLayer(TIANDITU_LAYERS.cia, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 }).addTo(map);
+      // 移除矢量图层，添加影像图层
+      vecLayersRef.current.forEach((l) => { if (map.hasLayer(l)) map.removeLayer(l); });
+      imgLayersRef.current.forEach((l) => { if (!map.hasLayer(l)) l.addTo(map); });
     }
   }, [mapType]);
 
@@ -314,16 +330,21 @@ export default function MapView({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [drawMode, onDrawModeChange]);
 
-  // 创建自定义图标
+  // 创建自定义图标（修复 #3: 移除内联事件，使用 CSS :hover 替代）
   const createCustomIcon = (style: PointStyle): L.DivIcon => {
-    const iconData = PRESET_ICONS.find((i) => i.value === style.icon) || PRESET_ICONS[0];
-    const size = (style.size || 3) * 8 + 16; // 24-56px
+    const safeIcon = sanitizeIcon(style.icon);
+    const safeColor = sanitizeColor(style.color);
+    const safeSize = sanitizeSize(style.size || 3);
+    const iconData = PRESET_ICONS.find((i) => i.value === safeIcon) || PRESET_ICONS[0];
+    const size = safeSize * 8 + 16; // 24-56px
+
+    // 修复 #3: 移除 onmouseover/onmouseout 内联事件，用 CSS :hover 实现
     return L.divIcon({
       className: 'custom-marker',
-      html: `<div style="
+      html: `<div class="marker-icon" style="
         width: ${size}px;
         height: ${size}px;
-        background-color: ${style.color};
+        background-color: ${safeColor};
         border-radius: 50%;
         border: 3px solid white;
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);
@@ -334,7 +355,7 @@ export default function MapView({
         font-size: ${size * 0.4}px;
         cursor: pointer;
         transition: transform 0.2s;
-      " onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">
+      ">
         ${getIconSvg(iconData.value, size * 0.4)}
       </div>`,
       iconSize: [size, size],
@@ -346,6 +367,13 @@ export default function MapView({
   return (
     <div className="relative w-full h-full">
       <div ref={mapContainerRef} className="w-full h-full" />
+
+      {/* 修复 #3: CSS :hover 替代内联事件 */}
+      <style jsx global>{`
+        .marker-icon:hover {
+          transform: scale(1.2) !important;
+        }
+      `}</style>
 
       {/* 地图类型切换 */}
       <div className="absolute top-4 right-4 z-[1000] bg-white rounded-lg shadow-lg overflow-hidden">
