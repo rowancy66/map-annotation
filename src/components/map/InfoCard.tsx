@@ -44,7 +44,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
   };
 
   return (
-    <div className="absolute top-4 right-4 z-[1000] w-80 max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl overflow-hidden md:top-4 md:right-4 max-md:bottom-4 max-md:left-4 max-md:right-4 max-md:top-auto max-md:w-auto">
+    <div className="w-80 max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl overflow-hidden max-md:w-auto">
       {/* 头部 */}
       <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
         <div className="flex items-center gap-2">

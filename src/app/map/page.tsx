@@ -644,34 +644,29 @@ export default function MapEditorPage() {
             selectedAnnotation={selectedAnnotation}
           />
 
-          {/* 绘制工具栏 */}
-          <div
-            className="absolute top-4 z-[1000] transition-all duration-300"
-            style={{ right: '16px' }}
-          >
+          {/* 右侧面板 — 工具栏 + 信息卡片垂直堆叠，避免重叠 */}
+          <div className="absolute right-4 top-4 z-[1000] flex flex-col gap-3 items-end">
             <DrawingToolbar
               drawMode={drawMode}
               onDrawModeChange={setDrawMode}
               annotationCount={annotationCount}
             />
+            {selectedAnnotation && mapProject && !batchMode && (
+              <InfoCard
+                annotation={selectedAnnotation}
+                fieldTemplates={mapProject.field_templates}
+                onClose={() => setSelectedAnnotation(null)}
+                onSave={handleSaveAnnotation}
+                onDelete={handleDeleteAnnotation}
+              />
+            )}
           </div>
 
           {/* 移动提示 */}
-          <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 backdrop-blur text-gray-600 px-3 py-1.5 rounded-lg shadow text-xs flex items-center gap-1.5">
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[999] bg-white/90 backdrop-blur text-gray-600 px-3 py-1.5 rounded-lg shadow text-xs flex items-center gap-1.5 pointer-events-none">
             <Move className="w-3.5 h-3.5" />
             选择模式下可直接拖拽点位移动
           </div>
-
-          {/* 信息卡片 */}
-          {selectedAnnotation && mapProject && !batchMode && (
-            <InfoCard
-              annotation={selectedAnnotation}
-              fieldTemplates={mapProject.field_templates}
-              onClose={() => setSelectedAnnotation(null)}
-              onSave={handleSaveAnnotation}
-              onDelete={handleDeleteAnnotation}
-            />
-          )}
         </div>
       </div>
 
