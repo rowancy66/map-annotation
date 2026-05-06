@@ -647,7 +647,7 @@ export default function MapEditorPage() {
           {/* 绘制工具栏 */}
           <div
             className="absolute top-4 z-[1000] transition-all duration-300"
-            style={{ left: sidebarOpen ? '336px' : '16px' }}
+            style={{ right: '16px' }}
           >
             <DrawingToolbar
               drawMode={drawMode}
