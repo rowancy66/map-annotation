@@ -214,15 +214,25 @@ CREATE TRIGGER update_annotations_updated_at
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- 6. 新用户注册时自动创建默认地图
-CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER AS $$
+-- 关键：SECURITY DEFINER SET search_path = '' 绕过 RLS
+-- 异常处理确保地图创建失败不阻塞注册
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+SECURITY DEFINER SET search_path = ''
+LANGUAGE plpgsql
+AS $$
 BEGIN
-  INSERT INTO maps (user_id, name, description)
+  INSERT INTO public.maps (user_id, name, description)
   VALUES (NEW.id, '我的地图', '默认地图项目');
   RETURN NEW;
+EXCEPTION
+  WHEN OTHERS THEN
+    RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION handle_new_user();`;
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();`;
