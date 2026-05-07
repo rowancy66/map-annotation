@@ -75,6 +75,12 @@ export default function MapView({
   const onAnnotationClickRef = useRef(onAnnotationClick);
   onAnnotationClickRef.current = onAnnotationClick;
 
+  const rightDragRef = useRef<{
+    marker: L.Marker;
+    annotationId: string;
+    isDragging: boolean;
+  } | null>(null);
+
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
@@ -163,17 +169,25 @@ export default function MapView({
         const geom = annotation.geometry as { type: string; coordinates: [number, number] };
         const style = annotation.style as PointStyle;
         const icon = createCustomIcon(style);
-        const isDraggable = drawMode === 'none';
-        leafletLayer = L.marker([geom.coordinates[1], geom.coordinates[0]], { icon, draggable: isDraggable });
+        leafletLayer = L.marker([geom.coordinates[1], geom.coordinates[0]], {
+          icon,
+          draggable: false,
+        });
 
-        if (isDraggable) {
-          (leafletLayer as L.Marker).on('dragend', (e: L.DragEndEvent) => {
-            const marker = e.target as L.Marker;
-            const newPos = marker.getLatLng();
-            const currentAnnotation = annotationsRef.current.find((a) => a.id === annotation.id) || annotation;
-            onAnnotationMoveRef.current?.(currentAnnotation, newPos);
-          });
-        }
+        (leafletLayer as L.Marker).on('contextmenu', (e: L.LeafletMouseEvent) => {
+          L.DomEvent.stopPropagation(e);
+          L.DomEvent.preventDefault(e);
+          if (drawMode !== 'none') return;
+
+          const marker = e.target as L.Marker;
+          marker.dragging?.enable();
+          rightDragRef.current = {
+            marker,
+            annotationId: annotation.id,
+            isDragging: true,
+          };
+        });
+
       } else if (annotation.type === 'line') {
         const geom = annotation.geometry as { type: string; coordinates: [number, number][] };
         const style = annotation.style as LineStyle;
@@ -203,6 +217,32 @@ export default function MapView({
       layer.addLayer(leafletLayer);
     });
   }, [annotations, mapReady, selectedAnnotation, drawMode]);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+
+    const handleMouseUp = () => {
+      const dragInfo = rightDragRef.current;
+      if (!dragInfo || !dragInfo.isDragging) return;
+
+      const marker = dragInfo.marker;
+      const newPos = marker.getLatLng();
+      marker.dragging?.disable();
+
+      const currentAnnotation = annotationsRef.current.find((a) => a.id === dragInfo.annotationId);
+      if (currentAnnotation) {
+        onAnnotationMoveRef.current?.(currentAnnotation, newPos);
+      }
+
+      rightDragRef.current = null;
+    };
+
+    map.on('mouseup', handleMouseUp);
+    return () => {
+      map.off('mouseup', handleMouseUp);
+    };
+  }, []);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -313,9 +353,9 @@ export default function MapView({
   const createCustomIcon = (style: PointStyle): L.DivIcon => {
     const safeIcon = sanitizeIcon(style.icon);
     const safeColor = sanitizeColor(style.color);
-    const safeSize = sanitizeSize(style.size || 3);
+    const safeSize = sanitizeSize(style.size || 2);
     const iconData = PRESET_ICONS.find((i) => i.value === safeIcon) || PRESET_ICONS[0];
-    const size = safeSize * 8 + 16;
+    const size = safeSize * 5 + 10;
 
     return L.divIcon({
       className: 'custom-marker',
@@ -324,15 +364,15 @@ export default function MapView({
         height: ${size}px;
         background-color: ${safeColor};
         border-radius: 50%;
-        border: 3px solid white;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        border: 2px solid white;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.3);
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
         font-size: ${size * 0.4}px;
         cursor: pointer;
-        transition: transform 0.2s;
+        transition: transform 0.15s;
       ">
         ${getIconSvg(iconData.value, size * 0.4)}
       </div>`,
@@ -348,7 +388,7 @@ export default function MapView({
 
       <style jsx global>{`
         .marker-icon:hover {
-          transform: scale(1.2) !important;
+          transform: scale(1.15) !important;
         }
       `}</style>
 

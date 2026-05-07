@@ -113,7 +113,7 @@ export default function MapEditorPage() {
       geometry: { type: 'Point', coordinates: [latlng.lng, latlng.lat] },
       name: '',
       description: '',
-      style: { color: '#EF4444', icon: 'map-pin', size: 3 },
+      style: { color: '#EF4444', icon: 'map-pin', size: 2 },
       custom_fields: [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -577,7 +577,7 @@ export default function MapEditorPage() {
           {/* 移动提示 */}
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[999] bg-white/90 backdrop-blur text-gray-600 px-3 py-1.5 rounded-lg shadow text-xs flex items-center gap-1.5 pointer-events-none">
             <Move className="w-3.5 h-3.5" />
-            选择模式下可直接拖拽点位移动
+            右键拖拽可移动点位
           </div>
         </div>
       </div>
