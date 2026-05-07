@@ -419,7 +419,7 @@ export default function MapView({
     const safeColor = sanitizeColor(style.color);
     const safeSize = sanitizeSize(style.size || 2);
     const iconData = PRESET_ICONS.find((i) => i.value === safeIcon) || PRESET_ICONS[0];
-    const baseSize = safeSize * 5 + 10;
+    const baseSize = safeSize * 3 + 8;
     const size = highlighted ? Math.round(baseSize * 1.35) : baseSize;
 
     return L.divIcon({
