@@ -513,12 +513,6 @@ export default function MapView({
           </button>
         </div>
       )}
-
-      {editable && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[999] bg-white/70 backdrop-blur-md text-gray-500 px-4 py-2 rounded-xl shadow-lg border border-white/40 text-xs pointer-events-none">
-          在点位标注上点击右键可移动位置
-        </div>
-      )}
     </div>
   );
 }
