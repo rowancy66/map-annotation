@@ -68,7 +68,7 @@ export default function PublicMapPage() {
         />
 
         {/* InfoCard */}
-        <div className="absolute right-4 top-4 z-[1000]">
+        <div className="absolute right-4 top-20 z-[1000]">
           {selectedAnnotation && mapProject && (
             <InfoCard
               annotation={selectedAnnotation}

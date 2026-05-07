@@ -180,11 +180,11 @@ export default function SearchBox({ map }: SearchBoxProps) {
   }, [clearMarker]);
 
   return (
-    <div className="absolute bottom-20 right-4 z-[1000] flex flex-col items-end">
+    <div className="absolute top-4 right-4 z-[1000] flex flex-col items-end">
       <div className="relative w-72">
         {/* 搜索结果下拉 - 显示在搜索框上方 */}
         {showResults && (
-          <div className="absolute bottom-full mb-1 left-0 right-0 bg-white rounded-lg shadow-xl border border-gray-200 max-h-72 overflow-y-auto">
+          <div className="absolute top-full mt-1 left-0 right-0 bg-white rounded-lg shadow-xl border border-gray-200 max-h-72 overflow-y-auto">
             {results.length === 0 && !loading && (
               <div className="px-4 py-3 text-sm text-gray-400 text-center">
                 未找到结果
