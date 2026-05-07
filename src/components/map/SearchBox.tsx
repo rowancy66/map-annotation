@@ -180,7 +180,7 @@ export default function SearchBox({ map }: SearchBoxProps) {
   }, [clearMarker]);
 
   return (
-    <div className="absolute top-4 right-16 z-[1000] flex flex-col items-end">
+    <div className="absolute top-4 left-4 z-[1000] flex flex-col items-start">
       <div className="relative w-72">
         <div className="flex items-center bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
           <div className="pl-3 pr-1 text-gray-400">
