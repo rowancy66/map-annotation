@@ -278,8 +278,8 @@ export default function MapView({
 
     const handleDblClick = (e: L.LeafletMouseEvent) => {
       if (drawMode !== 'line' && drawMode !== 'polygon') return;
-      L.DomEvent.stopPropagation(e as unknown as Event);
-      L.DomEvent.preventDefault(e as unknown as Event);
+      e.originalEvent?.stopPropagation();
+      e.originalEvent?.preventDefault();
 
       const points = tempPointsRef.current;
       if (drawMode === 'line' && points.length >= 2) {
