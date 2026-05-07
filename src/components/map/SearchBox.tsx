@@ -126,7 +126,7 @@ export default function SearchBox({ map }: SearchBoxProps) {
         display: flex; align-items: center; justify-content: center;
         animation: searchPulse 1.5s ease-in-out infinite;
       ">
-        <svg viewBox="0 0 24 24" fill="white" width="14" height="14">
+        <svg viewBox="0 0 24 24" fill="white" width="14" height="14" aria-hidden="true">
           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
           <circle cx="12" cy="10" r="3" fill="white"/>
         </svg>
@@ -235,15 +235,16 @@ export default function SearchBox({ map }: SearchBoxProps) {
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onFocus={() => results.length > 0 && setShowResults(true)}
-            placeholder="搜索地址、路名..."
+            placeholder="搜索地址、路名…"
             className="flex-1 py-2.5 pr-2 text-sm outline-none text-gray-700 placeholder-gray-400"
           />
           {query && (
             <button
               onClick={handleClear}
+              aria-label="清除搜索"
               className="pr-2 pl-1 text-gray-400 hover:text-gray-600 transition"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
           )}
         </div>

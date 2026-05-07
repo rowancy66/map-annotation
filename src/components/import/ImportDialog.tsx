@@ -234,8 +234,8 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="text-lg font-semibold text-gray-900">批量导入标注点</h2>
-          <button onClick={handleClose} className="p-1 hover:bg-gray-100 rounded transition">
-            <X className="w-5 h-5 text-gray-500" />
+          <button onClick={handleClose} aria-label="关闭" className="p-1 hover:bg-gray-100 rounded transition">
+            <X aria-hidden="true" className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
@@ -260,7 +260,7 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
                   : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50/50'
               }`}
             >
-              <Upload className={`w-12 h-12 mx-auto mb-4 ${isDragging ? 'text-blue-500' : 'text-gray-400'}`} />
+              <Upload aria-hidden="true" className={`w-12 h-12 mx-auto mb-4 ${isDragging ? 'text-blue-500' : 'text-gray-400'}`} />
               <p className={`mb-2 ${isDragging ? 'text-blue-600 font-medium' : 'text-gray-600'}`}>
                 {isDragging ? '松开鼠标即可上传' : '点击或拖拽文件到此处上传'}
               </p>
@@ -281,7 +281,7 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
           {step === 'mapping' && preview && (
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm text-gray-600">
-                <FileSpreadsheet className="w-4 h-4" />
+                <FileSpreadsheet aria-hidden="true" className="w-4 h-4" />
                 <span>{fileName}</span>
                 <span className="text-gray-400">·</span>
                 <span>{preview.totalRows} 行数据</span>
@@ -289,7 +289,7 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
 
               {!preview.latColumn || !preview.lngColumn ? (
                 <div className="flex items-start gap-2 p-3 bg-yellow-50 text-yellow-700 rounded-lg text-sm">
-                  <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                  <AlertCircle aria-hidden="true" className="w-5 h-5 shrink-0 mt-0.5" />
                   <div>
                     <p className="font-medium">需要映射经纬度列</p>
                     <p className="mt-1 text-yellow-600">请在下方为"纬度"和"经度"选择对应的列，否则无法在地图上标注位置。</p>
@@ -297,7 +297,7 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
                 </div>
               ) : (
                 <div className="flex items-start gap-2 p-3 bg-green-50 text-green-700 rounded-lg text-sm">
-                  <Check className="w-5 h-5 shrink-0 mt-0.5" />
+                  <Check aria-hidden="true" className="w-5 h-5 shrink-0 mt-0.5" />
                   <span>已自动识别经纬度列：{preview.latColumn} / {preview.lngColumn}</span>
                 </div>
               )}
@@ -350,7 +350,7 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
                 className="px-6 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
               >
                 {importing ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />
                 ) : (
                   <MapPin className="w-4 h-4" />
                 )}

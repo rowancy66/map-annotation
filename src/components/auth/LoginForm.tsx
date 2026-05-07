@@ -43,7 +43,7 @@ export default function LoginForm({ redirectTo = '/admin' }: LoginFormProps) {
         {/* Logo & 标题 */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white mb-4 shadow-lg shadow-blue-200">
-            <MapPin className="w-7 h-7" />
+            <MapPin aria-hidden="true" className="w-7 h-7" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">地图标注平台</h1>
           <p className="text-gray-400 mt-1.5 text-sm">登录以管理你的地图标注</p>
@@ -55,14 +55,15 @@ export default function LoginForm({ redirectTo = '/admin' }: LoginFormProps) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">邮箱</label>
               <div className="relative group">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                <Mail aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                 <input
                   type="email"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
                   required
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition"
                 />
               </div>
             </div>
@@ -70,14 +71,15 @@ export default function LoginForm({ redirectTo = '/admin' }: LoginFormProps) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">密码</label>
               <div className="relative group">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                <Lock aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                 <input
                   type="password"
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="输入密码"
+                  placeholder="输入密码…"
                   required
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition"
                 />
               </div>
             </div>
@@ -103,9 +105,9 @@ export default function LoginForm({ redirectTo = '/admin' }: LoginFormProps) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-md shadow-blue-200"
+              className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition active:scale-[0.98] flex items-center justify-center gap-2 shadow-md shadow-blue-200"
             >
-              <LogIn className="w-4 h-4" />
+              <LogIn aria-hidden="true" className="w-4 h-4" />
               {loading ? '登录中...' : '登录'}
             </button>
           </form>

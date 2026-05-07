@@ -109,7 +109,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
         className={`flex items-center justify-between px-3 py-2 border-b bg-gray-50 ${readOnly ? '' : 'cursor-move select-none'}`}
       >
         <div className="flex items-center gap-1.5">
-          {!readOnly && <GripHorizontal className="w-3.5 h-3.5 text-gray-400" />}
+          {!readOnly && <GripHorizontal className="w-3.5 h-3.5 text-gray-400" aria-hidden="true" />}
           <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
             annotation.type === 'point' ? 'bg-blue-100 text-blue-700' :
             annotation.type === 'line' ? 'bg-green-100 text-green-700' :
@@ -121,8 +121,8 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
             {new Date(annotation.updated_at).toLocaleDateString('zh-CN')}
           </span>
         </div>
-        <button onClick={onClose} className="p-0.5 hover:bg-gray-200 rounded transition">
-          <X className="w-3.5 h-3.5 text-gray-500" />
+        <button onClick={onClose} aria-label="关闭" className="p-0.5 hover:bg-gray-200 rounded transition">
+          <X className="w-3.5 h-3.5 text-gray-500" aria-hidden="true" />
         </button>
       </div>
 
@@ -135,7 +135,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
               value={editData.name}
               onChange={(e) => setEditData({ ...editData, name: e.target.value })}
               className="w-full px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500 outline-none"
-              placeholder="输入名称"
+              placeholder="输入名称…"
             />
           ) : (
             <p className="text-xs font-medium text-gray-900">{annotation.name || '未命名'}</p>
@@ -150,7 +150,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
               onChange={(e) => setEditData({ ...editData, description: e.target.value })}
               className="w-full px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500 outline-none resize-none"
               rows={2}
-              placeholder="输入描述"
+              placeholder="输入描述…"
             />
           ) : (
             <p className="text-xs text-gray-700">{annotation.description || '暂无描述'}</p>
@@ -240,7 +240,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
               disabled={saving}
               className="flex-1 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-1"
             >
-              {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+              {saving ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Save className="w-3 h-3" aria-hidden="true" />}
               {saving ? '保存中...' : '保存'}
             </button>
             <button
@@ -277,7 +277,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
                   disabled={deleting}
                   className="px-2 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700 disabled:opacity-50 transition flex items-center gap-0.5"
                 >
-                  {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                  {deleting ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : null}
                   确认
                 </button>
                 <button
@@ -293,8 +293,9 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
                 onClick={() => setShowDeleteConfirm(true)}
                 className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition"
                 title="删除"
+                aria-label="删除"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
             )}
           </>

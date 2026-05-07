@@ -445,6 +445,12 @@ export default function MapView({
           0%, 100% { transform: scale(1); opacity: 0.5; }
           50% { transform: scale(1.15); opacity: 0.8; }
         }
+        @media (prefers-reduced-motion: reduce) {
+          .marker-icon, .custom-marker *, .search-result-marker * {
+            animation: none !important;
+            transition: none !important;
+          }
+        }
       `}</style>
 
       {/* 搜索框（支持路名、建筑名搜索定位） */}
@@ -502,7 +508,7 @@ export default function MapView({
             onClick={handleMovePoint}
             className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-2"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             移动点位
           </button>
         </div>

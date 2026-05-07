@@ -253,11 +253,12 @@ export default function AdminEditor() {
             href="/"
             className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
             title="返回前台"
+            aria-label="返回前台"
           >
-            <Home className="w-4 h-4" />
+            <Home className="w-4 h-4" aria-hidden="true" />
           </Link>
           <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm shadow-blue-200">
-            <MapPin className="w-4 h-4 text-white" />
+            <MapPin className="w-4 h-4 text-white" aria-hidden="true" />
           </div>
           <h1 className="text-sm font-semibold text-gray-900">
             {mapProject?.name || '地图标注平台'}
@@ -271,8 +272,9 @@ export default function AdminEditor() {
             onClick={() => setImportOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
             title="批量导入"
+            aria-label="批量导入"
           >
-            <Upload className="w-4 h-4" />
+            <Upload className="w-4 h-4" aria-hidden="true" />
             <span className="hidden sm:inline">导入</span>
           </button>
 
@@ -281,11 +283,12 @@ export default function AdminEditor() {
             <button
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
               title="导出"
+              aria-label="导出"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-4 h-4" aria-hidden="true" />
               <span className="hidden sm:inline">导出</span>
             </button>
-            <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+            <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-opacity z-50">
               <button
                 onClick={() => handleExport('xlsx')}
                 className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50 rounded-t-lg"
@@ -308,8 +311,9 @@ export default function AdminEditor() {
               showSettings ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100'
             }`}
             title="设置"
+            aria-label="设置"
           >
-            <Settings className="w-4 h-4" />
+            <Settings className="w-4 h-4" aria-hidden="true" />
           </button>
 
           {/* 用户 */}
@@ -321,8 +325,9 @@ export default function AdminEditor() {
               onClick={signOut}
               className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg transition"
               title="退出登录"
+              aria-label="退出登录"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -341,7 +346,7 @@ export default function AdminEditor() {
           <div className="bg-white rounded-xl shadow-2xl p-6 max-w-sm mx-4">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-red-600" />
+                <AlertTriangle className="w-5 h-5 text-red-600" aria-hidden="true" />
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-gray-900">确认批量删除</h3>
@@ -391,15 +396,16 @@ export default function AdminEditor() {
                     batchMode ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'
                   }`}
                   title="批量操作"
+                  aria-label="批量操作"
                 >
-                  <CheckSquare className="w-4 h-4" />
+                  <CheckSquare className="w-4 h-4" aria-hidden="true" />
                 </button>
               </div>
             </div>
 
             <div className="px-3 py-2 border-b border-gray-100">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
                 <input
                   type="text"
                   value={searchQuery}
@@ -410,9 +416,10 @@ export default function AdminEditor() {
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
+                    aria-label="清除搜索"
                     className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X className="w-3.5 h-3.5" aria-hidden="true" />
                   </button>
                 )}
               </div>
@@ -424,7 +431,7 @@ export default function AdminEditor() {
             {batchMode && (
               <div className="px-3 py-2 border-b bg-blue-50 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <button onClick={handleSelectAll} className="text-xs text-blue-600 hover:text-blue-800">
+                  <button onClick={handleSelectAll} className="text-xs text-blue-600 hover:text-blue-800" aria-label={selectedIds.size === filteredAnnotations.length && filteredAnnotations.length > 0 ? '取消全选' : '全选'}>
                     {selectedIds.size === filteredAnnotations.length && filteredAnnotations.length > 0 ? '取消全选' : '全选'}
                   </button>
                   <span className="text-xs text-gray-500">已选 {selectedIds.size} 个</span>
@@ -434,7 +441,7 @@ export default function AdminEditor() {
                     onClick={onBatchDeleteClick}
                     className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded text-xs font-medium hover:bg-red-700 transition"
                   >
-                    <Trash2 className="w-3 h-3" />
+                    <Trash2 className="w-3 h-3" aria-hidden="true" />
                     批量删除
                   </button>
                 )}
@@ -459,19 +466,23 @@ export default function AdminEditor() {
                     >
                       <div className="flex items-center gap-2">
                         {batchMode && (
-                          <span className="shrink-0" onClick={(e) => {
-                            e.stopPropagation();
-                            const next = new Set(selectedIds);
-                            if (next.has(anno.id)) next.delete(anno.id);
-                            else next.add(anno.id);
-                            setSelectedIds(next);
-                          }}>
+                          <button
+                            className="shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const next = new Set(selectedIds);
+                              if (next.has(anno.id)) next.delete(anno.id);
+                              else next.add(anno.id);
+                              setSelectedIds(next);
+                            }}
+                            aria-label={selectedIds.has(anno.id) ? '取消选择' : '选择'}
+                          >
                             {selectedIds.has(anno.id) ? (
-                              <CheckSquare className="w-4 h-4 text-blue-600" />
+                              <CheckSquare className="w-4 h-4 text-blue-600" aria-hidden="true" />
                             ) : (
-                              <Square className="w-4 h-4 text-gray-400" />
+                              <Square className="w-4 h-4 text-gray-400" aria-hidden="true" />
                             )}
-                          </span>
+                          </button>
                         )}
                         <span className={`w-2 h-2 rounded-full shrink-0 ${
                           anno.type === 'point' ? 'bg-red-500' :
@@ -516,10 +527,11 @@ export default function AdminEditor() {
 
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
+          aria-label={sidebarOpen ? '收起侧边栏' : '展开侧边栏'}
           className="absolute top-2 z-40 bg-white shadow-md rounded-r-xl p-1.5 border border-l-0 border-gray-100 hover:bg-gray-50 transition hover:scale-105"
           style={{ left: sidebarOpen ? '320px' : '0' }}
         >
-          {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          {sidebarOpen ? <ChevronLeft className="w-4 h-4" aria-hidden="true" /> : <ChevronRight className="w-4 h-4" aria-hidden="true" />}
         </button>
 
         <div className="flex-1 relative">

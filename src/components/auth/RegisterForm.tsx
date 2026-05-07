@@ -43,7 +43,7 @@ export default function RegisterForm() {
         {/* Logo & 标题 */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white mb-4 shadow-lg shadow-blue-200">
-            <MapPin className="w-7 h-7" />
+            <MapPin className="w-7 h-7" aria-hidden="true" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">创建账号</h1>
           <p className="text-gray-400 mt-1.5 text-sm">注册后即可开始使用地图标注</p>
@@ -52,7 +52,7 @@ export default function RegisterForm() {
         {/* 注册表单 / 成功提示 */}
         {success ? (
           <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 p-7 text-center">
-            <CheckCircle2 className="w-14 h-14 text-green-500 mx-auto mb-4" />
+            <CheckCircle2 className="w-14 h-14 text-green-500 mx-auto mb-4" aria-hidden="true" />
             <h2 className="text-xl font-bold text-gray-900 mb-2">注册成功！</h2>
             <p className="text-gray-600 mb-4">
               确认邮件已发送至 <strong>{registeredEmail}</strong>
@@ -62,7 +62,7 @@ export default function RegisterForm() {
             </p>
             <a
               href="/auth/login"
-              className="inline-flex px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md shadow-blue-200"
+              className="inline-flex px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-indigo-700 transition shadow-md shadow-blue-200"
             >
               去登录
             </a>
@@ -73,14 +73,15 @@ export default function RegisterForm() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">昵称</label>
               <div className="relative group">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" aria-hidden="true" />
                 <input
                   type="text"
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
-                  placeholder="输入昵称"
+                  placeholder="输入昵称…"
+                  autoComplete="name"
                   required
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition"
                 />
               </div>
             </div>
@@ -88,14 +89,15 @@ export default function RegisterForm() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">邮箱</label>
               <div className="relative group">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" aria-hidden="true" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
+                  autoComplete="email"
                   required
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition"
                 />
               </div>
             </div>
@@ -103,14 +105,15 @@ export default function RegisterForm() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">密码</label>
               <div className="relative group">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" aria-hidden="true" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="至少 6 个字符"
+                  placeholder="至少 6 个字符…"
+                  autoComplete="new-password"
                   required
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition"
                 />
               </div>
             </div>
@@ -122,9 +125,9 @@ export default function RegisterForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-md shadow-blue-200"
+              className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition active:scale-[0.98] flex items-center justify-center gap-2 shadow-md shadow-blue-200"
             >
-              <UserPlus className="w-4 h-4" />
+              <UserPlus className="w-4 h-4" aria-hidden="true" />
               {loading ? '注册中...' : '注册'}
             </button>
           </form>

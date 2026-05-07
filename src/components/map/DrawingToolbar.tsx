@@ -11,10 +11,10 @@ interface DrawingToolbarProps {
 
 export default function DrawingToolbar({ drawMode, onDrawModeChange, annotationCount }: DrawingToolbarProps) {
   const tools: { mode: DrawMode; icon: React.ReactNode; label: string; count: number }[] = [
-    { mode: 'none', icon: <MousePointer2 className="w-5 h-5" />, label: '选择', count: 0 },
-    { mode: 'point', icon: <MapPin className="w-5 h-5" />, label: '添加点', count: annotationCount.point },
-    { mode: 'line', icon: <TrendingUp className="w-5 h-5" />, label: '画线', count: annotationCount.line },
-    { mode: 'polygon', icon: <Pentagon className="w-5 h-5" />, label: '画面', count: annotationCount.polygon },
+    { mode: 'none', icon: <MousePointer2 className="w-5 h-5" aria-hidden="true" />, label: '选择', count: 0 },
+    { mode: 'point', icon: <MapPin className="w-5 h-5" aria-hidden="true" />, label: '添加点', count: annotationCount.point },
+    { mode: 'line', icon: <TrendingUp className="w-5 h-5" aria-hidden="true" />, label: '画线', count: annotationCount.line },
+    { mode: 'polygon', icon: <Pentagon className="w-5 h-5" aria-hidden="true" />, label: '画面', count: annotationCount.polygon },
   ];
 
   return (
@@ -23,7 +23,7 @@ export default function DrawingToolbar({ drawMode, onDrawModeChange, annotationC
         <button
           key={tool.mode}
           onClick={() => onDrawModeChange(tool.mode)}
-          className={`relative flex flex-col items-center justify-center w-12 h-12 rounded-xl transition-all ${
+          className={`relative flex flex-col items-center justify-center w-12 h-12 rounded-xl transition-colors ${
             drawMode === tool.mode
               ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-200 scale-105'
               : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
