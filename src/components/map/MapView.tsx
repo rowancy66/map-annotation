@@ -237,6 +237,24 @@ export default function MapView({
   }, [annotations, mapReady, selectedAnnotation, drawMode]);
 
   useEffect(() => {
+    if (!mapRef.current || !selectedAnnotation) return;
+    const map = mapRef.current;
+    const anno = selectedAnnotation;
+    const geom = anno.geometry as { type: string; coordinates: any };
+
+    if (anno.type === 'point') {
+      const [lng, lat] = geom.coordinates;
+      map.flyTo([lat, lng], Math.max(map.getZoom(), 14), { duration: 0.6 });
+    } else if (anno.type === 'line') {
+      const bounds = L.latLngBounds(geom.coordinates.map(([lng, lat]: [number, number]) => [lat, lng]));
+      map.flyToBounds(bounds, { padding: [40, 40], duration: 0.6 });
+    } else if (anno.type === 'polygon') {
+      const bounds = L.latLngBounds(geom.coordinates.map(([lng, lat]: [number, number]) => [lat, lng]));
+      map.flyToBounds(bounds, { padding: [40, 40], duration: 0.6 });
+    }
+  }, [selectedAnnotation]);
+
+  useEffect(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
 
