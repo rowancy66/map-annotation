@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import L from 'leaflet';
 import { Search, X, Loader2, Navigation, MapPin } from 'lucide-react';
+import { TIANDITU_KEY } from '@/lib/constants';
 
 interface SearchResult {
   name: string;
@@ -48,14 +49,21 @@ export default function SearchBox({ map }: SearchBoxProps) {
     setLoading(true);
 
     try {
-      // 从地图获取当前级别和视野范围，天地图 search API 需要这两个参数
       const level = map?.getZoom() || 12;
       let mapBound = '';
       if (map) {
         const b = map.getBounds();
         mapBound = `${b.getWest()},${b.getSouth()},${b.getEast()},${b.getNorth()}`;
       }
-      const url = `/api/search?keyword=${encodeURIComponent(keyword.trim())}&queryType=1&start=0&count=10&level=${level}&mapBound=${encodeURIComponent(mapBound)}`;
+      const postStr = JSON.stringify({
+        keyWord: keyword.trim(),
+        queryType: '1',
+        level,
+        mapBound,
+        start: 0,
+        count: 10,
+      });
+      const url = `https://api.tianditu.gov.cn/v2/search?postStr=${encodeURIComponent(postStr)}&type=query&tk=${TIANDITU_KEY}`;
 
       const res = await fetch(url, { signal: controller.signal });
       const data = await res.json();

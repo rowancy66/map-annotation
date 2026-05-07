@@ -559,7 +559,7 @@ export default function MapEditorPage() {
           />
 
           {/* 右侧面板 */}
-          <div className="absolute right-4 top-16 z-[1000] flex flex-col gap-3 items-end">
+          <div className="absolute right-4 top-28 z-[1000] flex flex-col gap-3 items-end">
             <DrawingToolbar
               drawMode={drawMode}
               onDrawModeChange={setDrawMode}
