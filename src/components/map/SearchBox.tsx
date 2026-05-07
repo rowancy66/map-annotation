@@ -69,13 +69,23 @@ export default function SearchBox({ map }: SearchBoxProps) {
       const data = await res.json();
 
       if ((data.status?.infocode === 1000 || data.status === 'OK') && Array.isArray(data.pois)) {
-        const parsed: SearchResult[] = data.pois.map((poi: Record<string, unknown>) => ({
-          name: String(poi.name || ''),
-          address: String(poi.address || ''),
-          lng: Number(poi.lon || poi.lng || 0),
-          lat: Number(poi.lat || 0),
-          score: Number(poi.score || 0),
-        }));
+        const parsed: SearchResult[] = data.pois.map((poi: Record<string, unknown>) => {
+          // 天地图 API 返回的坐标在 lonlat 字段（如 "120.418,36.164"）
+          let lng = Number(poi.lon || poi.lng || 0);
+          let lat = Number(poi.lat || 0);
+          if (!lng && !lat && poi.lonlat) {
+            const parts = String(poi.lonlat).split(',');
+            lng = Number(parts[0] || 0);
+            lat = Number(parts[1] || 0);
+          }
+          return {
+            name: String(poi.name || ''),
+            address: String(poi.address || ''),
+            lng,
+            lat,
+            score: Number(poi.score || 0),
+          };
+        });
         setResults(parsed);
         setShowResults(parsed.length > 0);
         setSelectedIndex(-1);
