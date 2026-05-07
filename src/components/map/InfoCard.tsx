@@ -2,20 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import { Annotation, PointStyle, LineStyle, PolygonStyle, PRESET_COLORS, PRESET_ICONS, FieldTemplate, CustomFieldValue, FieldType } from '@/lib/types';
-import { X, Save, Trash2, Plus, Minus } from 'lucide-react';
+import { X, Save, Trash2, Plus, Minus, Loader2 } from 'lucide-react';
 
 interface InfoCardProps {
   annotation: Annotation;
   fieldTemplates: FieldTemplate[];
   onClose: () => void;
-  onSave: (annotation: Annotation) => void;
-  onDelete: (id: string) => void;
+  onSave: (annotation: Annotation) => Promise<Annotation | undefined>;
+  onDelete: (id: string) => Promise<void>;
 }
 
 export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, onDelete }: InfoCardProps) {
   const [editing, setEditing] = useState(false);
   const [editData, setEditData] = useState<Annotation>({ ...annotation });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     setEditData({ ...annotation });
@@ -23,9 +25,14 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
     setShowDeleteConfirm(false);
   }, [annotation]);
 
-  const handleSave = () => {
-    onSave(editData);
-    setEditing(false);
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onSave(editData);
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCustomFieldChange = (fieldId: string, value: string | number | null) => {
@@ -180,13 +187,16 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
           <>
             <button
               onClick={handleSave}
-              className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition flex items-center justify-center gap-1"
+              disabled={saving}
+              className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-1"
             >
-              <Save className="w-4 h-4" /> 保存
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {saving ? '保存中...' : '保存'}
             </button>
             <button
               onClick={() => { setEditData({ ...annotation }); setEditing(false); }}
-              className="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition"
+              disabled={saving}
+              className="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 disabled:opacity-50 transition"
             >
               取消
             </button>
@@ -202,14 +212,21 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
             {showDeleteConfirm ? (
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => onDelete(annotation.id)}
-                  className="px-3 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition"
+                  onClick={async () => {
+                    setDeleting(true);
+                    await onDelete(annotation.id);
+                    setDeleting(false);
+                  }}
+                  disabled={deleting}
+                  className="px-3 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition flex items-center gap-1"
                 >
+                  {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                   确认删除
                 </button>
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition"
+                  disabled={deleting}
+                  className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 disabled:opacity-50 transition"
                 >
                   取消
                 </button>

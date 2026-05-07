@@ -6,7 +6,6 @@ import 'leaflet/dist/leaflet.css';
 import { TIANDITU_LAYERS, TIANDITU_SUBDOMAINS, DEFAULT_CENTER, DEFAULT_ZOOM } from '@/lib/constants';
 import { Annotation, DrawMode, AnnotationType, PointStyle, LineStyle, PolygonStyle, PRESET_COLORS, PRESET_ICONS } from '@/lib/types';
 
-// 修复 Leaflet 默认图标问题
 const DefaultIcon = L.icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -18,15 +17,12 @@ const DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// 修复 #3: 白名单验证，防止 XSS
 const ALLOWED_ICONS = new Set(PRESET_ICONS.map((i) => i.value));
 const ALLOWED_COLORS = new Set(PRESET_COLORS.map((c) => c.value));
 function sanitizeColor(color: string): string {
-  // 只允许十六进制颜色
   if (/^#[0-9A-Fa-f]{6}$/.test(color)) return color;
-  // 也允许预设颜色名
   if (ALLOWED_COLORS.has(color)) return color;
-  return '#EF4444'; // 默认红色
+  return '#EF4444';
 }
 function sanitizeIcon(icon: string): string {
   return ALLOWED_ICONS.has(icon) ? icon : 'map-pin';
@@ -67,11 +63,18 @@ export default function MapView({
   const [mapReady, setMapReady] = useState(false);
   const [mapType, setMapType] = useState<'vec' | 'img'>('vec');
 
-  // 修复 #17: 保留图层引用，切换时复用而非销毁重建
   const vecLayersRef = useRef<L.TileLayer[]>([]);
   const imgLayersRef = useRef<L.TileLayer[]>([]);
 
-  // 初始化地图
+  const annotationsRef = useRef<Annotation[]>(annotations);
+  annotationsRef.current = annotations;
+
+  const onAnnotationMoveRef = useRef(onAnnotationMove);
+  onAnnotationMoveRef.current = onAnnotationMove;
+
+  const onAnnotationClickRef = useRef(onAnnotationClick);
+  onAnnotationClickRef.current = onAnnotationClick;
+
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
@@ -82,10 +85,8 @@ export default function MapView({
       attributionControl: false,
     });
 
-    // 添加缩放控件到右下角
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // 修复 #17: 预创建所有图层，切换时只 add/remove
     const vecLayer = L.tileLayer(TIANDITU_LAYERS.vec, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
     const cvaLayer = L.tileLayer(TIANDITU_LAYERS.cva, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
     const imgLayer = L.tileLayer(TIANDITU_LAYERS.img, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
@@ -94,11 +95,9 @@ export default function MapView({
     vecLayersRef.current = [vecLayer, cvaLayer];
     imgLayersRef.current = [imgLayer, ciaLayer];
 
-    // 默认显示矢量
     vecLayer.addTo(map);
     cvaLayer.addTo(map);
 
-    // 图层组
     const annotationsLayer = L.layerGroup().addTo(map);
     const drawLayer = L.layerGroup().addTo(map);
 
@@ -114,50 +113,40 @@ export default function MapView({
     };
   }, []);
 
-  // 修复 #17: 地图类型切换 — 复用已有图层，只做 add/remove
   useEffect(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
 
     if (mapType === 'vec') {
-      // 移除影像图层，添加矢量图层
       imgLayersRef.current.forEach((l) => { if (map.hasLayer(l)) map.removeLayer(l); });
       vecLayersRef.current.forEach((l) => { if (!map.hasLayer(l)) l.addTo(map); });
     } else {
-      // 移除矢量图层，添加影像图层
       vecLayersRef.current.forEach((l) => { if (map.hasLayer(l)) map.removeLayer(l); });
       imgLayersRef.current.forEach((l) => { if (!map.hasLayer(l)) l.addTo(map); });
     }
   }, [mapType]);
 
-  // 渲染标注
   useEffect(() => {
     if (!annotationsLayerRef.current || !mapReady) return;
     const layer = annotationsLayerRef.current;
 
-    // 记录当前已有的 marker（避免拖拽中被重建）
     const existingLayers = new Map<string, L.Layer>();
     layer.eachLayer((l) => {
       const anno = (l as L.Layer & { _annotationId?: string })._annotationId;
       if (anno) existingLayers.set(anno, l);
     });
 
-    // 当前标注 ID 集合
     const currentIds = new Set(annotations.map((a) => a.id));
 
-    // 移除已不存在的标注
     existingLayers.forEach((l, annoId) => {
       if (!currentIds.has(annoId)) {
         layer.removeLayer(l);
       }
     });
 
-    // 添加或更新标注
     annotations.forEach((annotation) => {
-      // 如果标注已存在且位置没变（非拖拽导致），跳过重建
       const existing = existingLayers.get(annotation.id);
       if (existing) {
-        // 更新选中高亮
         if (existing instanceof L.Polyline) {
           const isSelected = selectedAnnotation?.id === annotation.id;
           (existing as L.Polyline).setStyle({
@@ -165,7 +154,7 @@ export default function MapView({
             opacity: isSelected ? 1 : 0.8,
           });
         }
-        return; // 跳过重建，保留拖拽状态
+        return;
       }
 
       let leafletLayer: L.Layer & { _annotationId?: string };
@@ -181,7 +170,8 @@ export default function MapView({
           (leafletLayer as L.Marker).on('dragend', (e: L.DragEndEvent) => {
             const marker = e.target as L.Marker;
             const newPos = marker.getLatLng();
-            onAnnotationMove?.(annotation, newPos);
+            const currentAnnotation = annotationsRef.current.find((a) => a.id === annotation.id) || annotation;
+            onAnnotationMoveRef.current?.(currentAnnotation, newPos);
           });
         }
       } else if (annotation.type === 'line') {
@@ -204,17 +194,16 @@ export default function MapView({
 
       leafletLayer._annotationId = annotation.id;
 
-      // 点击事件
       leafletLayer.on('click', (e) => {
         L.DomEvent.stopPropagation(e);
-        onAnnotationClick?.(annotation);
+        const currentAnnotation = annotationsRef.current.find((a) => a.id === annotation.id) || annotation;
+        onAnnotationClickRef.current?.(currentAnnotation);
       });
 
       layer.addLayer(leafletLayer);
     });
-  }, [annotations, mapReady, selectedAnnotation, onAnnotationClick, onAnnotationMove, drawMode]);
+  }, [annotations, mapReady, selectedAnnotation, drawMode]);
 
-  // 绘制模式下的地图交互
   useEffect(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
@@ -227,7 +216,6 @@ export default function MapView({
         return;
       }
 
-      // 线/面绘制
       tempPointsRef.current.push(e.latlng);
       updateTempDrawing();
     };
@@ -244,7 +232,6 @@ export default function MapView({
         onMapDrawComplete?.('polygon', points);
       }
 
-      // 清理临时绘制
       cleanupTempDrawing();
       onDrawModeChange('none');
     };
@@ -259,14 +246,12 @@ export default function MapView({
     map.on('dblclick', handleDblClick);
     map.on('mousemove', handleMouseMove);
 
-    // 绘制模式下禁用双击缩放
     if (drawMode !== 'none') {
       map.doubleClickZoom.disable();
     } else {
       map.doubleClickZoom.enable();
     }
 
-    // 更新光标
     if (mapContainerRef.current) {
       mapContainerRef.current.style.cursor = drawMode !== 'none' ? 'crosshair' : '';
     }
@@ -278,7 +263,6 @@ export default function MapView({
     };
   }, [drawMode, onMapClick, onMapDrawComplete, onDrawModeChange]);
 
-  // 更新临时绘制
   const updateTempDrawing = (mouseLatLng?: L.LatLng) => {
     if (!drawLayerRef.current) return;
     drawLayerRef.current.clearLayers();
@@ -286,7 +270,6 @@ export default function MapView({
     const points = tempPointsRef.current;
     if (points.length === 0) return;
 
-    // 绘制已点击的点
     points.forEach((p) => {
       L.circleMarker(p, {
         radius: 4,
@@ -297,12 +280,11 @@ export default function MapView({
       }).addTo(drawLayerRef.current!);
     });
 
-    // 绘制连线
     if (points.length > 1 || mouseLatLng) {
       const linePoints = [...points];
       if (mouseLatLng) linePoints.push(mouseLatLng);
       if (drawMode === 'polygon' && linePoints.length > 2) {
-        linePoints.push(linePoints[0]); // 闭合
+        linePoints.push(linePoints[0]);
       }
       L.polyline(linePoints, {
         color: '#3B82F6',
@@ -312,13 +294,11 @@ export default function MapView({
     }
   };
 
-  // 清理临时绘制
   const cleanupTempDrawing = () => {
     tempPointsRef.current = [];
     drawLayerRef.current?.clearLayers();
   };
 
-  // ESC 取消绘制
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && drawMode !== 'none') {
@@ -330,15 +310,13 @@ export default function MapView({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [drawMode, onDrawModeChange]);
 
-  // 创建自定义图标（修复 #3: 移除内联事件，使用 CSS :hover 替代）
   const createCustomIcon = (style: PointStyle): L.DivIcon => {
     const safeIcon = sanitizeIcon(style.icon);
     const safeColor = sanitizeColor(style.color);
     const safeSize = sanitizeSize(style.size || 3);
     const iconData = PRESET_ICONS.find((i) => i.value === safeIcon) || PRESET_ICONS[0];
-    const size = safeSize * 8 + 16; // 24-56px
+    const size = safeSize * 8 + 16;
 
-    // 修复 #3: 移除 onmouseover/onmouseout 内联事件，用 CSS :hover 实现
     return L.divIcon({
       className: 'custom-marker',
       html: `<div class="marker-icon" style="
@@ -368,14 +346,12 @@ export default function MapView({
     <div className="relative w-full h-full">
       <div ref={mapContainerRef} className="w-full h-full" />
 
-      {/* 修复 #3: CSS :hover 替代内联事件 */}
       <style jsx global>{`
         .marker-icon:hover {
           transform: scale(1.2) !important;
         }
       `}</style>
 
-      {/* 地图类型切换 */}
       <div className="absolute top-4 right-4 z-[1000] bg-white rounded-lg shadow-lg overflow-hidden">
         <button
           onClick={() => setMapType('vec')}
@@ -395,7 +371,6 @@ export default function MapView({
         </button>
       </div>
 
-      {/* 绘制模式提示 */}
       {drawMode !== 'none' && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm flex items-center gap-2">
           <span>
@@ -418,7 +393,6 @@ export default function MapView({
   );
 }
 
-// 简单 SVG 图标生成
 function getIconSvg(iconName: string, size: number): string {
   const icons: Record<string, string> = {
     'map-pin': `<svg viewBox="0 0 24 24" fill="currentColor" width="${size}" height="${size}"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3" fill="white"/></svg>`,

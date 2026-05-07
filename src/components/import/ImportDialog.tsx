@@ -2,14 +2,14 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { ImportPreview, ImportColumn, Annotation, FieldTemplate, PointStyle } from '@/lib/types';
-import { Upload, FileSpreadsheet, MapPin, AlertCircle, Check, X } from 'lucide-react';
+import { Upload, FileSpreadsheet, MapPin, AlertCircle, Check, X, Loader2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 
 interface ImportDialogProps {
   open: boolean;
   onClose: () => void;
-  onImport: (annotations: Omit<Annotation, 'id' | 'created_at' | 'updated_at'>[]) => void;
+  onImport: (annotations: Omit<Annotation, 'id' | 'created_at' | 'updated_at'>[]) => Promise<{ error: string | null }>;
   fieldTemplates: FieldTemplate[];
   mapId: string;
 }
@@ -19,7 +19,57 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
   const [fileName, setFileName] = useState('');
   const [error, setError] = useState('');
   const [step, setStep] = useState<'upload' | 'mapping' | 'confirm'>('upload');
+  const [isDragging, setIsDragging] = useState(false);
+  const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounterRef = useRef(0);
+
+  const buildPreview = useCallback((headers: string[], rows: Record<string, string>[]) => {
+    const latKeywords = ['纬度', 'lat', 'latitude', 'y'];
+    const lngKeywords = ['经度', 'lng', 'lon', 'longitude', 'x'];
+    let autoLat: string | null = null;
+    let autoLng: string | null = null;
+
+    headers.forEach((h) => {
+      const lower = h.toLowerCase().trim();
+      if (latKeywords.some((k) => lower.includes(k))) autoLat = h;
+      if (lngKeywords.some((k) => lower.includes(k))) autoLng = h;
+    });
+
+    const columns: ImportColumn[] = headers.map((header, index) => {
+      const sampleValues = rows.slice(0, 5).map((r) => r[header] || '');
+      let mappedField: string | null = null;
+
+      const lower = header.toLowerCase().trim();
+      if (lower === '名称' || lower === 'name' || lower === '标题' || lower === '编号') mappedField = 'name';
+      else if (lower === '描述' || lower === 'description' || lower === '备注' || lower === '位置') mappedField = 'description';
+      else if (lower === '纬度' || lower === 'lat' || lower === 'latitude') mappedField = '_lat';
+      else if (lower === '经度' || lower === 'lng' || lower === 'lon' || lower === 'longitude') mappedField = '_lng';
+
+      if (!mappedField) {
+        const matchedField = fieldTemplates.find(
+          (f) => f.name.toLowerCase() === lower || f.name === header
+        );
+        if (matchedField) mappedField = `custom_${matchedField.id}`;
+      }
+
+      return {
+        index,
+        header,
+        mappedField,
+        sampleValues,
+      };
+    });
+
+    setPreview({
+      columns,
+      rows,
+      totalRows: rows.length,
+      latColumn: autoLat,
+      lngColumn: autoLng,
+    });
+    setStep('mapping');
+  }, [fieldTemplates]);
 
   const handleFile = useCallback((file: File) => {
     setError('');
@@ -64,64 +114,13 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
     } else {
       setError('不支持的文件格式，请上传 .xlsx 或 .csv 文件');
     }
-  }, []);
-
-  const buildPreview = (headers: string[], rows: Record<string, string>[]) => {
-    // 自动检测经纬度列
-    const latKeywords = ['纬度', 'lat', 'latitude', 'y'];
-    const lngKeywords = ['经度', 'lng', 'lon', 'longitude', 'x'];
-    let autoLat: string | null = null;
-    let autoLng: string | null = null;
-
-    headers.forEach((h) => {
-      const lower = h.toLowerCase().trim();
-      if (latKeywords.some((k) => lower.includes(k))) autoLat = h;
-      if (lngKeywords.some((k) => lower.includes(k))) autoLng = h;
-    });
-
-    const columns: ImportColumn[] = headers.map((header, index) => {
-      const sampleValues = rows.slice(0, 5).map((r) => r[header] || '');
-      let mappedField: string | null = null;
-
-      // 自动映射
-      const lower = header.toLowerCase().trim();
-      if (lower === '名称' || lower === 'name' || lower === '标题' || lower === '编号') mappedField = 'name';
-      else if (lower === '描述' || lower === 'description' || lower === '备注' || lower === '位置') mappedField = 'description';
-      else if (lower === '纬度' || lower === 'lat' || lower === 'latitude') mappedField = '_lat';
-      else if (lower === '经度' || lower === 'lng' || lower === 'lon' || lower === 'longitude') mappedField = '_lng';
-
-      // 映射到自定义字段
-      if (!mappedField) {
-        const matchedField = fieldTemplates.find(
-          (f) => f.name.toLowerCase() === lower || f.name === header
-        );
-        if (matchedField) mappedField = `custom_${matchedField.id}`;
-      }
-
-      return {
-        index,
-        header,
-        mappedField,
-        sampleValues,
-      };
-    });
-
-    setPreview({
-      columns,
-      rows,
-      totalRows: rows.length,
-      latColumn: autoLat,
-      lngColumn: autoLng,
-    });
-    setStep('mapping');
-  };
+  }, [buildPreview]);
 
   const handleColumnMapping = (colIndex: number, field: string) => {
     if (!preview) return;
     const newColumns = [...preview.columns];
     newColumns[colIndex] = { ...newColumns[colIndex], mappedField: field || null };
 
-    // 更新经纬度列
     let latCol = preview.latColumn;
     let lngCol = preview.lngColumn;
     if (field === '_lat') latCol = newColumns[colIndex].header;
@@ -130,7 +129,7 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
     setPreview({ ...preview, columns: newColumns, latColumn: latCol, lngColumn: lngCol });
   };
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (!preview || !preview.latColumn || !preview.lngColumn) {
       setError('请先映射经度和纬度列');
       return;
@@ -144,13 +143,11 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
 
       if (isNaN(lat) || isNaN(lng)) return;
 
-      // 获取名称和描述
       const nameCol = preview.columns.find((c) => c.mappedField === 'name');
       const descCol = preview.columns.find((c) => c.mappedField === 'description');
       const name = nameCol ? row[nameCol.header] : '';
       const description = descCol ? row[descCol.header] : '';
 
-      // 获取自定义字段值
       const customFields = preview.columns
         .filter((c) => c.mappedField?.startsWith('custom_'))
         .map((c) => ({
@@ -176,8 +173,18 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
       });
     });
 
-    onImport(annotations);
-    handleClose();
+    setImporting(true);
+    setError('');
+    try {
+      const { error: importError } = await onImport(annotations);
+      if (importError) {
+        setError(`导入失败: ${importError}`);
+        return;
+      }
+      handleClose();
+    } finally {
+      setImporting(false);
+    }
   };
 
   const handleClose = () => {
@@ -185,12 +192,31 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
     setFileName('');
     setError('');
     setStep('upload');
+    setIsDragging(false);
+    dragCounterRef.current = 0;
     onClose();
   };
 
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current++;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setIsDragging(false);
+    }
+  }, []);
+
   if (!open) return null;
 
-  // 构建映射选项 — 自定义字段直接显示字段名，与 Excel 表头一致
   const mappingOptions = [
     { value: '_lat', label: '纬度 (Latitude)' },
     { value: '_lng', label: '经度 (Longitude)' },
@@ -200,9 +226,12 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
   ];
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50">
+    <div
+      className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50"
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => e.preventDefault()}
+    >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
-        {/* 头部 */}
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="text-lg font-semibold text-gray-900">批量导入标注点</h2>
           <button onClick={handleClose} className="p-1 hover:bg-gray-100 rounded transition">
@@ -210,23 +239,31 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
           </button>
         </div>
 
-        {/* 内容 */}
         <div className="flex-1 overflow-y-auto p-6">
-          {/* 步骤 1: 上传 */}
           {step === 'upload' && (
             <div
               onClick={() => fileInputRef.current?.click()}
+              onDragEnter={handleDragEnter}
               onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onDragLeave={handleDragLeave}
               onDrop={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                dragCounterRef.current = 0;
+                setIsDragging(false);
                 const file = e.dataTransfer.files[0];
                 if (file) handleFile(file);
               }}
-              className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition"
+              className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition ${
+                isDragging
+                  ? 'border-blue-500 bg-blue-50 scale-[1.02]'
+                  : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50/50'
+              }`}
             >
-              <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-2">点击或拖拽文件到此处上传</p>
+              <Upload className={`w-12 h-12 mx-auto mb-4 ${isDragging ? 'text-blue-500' : 'text-gray-400'}`} />
+              <p className={`mb-2 ${isDragging ? 'text-blue-600 font-medium' : 'text-gray-600'}`}>
+                {isDragging ? '松开鼠标即可上传' : '点击或拖拽文件到此处上传'}
+              </p>
               <p className="text-sm text-gray-400">支持 .xlsx, .csv 格式</p>
               <input
                 ref={fileInputRef}
@@ -241,7 +278,6 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
             </div>
           )}
 
-          {/* 步骤 2: 字段映射 */}
           {step === 'mapping' && preview && (
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -293,7 +329,6 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
           )}
         </div>
 
-        {/* 底部 */}
         {step === 'mapping' && (
           <div className="px-6 py-4 border-t flex items-center justify-between">
             <button
@@ -311,11 +346,15 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
               </button>
               <button
                 onClick={handleImport}
-                disabled={!preview?.latColumn || !preview?.lngColumn}
+                disabled={!preview?.latColumn || !preview?.lngColumn || importing}
                 className="px-6 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
               >
-                <MapPin className="w-4 h-4" />
-                导入 {preview?.totalRows || 0} 个标注点
+                {importing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <MapPin className="w-4 h-4" />
+                )}
+                {importing ? '导入中...' : `导入 ${preview?.totalRows || 0} 个标注点`}
               </button>
             </div>
           </div>

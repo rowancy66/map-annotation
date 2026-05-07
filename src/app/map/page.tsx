@@ -170,9 +170,7 @@ export default function MapEditorPage() {
   // 批量导入
   const handleImport = useCallback(async (items: Omit<Annotation, 'id' | 'created_at' | 'updated_at'>[]) => {
     const { error } = await importAnnotations(items);
-    if (error) {
-      alert(`导入失败: ${error}`);
-    }
+    return { error };
   }, [importAnnotations]);
 
   // 修复 #9: 导出表头从 field_templates 动态生成
