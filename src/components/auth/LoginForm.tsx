@@ -2,10 +2,16 @@
 
 import { useState } from 'react';
 import { useAuth } from './AuthProvider';
+import { useRouter } from 'next/navigation';
 import { Mail, Lock, LogIn, MapPin } from 'lucide-react';
 
-export default function LoginForm() {
+interface LoginFormProps {
+  redirectTo?: string;
+}
+
+export default function LoginForm({ redirectTo = '/admin' }: LoginFormProps) {
   const { signInWithEmail } = useAuth();
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -25,6 +31,8 @@ export default function LoginForm() {
       } else {
         setError(error === 'Invalid login credentials' ? '邮箱或密码错误' : error);
       }
+    } else {
+      router.push(redirectTo);
     }
     setLoading(false);
   };

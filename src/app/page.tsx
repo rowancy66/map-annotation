@@ -1,33 +1,91 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Loader2 } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import dynamic from 'next/dynamic';
+import Link from 'next/link';
+import { useMapData } from '@/hooks/useMapData';
+import InfoCard from '@/components/map/InfoCard';
+import { Annotation } from '@/lib/types';
+import { Loader2, LogIn, MapPinned } from 'lucide-react';
 
-export default function HomePage() {
-  const [redirecting, setRedirecting] = useState(true);
+const MapView = dynamic(() => import('@/components/map/MapView'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-gray-100">
+      <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+    </div>
+  ),
+});
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const { error } = await supabase.from('maps').select('id').limit(1);
-        if (error) {
-          // 数据库未初始化，跳转设置页
-          window.location.href = '/setup';
-        } else {
-          // 数据库已就绪，跳转登录
-          window.location.href = '/auth/login';
-        }
-      } catch {
-        window.location.href = '/setup';
-      }
-      setRedirecting(false);
-    })();
+export default function PublicMapPage() {
+  const { mapProject, annotations, loading } = useMapData(null);
+  const [selectedAnnotation, setSelectedAnnotation] = useState<Annotation | null>(null);
+
+  const handleAnnotationClick = useCallback((annotation: Annotation) => {
+    setSelectedAnnotation(annotation);
   }, []);
 
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-100">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+          <p className="text-sm text-gray-400">加载地图数据...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+    <div className="h-screen flex flex-col">
+      {/* 顶部栏 */}
+      <header className="h-12 bg-white/90 backdrop-blur border-b border-gray-100 shadow-sm flex items-center justify-between px-4 z-50 shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm shadow-blue-200">
+            <MapPinned className="w-4 h-4 text-white" />
+          </div>
+          <h1 className="text-sm font-semibold text-gray-900">
+            {mapProject?.name || '地图标注平台'}
+          </h1>
+        </div>
+        <Link
+          href="/admin"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+        >
+          <LogIn className="w-4 h-4" />
+          后台管理
+        </Link>
+      </header>
+
+      {/* 地图区域 */}
+      <div className="flex-1 relative">
+        <MapView
+          annotations={annotations}
+          onAnnotationClick={handleAnnotationClick}
+          drawMode="none"
+          onDrawModeChange={() => {}}
+          editable={false}
+        />
+
+        {/* InfoCard */}
+        <div className="absolute right-4 top-4 z-[1000]">
+          {selectedAnnotation && mapProject && (
+            <InfoCard
+              annotation={selectedAnnotation}
+              fieldTemplates={mapProject.field_templates}
+              onClose={() => setSelectedAnnotation(null)}
+              onSave={async (a) => a}
+              onDelete={async () => {}}
+              readOnly={true}
+            />
+          )}
+        </div>
+
+        {/* 底部提示 */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[999] bg-white/80 backdrop-blur text-gray-400 px-3 py-1.5 rounded-lg shadow text-xs">
+          点击标注查看详情 · 右键拖动地图
+        </div>
+      </div>
     </div>
   );
 }

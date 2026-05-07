@@ -46,9 +46,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithEmail = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
-    router.push('/dashboard');
     return { error: null };
-  }, [router]);
+  }, []);
 
   const signUpWithEmail = useCallback(async (email: string, password: string, nickname: string) => {
     const { data, error } = await supabase.auth.signUp({
@@ -90,14 +89,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // 如果 session 存在，说明邮箱确认已关闭，用户已自动登录
     const needsConfirmation = !data.session;
     if (!needsConfirmation) {
-      router.push('/dashboard');
+      router.push('/admin');
     }
     return { error: null, needsConfirmation };
   }, [router]);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
-    router.push('/auth/login');
+    router.push('/');
   }, [router]);
 
   return (
