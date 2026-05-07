@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation'; // 修复 #13: 使用 router
 import { useAuth } from '@/components/auth/AuthProvider';
 import DrawingToolbar from '@/components/map/DrawingToolbar';
 import InfoCard from '@/components/map/InfoCard';
@@ -48,7 +47,6 @@ const MapView = dynamic(() => import('@/components/map/MapView'), {
 
 export default function MapEditorPage() {
   const { user, signOut, loading: authLoading } = useAuth();
-  const router = useRouter(); // 修复 #13
 
   // 数据加载 hook
   const {
@@ -100,6 +98,8 @@ export default function MapEditorPage() {
 
   // 修复 #1: 批量删除确认
   const [batchDeleteConfirm, setBatchDeleteConfirm] = useState(false);
+
+  const editable = !!user;
 
   // 地图点击 - 添加点
   const handleMapClick = useCallback(async (latlng: L.LatLng) => {
@@ -221,7 +221,7 @@ export default function MapEditorPage() {
       XLSX.writeFile(wb, `土地出让数据_${new Date().toLocaleDateString('zh-CN')}.xlsx`);
     } else {
       const csv = Papa.unparse(rows, { columns: allHeaders });
-      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -254,14 +254,6 @@ export default function MapEditorPage() {
     await handleBatchDelete();
   }, [handleBatchDelete]);
 
-  // 修复 #13: 使用 router.replace 替代 window.location.href
-  // 修复 Bug 2: 将跳转逻辑放入 useEffect，避免 render 阶段执行副作用
-  useEffect(() => {
-    if (!user && !authLoading && !loading) {
-      router.replace('/auth/login');
-    }
-  }, [user, authLoading, loading, router]);
-
   // 未登录或加载中
   if (authLoading || loading) {
     return (
@@ -270,8 +262,6 @@ export default function MapEditorPage() {
       </div>
     );
   }
-
-  if (!user) return null;
 
   return (
     <div className="h-screen flex flex-col">
@@ -283,69 +273,76 @@ export default function MapEditorPage() {
           </div>
           <h1 className="text-sm font-semibold text-gray-900">
             {mapProject?.name || '地图标注平台'}
+            {!editable && (
+              <span className="ml-2 px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-medium">只读</span>
+            )}
           </h1>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* 导入 */}
-          <button
-            onClick={() => setImportOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
-            title="批量导入"
-          >
-            <Upload className="w-4 h-4" />
-            <span className="hidden sm:inline">导入</span>
-          </button>
-
-          {/* 导出 */}
-          <div className="relative group">
-            <button
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
-              title="导出"
-            >
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">导出</span>
-            </button>
-            <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+          {editable && (
+            <>
+              {/* 导入 */}
               <button
-                onClick={() => handleExport('xlsx')}
-                className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50 rounded-t-lg"
+                onClick={() => setImportOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                title="批量导入"
               >
-                导出 Excel
+                <Upload className="w-4 h-4" />
+                <span className="hidden sm:inline">导入</span>
               </button>
+
+              {/* 导出 */}
+              <div className="relative group">
+                <button
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                  title="导出"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="hidden sm:inline">导出</span>
+                </button>
+                <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                  <button
+                    onClick={() => handleExport('xlsx')}
+                    className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50 rounded-t-lg"
+                  >
+                    导出 Excel
+                  </button>
+                  <button
+                    onClick={() => handleExport('csv')}
+                    className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50 rounded-b-lg"
+                  >
+                    导出 CSV
+                  </button>
+                </div>
+              </div>
+
+              {/* 设置 */}
               <button
-                onClick={() => handleExport('csv')}
-                className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50 rounded-b-lg"
+                onClick={() => setShowSettings(!showSettings)}
+                className={`p-1.5 rounded-lg transition ${
+                  showSettings ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+                title="设置"
               >
-                导出 CSV
+                <Settings className="w-4 h-4" />
               </button>
-            </div>
-          </div>
 
-          {/* 设置 */}
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className={`p-1.5 rounded-lg transition ${
-              showSettings ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100'
-            }`}
-            title="设置"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
-
-          {/* 用户 */}
-          <div className="flex items-center gap-2 pl-2 border-l">
-            <span className="text-xs text-gray-500 hidden sm:inline">
-              {user.email}
-            </span>
-            <button
-              onClick={signOut}
-              className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg transition"
-              title="退出登录"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
+              {/* 用户 */}
+              <div className="flex items-center gap-2 pl-2 border-l">
+                <span className="text-xs text-gray-500 hidden sm:inline">
+                  {user.email}
+                </span>
+                <button
+                  onClick={signOut}
+                  className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg transition"
+                  title="退出登录"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </header>
 
@@ -404,18 +401,20 @@ export default function MapEditorPage() {
               <h2 className="text-sm font-semibold text-gray-900">标注列表</h2>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-400">{annotations.length} 个</span>
-                <button
-                  onClick={() => {
-                    setBatchMode(!batchMode);
-                    setSelectedIds(new Set());
-                  }}
-                  className={`p-1 rounded transition ${
-                    batchMode ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'
-                  }`}
-                  title="批量操作"
-                >
-                  <CheckSquare className="w-4 h-4" />
-                </button>
+                {editable && (
+                  <button
+                    onClick={() => {
+                      setBatchMode(!batchMode);
+                      setSelectedIds(new Set());
+                    }}
+                    className={`p-1 rounded transition ${
+                      batchMode ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'
+                    }`}
+                    title="批量操作"
+                  >
+                    <CheckSquare className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -445,7 +444,7 @@ export default function MapEditorPage() {
             </div>
 
             {/* 批量操作栏 */}
-            {batchMode && (
+            {batchMode && editable && (
               <div className="px-3 py-2 border-b bg-blue-50 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <button onClick={handleSelectAll} className="text-xs text-blue-600 hover:text-blue-800">
@@ -470,8 +469,7 @@ export default function MapEditorPage() {
               {filteredAnnotations.length === 0 ? (
                 <div className="p-6 text-center text-sm text-gray-400">
                   {searchQuery ? '没有找到匹配的标注' : '暂无标注'}<br />
-                  {/* 修复 #14: 工具栏在右侧 */}
-                  {!searchQuery && '点击右侧工具在地图上添加'}
+                  {!searchQuery && editable && '点击右侧工具在地图上添加'}
                 </div>
               ) : (
                 <div className="divide-y">
@@ -525,7 +523,7 @@ export default function MapEditorPage() {
             </div>
 
             {/* 字段模板管理 */}
-            {showSettings && mapProject && (
+            {showSettings && mapProject && editable && (
               <div className="border-t">
                 <FieldTemplateManager
                   templates={mapProject.field_templates}
@@ -556,15 +554,18 @@ export default function MapEditorPage() {
             drawMode={drawMode}
             onDrawModeChange={setDrawMode}
             selectedAnnotation={selectedAnnotation}
+            editable={editable}
           />
 
           {/* 右侧面板 */}
           <div className="absolute right-4 top-28 z-[1000] flex flex-col gap-3 items-end">
-            <DrawingToolbar
-              drawMode={drawMode}
-              onDrawModeChange={setDrawMode}
-              annotationCount={annotationCount}
-            />
+            {editable && (
+              <DrawingToolbar
+                drawMode={drawMode}
+                onDrawModeChange={setDrawMode}
+                annotationCount={annotationCount}
+              />
+            )}
             {selectedAnnotation && mapProject && !batchMode && (
               <InfoCard
                 annotation={selectedAnnotation}
@@ -572,6 +573,7 @@ export default function MapEditorPage() {
                 onClose={() => setSelectedAnnotation(null)}
                 onSave={handleSaveAnnotation}
                 onDelete={handleDeleteAnnotation}
+                readOnly={!editable}
               />
             )}
           </div>

@@ -10,9 +10,10 @@ interface InfoCardProps {
   onClose: () => void;
   onSave: (annotation: Annotation) => Promise<Annotation | undefined>;
   onDelete: (id: string) => Promise<void>;
+  readOnly?: boolean;
 }
 
-export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, onDelete }: InfoCardProps) {
+export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, onDelete, readOnly = false }: InfoCardProps) {
   const [editing, setEditing] = useState(false);
   const [editData, setEditData] = useState<Annotation>({ ...annotation });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -104,11 +105,11 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
       className="w-72 max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl overflow-hidden"
     >
       <div
-        onMouseDown={handleDragStart}
-        className="flex items-center justify-between px-3 py-2 border-b bg-gray-50 cursor-move select-none"
+        onMouseDown={readOnly ? undefined : handleDragStart}
+        className={`flex items-center justify-between px-3 py-2 border-b bg-gray-50 ${readOnly ? '' : 'cursor-move select-none'}`}
       >
         <div className="flex items-center gap-1.5">
-          <GripHorizontal className="w-3.5 h-3.5 text-gray-400" />
+          {!readOnly && <GripHorizontal className="w-3.5 h-3.5 text-gray-400" />}
           <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
             annotation.type === 'point' ? 'bg-blue-100 text-blue-700' :
             annotation.type === 'line' ? 'bg-green-100 text-green-700' :
@@ -250,6 +251,13 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
               取消
             </button>
           </>
+        ) : readOnly ? (
+          <button
+            onClick={onClose}
+            className="flex-1 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-200 transition"
+          >
+            关闭
+          </button>
         ) : (
           <>
             <button

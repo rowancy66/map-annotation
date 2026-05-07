@@ -42,6 +42,7 @@ interface MapViewProps {
   onDrawModeChange: (mode: DrawMode) => void;
   selectedAnnotation?: Annotation | null;
   editingAnnotation?: Annotation | null;
+  editable?: boolean;
 }
 
 export default function MapView({
@@ -54,6 +55,7 @@ export default function MapView({
   onDrawModeChange,
   selectedAnnotation,
   editingAnnotation,
+  editable = true,
 }: MapViewProps) {
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -183,18 +185,20 @@ export default function MapView({
           draggable: false,
         });
 
-        (leafletLayer as L.Marker).on('contextmenu', (e: L.LeafletMouseEvent) => {
-          L.DomEvent.stopPropagation(e);
-          L.DomEvent.preventDefault(e);
-          if (drawMode !== 'none') return;
+        if (editable) {
+          (leafletLayer as L.Marker).on('contextmenu', (e: L.LeafletMouseEvent) => {
+            L.DomEvent.stopPropagation(e);
+            L.DomEvent.preventDefault(e);
+            if (drawMode !== 'none') return;
 
-          setContextMenu({
-            x: e.originalEvent.clientX,
-            y: e.originalEvent.clientY,
-            annotation: annotation,
-            marker: e.target as L.Marker,
+            setContextMenu({
+              x: e.originalEvent.clientX,
+              y: e.originalEvent.clientY,
+              annotation: annotation,
+              marker: e.target as L.Marker,
+            });
           });
-        });
+        }
 
       } else if (annotation.type === 'line') {
         const geom = annotation.geometry as { type: string; coordinates: [number, number][] };
@@ -491,10 +495,11 @@ export default function MapView({
         </div>
       )}
 
-      {/* 操作提示 */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[999] bg-white/90 backdrop-blur text-gray-600 px-3 py-1.5 rounded-lg shadow text-xs pointer-events-none">
-        在点位标注上点击右键可移动位置
-      </div>
+      {editable && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[999] bg-white/90 backdrop-blur text-gray-600 px-3 py-1.5 rounded-lg shadow text-xs pointer-events-none">
+          在点位标注上点击右键可移动位置
+        </div>
+      )}
     </div>
   );
 }
