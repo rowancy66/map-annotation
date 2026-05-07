@@ -91,6 +91,8 @@ export default function MapView({
     isDragging: boolean;
   } | null>(null);
 
+  const lastClickTimeRef = useRef(0);
+
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
@@ -272,24 +274,24 @@ export default function MapView({
         return;
       }
 
+      // Detect double-click by interval (< 400ms)
+      const now = Date.now();
+      if (now - lastClickTimeRef.current < 400) {
+        lastClickTimeRef.current = 0;
+        const points = tempPointsRef.current;
+        if (drawMode === 'line' && points.length >= 2) {
+          onMapDrawComplete?.('line', points);
+        } else if (drawMode === 'polygon' && points.length >= 3) {
+          onMapDrawComplete?.('polygon', points);
+        }
+        cleanupTempDrawing();
+        onDrawModeChange('none');
+        return;
+      }
+      lastClickTimeRef.current = now;
+
       tempPointsRef.current.push(e.latlng);
       updateTempDrawing();
-    };
-
-    const handleDblClick = (e: L.LeafletMouseEvent) => {
-      if (drawMode !== 'line' && drawMode !== 'polygon') return;
-      e.originalEvent?.stopPropagation();
-      e.originalEvent?.preventDefault();
-
-      const points = tempPointsRef.current;
-      if (drawMode === 'line' && points.length >= 2) {
-        onMapDrawComplete?.('line', points);
-      } else if (drawMode === 'polygon' && points.length >= 3) {
-        onMapDrawComplete?.('polygon', points);
-      }
-
-      cleanupTempDrawing();
-      onDrawModeChange('none');
     };
 
     const handleMouseMove = (e: L.LeafletMouseEvent) => {
@@ -299,7 +301,6 @@ export default function MapView({
     };
 
     map.on('click', handleClick);
-    map.on('dblclick', handleDblClick);
     map.on('mousemove', handleMouseMove);
 
     if (drawMode !== 'none') {
@@ -314,7 +315,6 @@ export default function MapView({
 
     return () => {
       map.off('click', handleClick);
-      map.off('dblclick', handleDblClick);
       map.off('mousemove', handleMouseMove);
     };
   }, [drawMode, onMapClick, onMapDrawComplete, onDrawModeChange]);
