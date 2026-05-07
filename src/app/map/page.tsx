@@ -276,9 +276,9 @@ export default function MapEditorPage() {
   return (
     <div className="h-screen flex flex-col">
       {/* 顶部栏 */}
-      <header className="h-12 bg-white border-b flex items-center justify-between px-4 z-50 shrink-0">
+      <header className="h-12 bg-white border-b border-gray-100 shadow-sm flex items-center justify-between px-4 z-50 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
+          <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm shadow-blue-200">
             <MapPin className="w-4 h-4 text-white" />
           </div>
           <h1 className="text-sm font-semibold text-gray-900">
@@ -394,13 +394,13 @@ export default function MapEditorPage() {
       <div className="flex-1 flex relative overflow-hidden">
         {/* 侧边栏 */}
         <div
-          className={`absolute left-0 top-0 bottom-0 z-40 bg-white border-r transition-all duration-300 ${
+          className={`absolute left-0 top-0 bottom-0 z-40 bg-white border-r border-gray-100 shadow-lg shadow-gray-200/30 transition-all duration-300 ${
             sidebarOpen ? 'w-80' : 'w-0'
           } overflow-hidden`}
         >
           <div className="w-80 h-full flex flex-col">
             {/* 侧边栏标题 */}
-            <div className="px-4 py-3 border-b flex items-center justify-between">
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
               <h2 className="text-sm font-semibold text-gray-900">标注列表</h2>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-400">{annotations.length} 个</span>
@@ -420,7 +420,7 @@ export default function MapEditorPage() {
             </div>
 
             {/* 搜索框 */}
-            <div className="px-3 py-2 border-b">
+            <div className="px-3 py-2 border-b border-gray-100">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
@@ -539,7 +539,7 @@ export default function MapEditorPage() {
         {/* 侧边栏切换 */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="absolute top-2 z-40 bg-white shadow rounded-r-lg p-1 border border-l-0 hover:bg-gray-50 transition"
+          className="absolute top-2 z-40 bg-white shadow-md rounded-r-xl p-1.5 border border-l-0 border-gray-100 hover:bg-gray-50 transition hover:scale-105"
           style={{ left: sidebarOpen ? '320px' : '0' }}
         >
           {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}

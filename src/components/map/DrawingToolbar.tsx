@@ -23,17 +23,17 @@ export default function DrawingToolbar({ drawMode, onDrawModeChange, annotationC
         <button
           key={tool.mode}
           onClick={() => onDrawModeChange(tool.mode)}
-          className={`relative flex flex-col items-center justify-center w-12 h-12 rounded-lg transition-all ${
+          className={`relative flex flex-col items-center justify-center w-12 h-12 rounded-xl transition-all ${
             drawMode === tool.mode
-              ? 'bg-blue-600 text-white shadow-md'
-              : 'text-gray-600 hover:bg-gray-100'
+              ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-200 scale-105'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
           }`}
           title={tool.label}
         >
           {tool.icon}
-          <span className="text-[10px] mt-0.5">{tool.label}</span>
+          <span className="text-[10px] mt-0.5 leading-none">{tool.label}</span>
           {tool.count > 0 && (
-            <span className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full text-[10px] flex items-center justify-center font-bold ${
+            <span className={`absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full text-[10px] flex items-center justify-center font-bold px-1 ${
               drawMode === tool.mode ? 'bg-white text-blue-600' : 'bg-blue-100 text-blue-600'
             }`}>
               {tool.count}
