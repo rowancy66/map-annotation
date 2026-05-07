@@ -195,6 +195,7 @@ export default function PublicMapPage() {
             onAnnotationClick={handleAnnotationClick}
             drawMode="none"
             onDrawModeChange={() => {}}
+            selectedAnnotation={selectedAnnotation}
             editable={false}
           />
 
