@@ -456,31 +456,31 @@ export default function MapView({
       {/* 搜索框（支持路名、建筑名搜索定位） */}
       <SearchBox map={mapInstance} />
 
-      <div className="absolute top-16 right-4 z-[1000] flex flex-col gap-1">
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="absolute top-16 right-4 z-[1000]">
+        <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-white/40 overflow-hidden flex">
           <button
             onClick={() => setMapType('vec')}
-            className={`px-3 py-2 text-xs font-medium transition ${
-              mapType === 'vec' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
+            className={`px-3.5 py-2 text-xs font-medium transition-all duration-200 first:rounded-l-xl last:rounded-r-xl ${
+              mapType === 'vec' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'
             }`}
           >
             矢量
           </button>
           <button
             onClick={() => setMapType('img')}
-            className={`px-3 py-2 text-xs font-medium transition ${
-              mapType === 'img' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
+            className={`px-3.5 py-2 text-xs font-medium transition-all duration-200 first:rounded-l-xl last:rounded-r-xl ${
+              mapType === 'img' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'
             }`}
           >
             卫星
           </button>
         </div>
-
       </div>
 
       {drawMode !== 'none' && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm flex items-center gap-2">
-          <span>
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-gray-900/85 backdrop-blur-md text-white px-4 py-2.5 rounded-xl shadow-xl border border-white/10 text-sm flex items-center gap-3 animate-fade-slide-up">
+          <span className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
             {drawMode === 'point' && '点击地图放置标注点'}
             {drawMode === 'line' && '依次点击添加折线顶点，双击结束'}
             {drawMode === 'polygon' && '依次点击添加多边形顶点，双击结束'}
@@ -490,9 +490,9 @@ export default function MapView({
               cleanupTempDrawing();
               onDrawModeChange('none');
             }}
-            className="ml-2 hover:bg-blue-700 rounded px-2 py-0.5 text-xs"
+            className="ml-1 px-2.5 py-1 text-xs bg-white/15 hover:bg-white/25 rounded-lg transition"
           >
-            取消 (Esc)
+            取消
           </button>
         </div>
       )}
@@ -515,7 +515,7 @@ export default function MapView({
       )}
 
       {editable && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[999] bg-white/90 backdrop-blur text-gray-600 px-3 py-1.5 rounded-lg shadow text-xs pointer-events-none">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[999] bg-white/70 backdrop-blur-md text-gray-500 px-4 py-2 rounded-xl shadow-lg border border-white/40 text-xs pointer-events-none">
           在点位标注上点击右键可移动位置
         </div>
       )}

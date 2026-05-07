@@ -40,7 +40,7 @@ import Link from 'next/link';
 const MapView = dynamic(() => import('@/components/map/MapView'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full flex items-center justify-center bg-gray-100">
+    <div className="w-full h-full flex items-center justify-center bg-gray-50">
       <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
     </div>
   ),
@@ -238,7 +238,7 @@ export default function AdminEditor() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-100">
+      <div className="h-screen flex items-center justify-center bg-gray-50">
         <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
       </div>
     );
@@ -247,11 +247,11 @@ export default function AdminEditor() {
   return (
     <div className="h-screen flex flex-col">
       {/* 顶部栏 */}
-      <header className="h-12 bg-white border-b border-gray-100 shadow-sm flex items-center justify-between px-4 z-50 shrink-0">
+      <header className="h-12 bg-white/70 backdrop-blur-xl border-b border-white/30 shadow-sm flex items-center justify-between px-4 z-50 shrink-0">
         <div className="flex items-center gap-3">
           <Link
             href="/"
-            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100/80 rounded-lg transition"
             title="返回前台"
             aria-label="返回前台"
           >
@@ -266,11 +266,11 @@ export default function AdminEditor() {
           </h1>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {/* 导入 */}
           <button
             onClick={() => setImportOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 rounded-lg transition"
             title="批量导入"
             aria-label="批量导入"
           >
@@ -281,7 +281,7 @@ export default function AdminEditor() {
           {/* 导出 */}
           <div className="relative group">
             <button
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 rounded-lg transition"
               title="导出"
               aria-label="导出"
             >
@@ -308,7 +308,7 @@ export default function AdminEditor() {
           <button
             onClick={() => setShowSettings(!showSettings)}
             className={`p-1.5 rounded-lg transition ${
-              showSettings ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100'
+              showSettings ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100/80'
             }`}
             title="设置"
             aria-label="设置"
@@ -316,9 +316,12 @@ export default function AdminEditor() {
             <Settings className="w-4 h-4" aria-hidden="true" />
           </button>
 
+          {/* 分隔 */}
+          <div className="w-px h-5 bg-gray-200 mx-1" />
+
           {/* 用户 */}
-          <div className="flex items-center gap-2 pl-2 border-l">
-            <span className="text-xs text-gray-500 hidden sm:inline">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400 hidden sm:inline max-w-[120px] truncate">
               {user?.email}
             </span>
             <button
@@ -335,14 +338,14 @@ export default function AdminEditor() {
 
       {/* 反馈消息 */}
       {feedbackMessage && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[9999] bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm animate-fade-in">
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[9999] bg-gray-800/90 backdrop-blur text-white px-4 py-2 rounded-xl shadow-lg text-sm animate-fade-in">
           {feedbackMessage}
         </div>
       )}
 
       {/* 批量删除确认对话框 */}
       {batchDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/40 z-[9999] flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center animate-fade-in">
           <div className="bg-white rounded-xl shadow-2xl p-6 max-w-sm mx-4">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
@@ -378,15 +381,16 @@ export default function AdminEditor() {
       <div className="flex-1 flex relative overflow-hidden">
         {/* 侧边栏 */}
         <div
-          className={`absolute left-0 top-0 bottom-0 z-40 bg-white border-r border-gray-100 shadow-lg shadow-gray-200/30 transition-all duration-300 ${
+          className={`absolute left-0 top-0 bottom-0 z-40 bg-white/95 backdrop-blur-sm border-r border-gray-100 shadow-lg shadow-gray-200/30 transition-all duration-300 ${
             sidebarOpen ? 'w-80' : 'w-0'
           } overflow-hidden`}
         >
           <div className="w-80 h-full flex flex-col">
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+            {/* 侧边栏头部 */}
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-transparent to-blue-50/30">
               <h2 className="text-sm font-semibold text-gray-900">标注列表</h2>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400">{annotations.length} 个</span>
+                <span className="text-xs text-gray-400 font-mono">{annotations.length} 个</span>
                 <button
                   onClick={() => {
                     setBatchMode(!batchMode);
@@ -403,6 +407,7 @@ export default function AdminEditor() {
               </div>
             </div>
 
+            {/* 搜索 */}
             <div className="px-3 py-2 border-b border-gray-100">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
@@ -411,13 +416,13 @@ export default function AdminEditor() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="搜索编号、位置..."
-                  className="w-full pl-9 pr-8 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  className="w-full pl-9 pr-8 py-2 bg-gray-50/80 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
                     aria-label="清除搜索"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 transition"
                   >
                     <X className="w-3.5 h-3.5" aria-hidden="true" />
                   </button>
@@ -428,10 +433,11 @@ export default function AdminEditor() {
               )}
             </div>
 
+            {/* 批量操作栏 */}
             {batchMode && (
-              <div className="px-3 py-2 border-b bg-blue-50 flex items-center justify-between">
+              <div className="px-3 py-2 border-b bg-gradient-to-r from-blue-50/80 to-indigo-50/50 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <button onClick={handleSelectAll} className="text-xs text-blue-600 hover:text-blue-800" aria-label={selectedIds.size === filteredAnnotations.length && filteredAnnotations.length > 0 ? '取消全选' : '全选'}>
+                  <button onClick={handleSelectAll} className="text-xs text-blue-600 hover:text-blue-800 font-medium" aria-label={selectedIds.size === filteredAnnotations.length && filteredAnnotations.length > 0 ? '取消全选' : '全选'}>
                     {selectedIds.size === filteredAnnotations.length && filteredAnnotations.length > 0 ? '取消全选' : '全选'}
                   </button>
                   <span className="text-xs text-gray-500">已选 {selectedIds.size} 个</span>
@@ -439,7 +445,7 @@ export default function AdminEditor() {
                 {selectedIds.size > 0 && (
                   <button
                     onClick={onBatchDeleteClick}
-                    className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded text-xs font-medium hover:bg-red-700 transition"
+                    className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded text-xs font-medium hover:bg-red-700 transition shadow-sm"
                   >
                     <Trash2 className="w-3 h-3" aria-hidden="true" />
                     批量删除
@@ -448,23 +454,29 @@ export default function AdminEditor() {
               </div>
             )}
 
+            {/* 标注列表 */}
             <div className="flex-1 overflow-y-auto">
               {filteredAnnotations.length === 0 ? (
-                <div className="p-6 text-center text-sm text-gray-400">
+                <div className="p-8 text-center text-sm text-gray-400">
+                  <div className="text-3xl mb-3 opacity-30">📍</div>
                   {searchQuery ? '没有找到匹配的标注' : '暂无标注'}<br />
-                  {!searchQuery && '点击右侧工具在地图上添加'}
+                  {!searchQuery && (
+                    <span className="text-xs text-gray-300">点击右侧工具在地图上添加</span>
+                  )}
                 </div>
               ) : (
-                <div className="divide-y">
+                <div className="divide-y divide-gray-50">
                   {filteredAnnotations.map((anno) => (
                     <div
                       key={anno.id}
                       onClick={() => handleAnnotationClick(anno)}
-                      className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition cursor-pointer ${
-                        selectedAnnotation?.id === anno.id ? 'bg-blue-50 border-l-2 border-l-blue-600' : ''
+                      className={`w-full px-4 py-3 text-left hover:bg-blue-50/50 transition-all duration-150 cursor-pointer border-l-2 ${
+                        selectedAnnotation?.id === anno.id
+                          ? 'bg-blue-50/70 border-l-blue-500 shadow-sm'
+                          : 'border-l-transparent hover:border-l-gray-200'
                       }`}
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2.5">
                         {batchMode && (
                           <button
                             className="shrink-0"
@@ -485,23 +497,31 @@ export default function AdminEditor() {
                           </button>
                         )}
                         <span className={`w-2 h-2 rounded-full shrink-0 ${
-                          anno.type === 'point' ? 'bg-red-500' :
-                          anno.type === 'line' ? 'bg-blue-500' : 'bg-purple-500'
+                          anno.type === 'point' ? 'bg-red-500 shadow-sm shadow-red-200' :
+                          anno.type === 'line' ? 'bg-blue-500 shadow-sm shadow-blue-200' : 'bg-purple-500 shadow-sm shadow-purple-200'
                         }`} />
-                        <span className="text-sm font-medium text-gray-900 truncate">
-                          {anno.name || '未命名'}
+                        <div className="min-w-0 flex-1">
+                          <span className="text-sm font-medium text-gray-900 truncate block">
+                            {anno.name || '未命名'}
+                          </span>
+                          {anno.description && (
+                            <p className="text-[11px] text-gray-400 mt-0.5 truncate">{anno.description}</p>
+                          )}
+                        </div>
+                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                          anno.type === 'point' ? 'bg-red-50 text-red-600' :
+                          anno.type === 'line' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'
+                        }`}>
+                          {anno.type === 'point' ? '点' : anno.type === 'line' ? '线' : '面'}
                         </span>
                       </div>
-                      {anno.description && (
-                        <p className="text-xs text-gray-500 mt-1 truncate pl-4">{anno.description}</p>
-                      )}
                       {anno.type === 'point' && anno.custom_fields.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1.5 pl-6">
+                        <div className="flex flex-wrap gap-1 mt-2 pl-9">
                           {anno.custom_fields.slice(0, 3).map((cf) => {
                             const field = fieldTemplateMap.get(cf.fieldId);
                             if (!field || cf.value == null) return null;
                             return (
-                              <span key={cf.fieldId} className="px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px]">
+                              <span key={cf.fieldId} className="px-1.5 py-0.5 bg-gray-100/80 text-gray-500 rounded text-[10px]">
                                 {field.name}: {String(cf.value)}
                               </span>
                             );
@@ -514,8 +534,9 @@ export default function AdminEditor() {
               )}
             </div>
 
+            {/* 设置面板 */}
             {showSettings && mapProject && (
-              <div className="border-t">
+              <div className="border-t border-gray-100">
                 <FieldTemplateManager
                   templates={mapProject.field_templates}
                   onChange={handleFieldTemplatesChange}
@@ -525,15 +546,17 @@ export default function AdminEditor() {
           </div>
         </div>
 
+        {/* 侧边栏开关 */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           aria-label={sidebarOpen ? '收起侧边栏' : '展开侧边栏'}
-          className="absolute top-2 z-40 bg-white shadow-md rounded-r-xl p-1.5 border border-l-0 border-gray-100 hover:bg-gray-50 transition hover:scale-105"
+          className="absolute top-3 z-40 bg-white/90 backdrop-blur shadow-md rounded-r-xl p-1.5 border border-l-0 border-gray-100 hover:bg-gray-50 transition-all duration-200 hover:scale-105"
           style={{ left: sidebarOpen ? '320px' : '0' }}
         >
-          {sidebarOpen ? <ChevronLeft className="w-4 h-4" aria-hidden="true" /> : <ChevronRight className="w-4 h-4" aria-hidden="true" />}
+          {sidebarOpen ? <ChevronLeft className="w-4 h-4 text-gray-500" aria-hidden="true" /> : <ChevronRight className="w-4 h-4 text-gray-500" aria-hidden="true" />}
         </button>
 
+        {/* 地图区域 */}
         <div className="flex-1 relative">
           <MapView
             annotations={annotations}
