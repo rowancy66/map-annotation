@@ -180,39 +180,11 @@ export default function SearchBox({ map }: SearchBoxProps) {
   }, [clearMarker]);
 
   return (
-    <div className="absolute top-4 left-4 z-[1000] flex flex-col items-start">
+    <div className="absolute bottom-20 right-4 z-[1000] flex flex-col items-end">
       <div className="relative w-72">
-        <div className="flex items-center bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
-          <div className="pl-3 pr-1 text-gray-400">
-            {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Search className="w-4 h-4" />
-            )}
-          </div>
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            onFocus={() => results.length > 0 && setShowResults(true)}
-            placeholder="搜索地址、路名..."
-            className="flex-1 py-2.5 pr-2 text-sm outline-none text-gray-700 placeholder-gray-400"
-          />
-          {query && (
-            <button
-              onClick={handleClear}
-              className="pr-2 pl-1 text-gray-400 hover:text-gray-600 transition"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-
-        {/* 搜索结果下拉 */}
+        {/* 搜索结果下拉 - 显示在搜索框上方 */}
         {showResults && (
-          <div className="absolute top-full mt-1 left-0 right-0 bg-white rounded-lg shadow-xl border border-gray-200 max-h-72 overflow-y-auto">
+          <div className="absolute bottom-full mb-1 left-0 right-0 bg-white rounded-lg shadow-xl border border-gray-200 max-h-72 overflow-y-auto">
             {results.length === 0 && !loading && (
               <div className="px-4 py-3 text-sm text-gray-400 text-center">
                 未找到结果
@@ -247,6 +219,34 @@ export default function SearchBox({ map }: SearchBoxProps) {
             ))}
           </div>
         )}
+
+        <div className="flex items-center bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+          <div className="pl-3 pr-1 text-gray-400">
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Search className="w-4 h-4" />
+            )}
+          </div>
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            onFocus={() => results.length > 0 && setShowResults(true)}
+            placeholder="搜索地址、路名..."
+            className="flex-1 py-2.5 pr-2 text-sm outline-none text-gray-700 placeholder-gray-400"
+          />
+          {query && (
+            <button
+              onClick={handleClear}
+              className="pr-2 pl-1 text-gray-400 hover:text-gray-600 transition"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       <style jsx global>{`

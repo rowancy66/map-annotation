@@ -164,12 +164,15 @@ export default function MapView({
     annotations.forEach((annotation) => {
       const existing = existingLayers.get(annotation.id);
       if (existing) {
+        const isSelected = selectedAnnotation?.id === annotation.id;
         if (existing instanceof L.Polyline) {
-          const isSelected = selectedAnnotation?.id === annotation.id;
           (existing as L.Polyline).setStyle({
             weight: isSelected ? 4 : 3,
             opacity: isSelected ? 1 : 0.8,
           });
+        } else if (existing instanceof L.Marker && annotation.type === 'point') {
+          const style = annotation.style as PointStyle;
+          (existing as L.Marker).setIcon(createCustomIcon(style, isSelected));
         }
         return;
       }
@@ -179,7 +182,8 @@ export default function MapView({
       if (annotation.type === 'point') {
         const geom = annotation.geometry as { type: string; coordinates: [number, number] };
         const style = annotation.style as PointStyle;
-        const icon = createCustomIcon(style);
+        const isSelected = selectedAnnotation?.id === annotation.id;
+        const icon = createCustomIcon(style, isSelected);
         leafletLayer = L.marker([geom.coordinates[1], geom.coordinates[0]], {
           icon,
           draggable: false,
@@ -392,31 +396,36 @@ export default function MapView({
     setContextMenu(null);
   }, [contextMenu]);
 
-  const createCustomIcon = (style: PointStyle): L.DivIcon => {
+  const createCustomIcon = (style: PointStyle, highlighted = false): L.DivIcon => {
     const safeIcon = sanitizeIcon(style.icon);
     const safeColor = sanitizeColor(style.color);
     const safeSize = sanitizeSize(style.size || 2);
     const iconData = PRESET_ICONS.find((i) => i.value === safeIcon) || PRESET_ICONS[0];
-    const size = safeSize * 5 + 10;
+    const baseSize = safeSize * 5 + 10;
+    const size = highlighted ? Math.round(baseSize * 1.35) : baseSize;
 
     return L.divIcon({
       className: 'custom-marker',
-      html: `<div class="marker-icon" style="
-        width: ${size}px;
-        height: ${size}px;
-        background-color: ${safeColor};
-        border-radius: 50%;
-        border: 2px solid white;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: ${size * 0.4}px;
-        cursor: pointer;
-        transition: transform 0.15s;
-      ">
-        ${getIconSvg(iconData.value, size * 0.4)}
+      html: `<div style="position:relative;display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px">
+        ${highlighted ? `<div style="position:absolute;inset:-4px;border-radius:50%;border:3px solid ${safeColor};opacity:0.5;animation:markerPulse 1.2s ease-in-out infinite"></div>` : ''}
+        <div class="marker-icon" style="
+          width: ${size}px;
+          height: ${size}px;
+          background-color: ${safeColor};
+          border-radius: 50%;
+          border: ${highlighted ? '3px solid #fff' : '2px solid white'};
+          box-shadow: ${highlighted ? '0 0 12px rgba(59,130,246,0.6)' : '0 1px 4px rgba(0,0,0,0.3)'};
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-size: ${size * 0.4}px;
+          cursor: pointer;
+          position:relative;
+          z-index:1;
+        ">
+          ${getIconSvg(iconData.value, size * 0.4)}
+        </div>
       </div>`,
       iconSize: [size, size],
       iconAnchor: [size / 2, size / 2],
@@ -431,6 +440,10 @@ export default function MapView({
       <style jsx global>{`
         .marker-icon:hover {
           transform: scale(1.15) !important;
+        }
+        @keyframes markerPulse {
+          0%, 100% { transform: scale(1); opacity: 0.5; }
+          50% { transform: scale(1.15); opacity: 0.8; }
         }
       `}</style>
 
