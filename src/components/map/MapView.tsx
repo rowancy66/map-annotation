@@ -101,10 +101,16 @@ export default function MapView({
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
+    // 创建注记瓦片专用 pane，z-index 高于 overlay pane(400) 但低于 marker pane(600)
+    // 这样标注的线/面不会压盖路名等注记
+    const labelPane = map.createPane('labelPane');
+    labelPane.style.zIndex = '450';
+    labelPane.style.pointerEvents = 'none';
+
     const vecLayer = L.tileLayer(TIANDITU_LAYERS.vec, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
-    const cvaLayer = L.tileLayer(TIANDITU_LAYERS.cva, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
+    const cvaLayer = L.tileLayer(TIANDITU_LAYERS.cva, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18, pane: 'labelPane' });
     const imgLayer = L.tileLayer(TIANDITU_LAYERS.img, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
-    const ciaLayer = L.tileLayer(TIANDITU_LAYERS.cia, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
+    const ciaLayer = L.tileLayer(TIANDITU_LAYERS.cia, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18, pane: 'labelPane' });
 
     vecLayersRef.current = [vecLayer, cvaLayer];
     imgLayersRef.current = [imgLayer, ciaLayer];
