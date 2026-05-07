@@ -5,6 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { TIANDITU_LAYERS, TIANDITU_SUBDOMAINS, DEFAULT_CENTER, DEFAULT_ZOOM } from '@/lib/constants';
 import { Annotation, DrawMode, AnnotationType, PointStyle, LineStyle, PolygonStyle, PRESET_COLORS, PRESET_ICONS } from '@/lib/types';
+import SearchBox from './SearchBox';
 
 const DefaultIcon = L.icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -61,7 +62,14 @@ export default function MapView({
   const tempPointsRef = useRef<L.LatLng[]>([]);
   const tempLineRef = useRef<L.Polyline | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
   const [mapType, setMapType] = useState<'vec' | 'img'>('vec');
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    annotation: Annotation;
+    marker: L.Marker;
+  } | null>(null);
 
   const vecLayersRef = useRef<L.TileLayer[]>([]);
   const imgLayersRef = useRef<L.TileLayer[]>([]);
@@ -75,7 +83,7 @@ export default function MapView({
   const onAnnotationClickRef = useRef(onAnnotationClick);
   onAnnotationClickRef.current = onAnnotationClick;
 
-  const rightDragRef = useRef<{
+  const pendingMoveRef = useRef<{
     marker: L.Marker;
     annotationId: string;
     isDragging: boolean;
@@ -111,6 +119,7 @@ export default function MapView({
     drawLayerRef.current = drawLayer;
 
     mapRef.current = map;
+    setMapInstance(map);
     setMapReady(true);
 
     return () => {
@@ -179,13 +188,12 @@ export default function MapView({
           L.DomEvent.preventDefault(e);
           if (drawMode !== 'none') return;
 
-          const marker = e.target as L.Marker;
-          marker.dragging?.enable();
-          rightDragRef.current = {
-            marker,
-            annotationId: annotation.id,
-            isDragging: true,
-          };
+          setContextMenu({
+            x: e.originalEvent.clientX,
+            y: e.originalEvent.clientY,
+            annotation: annotation,
+            marker: e.target as L.Marker,
+          });
         });
 
       } else if (annotation.type === 'line') {
@@ -223,7 +231,7 @@ export default function MapView({
     const map = mapRef.current;
 
     const handleMouseUp = () => {
-      const dragInfo = rightDragRef.current;
+      const dragInfo = pendingMoveRef.current;
       if (!dragInfo || !dragInfo.isDragging) return;
 
       const marker = dragInfo.marker;
@@ -235,7 +243,7 @@ export default function MapView({
         onAnnotationMoveRef.current?.(currentAnnotation, newPos);
       }
 
-      rightDragRef.current = null;
+      pendingMoveRef.current = null;
     };
 
     map.on('mouseup', handleMouseUp);
@@ -341,14 +349,44 @@ export default function MapView({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && drawMode !== 'none') {
-        cleanupTempDrawing();
-        onDrawModeChange('none');
+      if (e.key === 'Escape') {
+        if (contextMenu) {
+          setContextMenu(null);
+          return;
+        }
+        if (drawMode !== 'none') {
+          cleanupTempDrawing();
+          onDrawModeChange('none');
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [drawMode, onDrawModeChange]);
+  }, [drawMode, onDrawModeChange, contextMenu]);
+
+  // 右键菜单关闭 - 点击空白处关闭
+  useEffect(() => {
+    if (!contextMenu) return;
+    const handleClick = () => setContextMenu(null);
+    // 延迟添加，避免立即触发生成菜单时的 click 事件
+    const timer = setTimeout(() => document.addEventListener('click', handleClick), 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('click', handleClick);
+    };
+  }, [contextMenu]);
+
+  const handleMovePoint = useCallback(() => {
+    if (!contextMenu) return;
+    const marker = contextMenu.marker;
+    marker.dragging?.enable();
+    pendingMoveRef.current = {
+      marker,
+      annotationId: contextMenu.annotation.id,
+      isDragging: true,
+    };
+    setContextMenu(null);
+  }, [contextMenu]);
 
   const createCustomIcon = (style: PointStyle): L.DivIcon => {
     const safeIcon = sanitizeIcon(style.icon);
@@ -392,23 +430,29 @@ export default function MapView({
         }
       `}</style>
 
-      <div className="absolute top-4 right-4 z-[1000] bg-white rounded-lg shadow-lg overflow-hidden">
-        <button
-          onClick={() => setMapType('vec')}
-          className={`px-3 py-2 text-xs font-medium transition ${
-            mapType === 'vec' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
-          }`}
-        >
-          矢量
-        </button>
-        <button
-          onClick={() => setMapType('img')}
-          className={`px-3 py-2 text-xs font-medium transition ${
-            mapType === 'img' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
-          }`}
-        >
-          卫星
-        </button>
+      {/* 搜索框（支持路名、建筑名搜索定位） */}
+      <SearchBox map={mapInstance} />
+
+      <div className="absolute top-16 right-4 z-[1000] flex flex-col gap-1">
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <button
+            onClick={() => setMapType('vec')}
+            className={`px-3 py-2 text-xs font-medium transition ${
+              mapType === 'vec' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            矢量
+          </button>
+          <button
+            onClick={() => setMapType('img')}
+            className={`px-3 py-2 text-xs font-medium transition ${
+              mapType === 'img' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            卫星
+          </button>
+        </div>
+
       </div>
 
       {drawMode !== 'none' && (
@@ -429,6 +473,28 @@ export default function MapView({
           </button>
         </div>
       )}
+
+      {/* 右键菜单 */}
+      {contextMenu && (
+        <div
+          className="fixed z-[5000] bg-white rounded-lg shadow-xl border py-1 min-w-[140px]"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={handleMovePoint}
+            className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-2"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            移动点位
+          </button>
+        </div>
+      )}
+
+      {/* 操作提示 */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[999] bg-white/90 backdrop-blur text-gray-600 px-3 py-1.5 rounded-lg shadow text-xs pointer-events-none">
+        在点位标注上点击右键可移动位置
+      </div>
     </div>
   );
 }

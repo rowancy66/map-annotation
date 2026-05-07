@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation'; // 修复 #13: 使用 router
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -30,7 +30,6 @@ import {
   CheckSquare,
   Square,
   X,
-  Move,
   AlertTriangle,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -256,9 +255,12 @@ export default function MapEditorPage() {
   }, [handleBatchDelete]);
 
   // 修复 #13: 使用 router.replace 替代 window.location.href
-  if (!user && !authLoading && !loading) {
-    router.replace('/auth/login');
-  }
+  // 修复 Bug 2: 将跳转逻辑放入 useEffect，避免 render 阶段执行副作用
+  useEffect(() => {
+    if (!user && !authLoading && !loading) {
+      router.replace('/auth/login');
+    }
+  }, [user, authLoading, loading, router]);
 
   // 未登录或加载中
   if (authLoading || loading) {
@@ -574,11 +576,6 @@ export default function MapEditorPage() {
             )}
           </div>
 
-          {/* 移动提示 */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[999] bg-white/90 backdrop-blur text-gray-600 px-3 py-1.5 rounded-lg shadow text-xs flex items-center gap-1.5 pointer-events-none">
-            <Move className="w-3.5 h-3.5" />
-            右键拖拽可移动点位
-          </div>
         </div>
       </div>
 
