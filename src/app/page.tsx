@@ -57,6 +57,12 @@ export default function PublicMapPage() {
     return m;
   }, [mapProject]);
 
+  const fieldSortOrderMap = useMemo(() => {
+    const m = new Map<string, number>();
+    mapProject?.field_templates?.forEach((t) => m.set(t.id, t.sort_order ?? 0));
+    return m;
+  }, [mapProject]);
+
   const handleAnnotationClick = useCallback((annotation: Annotation) => {
     setSelectedAnnotation(annotation);
   }, []);
@@ -178,12 +184,14 @@ export default function PublicMapPage() {
                       </div>
                       {anno.type === 'point' && anno.custom_fields.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2 pl-9">
-                          {anno.custom_fields
+                          {[...anno.custom_fields]
+                            .sort((a, b) => (fieldSortOrderMap.get(a.fieldId) ?? 0) - (fieldSortOrderMap.get(b.fieldId) ?? 0))
                             .filter(cf => fieldNameMap.get(cf.fieldId) !== '成交总价')
+                            .filter(cf => cf.value != null)
                             .slice(0, 3)
                             .map((cf) => {
                             const name = fieldNameMap.get(cf.fieldId);
-                            if (!name || cf.value == null) return null;
+                            if (!name) return null;
                             return (
                               <span key={cf.fieldId} className="px-1.5 py-0.5 bg-gray-100/80 text-gray-500 rounded text-[10px]">
                                 {name}: {String(cf.value)}

@@ -192,7 +192,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
           <div className={editing ? '' : 'bg-gray-50/50 rounded-lg p-2.5 -mx-0.5'}>
             <label className="block text-[10px] font-medium text-gray-400 mb-1.5 uppercase tracking-wider">自定义属性</label>
             <div className="space-y-2">
-              {fieldTemplates.map((field) => (
+              {[...fieldTemplates].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)).map((field) => (
                 <div key={field.id} className="flex items-start gap-2">
                   <span className="text-[11px] text-gray-500 min-w-[3.5rem] pt-1 font-medium">{field.name}</span>
                   <div className="flex-1">
