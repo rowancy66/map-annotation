@@ -51,6 +51,12 @@ export default function PublicMapPage() {
     polygon: annotations.filter((a) => a.type === 'polygon').length,
   }), [annotations]);
 
+  const fieldNameMap = useMemo(() => {
+    const m = new Map<string, string>();
+    mapProject?.field_templates?.forEach((t) => m.set(t.id, t.name));
+    return m;
+  }, [mapProject]);
+
   const handleAnnotationClick = useCallback((annotation: Annotation) => {
     setSelectedAnnotation(annotation);
   }, []);
@@ -170,6 +176,19 @@ export default function PublicMapPage() {
                           {anno.type === 'point' ? '点' : anno.type === 'line' ? '线' : '面'}
                         </span>
                       </div>
+                      {anno.type === 'point' && anno.custom_fields.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2 pl-9">
+                          {anno.custom_fields.slice(0, 3).map((cf) => {
+                            const name = fieldNameMap.get(cf.fieldId);
+                            if (!name || cf.value == null) return null;
+                            return (
+                              <span key={cf.fieldId} className="px-1.5 py-0.5 bg-gray-100/80 text-gray-500 rounded text-[10px]">
+                                {name}: {String(cf.value)}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
