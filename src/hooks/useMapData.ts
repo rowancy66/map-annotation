@@ -72,6 +72,13 @@ export function useMapData(user: User | null) {
             }
             return t;
           });
+          // 补充 DEFAULT 中有但 DB 里没有的新字段
+          const existingIds = new Set(merged.map((t) => t.id));
+          const missing = DEFAULT_LAND_FIELD_TEMPLATES.filter((t) => !existingIds.has(t.id));
+          if (missing.length > 0) {
+            merged = [...merged, ...missing];
+            changed = true;
+          }
           if (merged.length === 0) {
             // 空模板时写入默认值
             merged = DEFAULT_LAND_FIELD_TEMPLATES;
