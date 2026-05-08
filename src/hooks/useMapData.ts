@@ -59,16 +59,36 @@ export function useMapData(user: User | null) {
           map = toMapProject(maps[0] as Record<string, unknown>);
         }
 
-        // 回填字段模板
-        if (map.field_templates && Array.isArray(map.field_templates) && map.field_templates.length === 0) {
-          const { data: updated } = await supabase
-            .from('maps')
-            .update({ field_templates: DEFAULT_LAND_FIELD_TEMPLATES })
-            .eq('id', map.id)
-            .select()
-            .single();
-          if (updated) {
-            map = toMapProject(updated as Record<string, unknown>);
+        // 同步字段模板：用最新 DEFAULT_LAND_FIELD_TEMPLATES 覆盖已有模板的名称和排序
+        if (map.field_templates && Array.isArray(map.field_templates)) {
+          const defaultMap = new Map(DEFAULT_LAND_FIELD_TEMPLATES.map((t) => [t.id, t]));
+          const oldTemplates = map.field_templates as FieldTemplate[];
+          let changed = false;
+          let merged = oldTemplates.map((t) => {
+            const def = defaultMap.get(t.id);
+            if (def && (def.name !== t.name || def.sort_order !== t.sort_order)) {
+              changed = true;
+              return { ...t, name: def.name, sort_order: def.sort_order };
+            }
+            return t;
+          });
+          if (merged.length === 0) {
+            // 空模板时写入默认值
+            merged = DEFAULT_LAND_FIELD_TEMPLATES;
+            changed = true;
+          }
+          if (changed) {
+            const { data: updated } = await supabase
+              .from('maps')
+              .update({ field_templates: merged })
+              .eq('id', map.id)
+              .select()
+              .single();
+            if (updated) {
+              map = toMapProject(updated as Record<string, unknown>);
+            } else {
+              map = { ...map, field_templates: merged as FieldTemplate[] };
+            }
           }
         }
       } else {
