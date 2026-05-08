@@ -517,7 +517,13 @@ export default function AdminEditor() {
                       </div>
                       {anno.type === 'point' && anno.custom_fields.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2 pl-9">
-                          {anno.custom_fields.slice(0, 3).map((cf) => {
+                          {anno.custom_fields
+                            .filter(cf => {
+                              const field = fieldTemplateMap.get(cf.fieldId);
+                              return field && field.name !== '成交总价';
+                            })
+                            .slice(0, 3)
+                            .map((cf) => {
                             const field = fieldTemplateMap.get(cf.fieldId);
                             if (!field || cf.value == null) return null;
                             return (

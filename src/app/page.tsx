@@ -178,7 +178,10 @@ export default function PublicMapPage() {
                       </div>
                       {anno.type === 'point' && anno.custom_fields.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2 pl-9">
-                          {anno.custom_fields.slice(0, 3).map((cf) => {
+                          {anno.custom_fields
+                            .filter(cf => fieldNameMap.get(cf.fieldId) !== '成交总价')
+                            .slice(0, 3)
+                            .map((cf) => {
                             const name = fieldNameMap.get(cf.fieldId);
                             if (!name || cf.value == null) return null;
                             return (

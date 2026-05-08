@@ -39,7 +39,7 @@ export const DEFAULT_LAND_FIELD_TEMPLATES: FieldTemplate[] = [
   { id: LAND_FIELD_IDS.far, name: '容积率', type: 'number', required: false, sort_order: 1 },
   { id: LAND_FIELD_IDS.price, name: '成交总价', type: 'number', required: false, sort_order: 2 },
   { id: LAND_FIELD_IDS.owner, name: '土地使用权人', type: 'text', required: false, sort_order: 3 },
-  { id: LAND_FIELD_IDS.floorPrice, name: '楼面地价(元/㎡)', type: 'number', required: false, sort_order: 4 },
-  { id: LAND_FIELD_IDS.date, name: '合同签订日期', type: 'date', required: false, sort_order: 5 },
+  { id: LAND_FIELD_IDS.date, name: '合同签订日期', type: 'date', required: false, sort_order: 4 },
+  { id: LAND_FIELD_IDS.floorPrice, name: '楼面地价(元/㎡)', type: 'number', required: false, sort_order: 5 },
   { id: LAND_FIELD_IDS.shareholders, name: '主要股东', type: 'text', required: false, sort_order: 6 },
 ];
