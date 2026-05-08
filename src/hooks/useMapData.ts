@@ -58,46 +58,6 @@ export function useMapData(user: User | null) {
         } else {
           map = toMapProject(maps[0] as Record<string, unknown>);
         }
-
-        // 同步字段模板：用最新 DEFAULT_LAND_FIELD_TEMPLATES 覆盖已有模板的名称和排序
-        if (map.field_templates && Array.isArray(map.field_templates)) {
-          const defaultMap = new Map(DEFAULT_LAND_FIELD_TEMPLATES.map((t) => [t.id, t]));
-          const oldTemplates = map.field_templates as FieldTemplate[];
-          let changed = false;
-          let merged = oldTemplates.map((t) => {
-            const def = defaultMap.get(t.id);
-            if (def && (def.name !== t.name || def.sort_order !== t.sort_order)) {
-              changed = true;
-              return { ...t, name: def.name, sort_order: def.sort_order };
-            }
-            return t;
-          });
-          // 补充 DEFAULT 中有但 DB 里没有的新字段
-          const existingIds = new Set(merged.map((t) => t.id));
-          const missing = DEFAULT_LAND_FIELD_TEMPLATES.filter((t) => !existingIds.has(t.id));
-          if (missing.length > 0) {
-            merged = [...merged, ...missing];
-            changed = true;
-          }
-          if (merged.length === 0) {
-            // 空模板时写入默认值
-            merged = DEFAULT_LAND_FIELD_TEMPLATES;
-            changed = true;
-          }
-          if (changed) {
-            const { data: updated } = await supabase
-              .from('maps')
-              .update({ field_templates: merged })
-              .eq('id', map.id)
-              .select()
-              .single();
-            if (updated) {
-              map = toMapProject(updated as Record<string, unknown>);
-            } else {
-              map = { ...map, field_templates: merged as FieldTemplate[] };
-            }
-          }
-        }
       } else {
         // 未登录：查询所有地图，取第一个（公共查看）
         const { data: maps, error: mapsError } = await supabase
@@ -109,6 +69,45 @@ export function useMapData(user: User | null) {
         if (mapsError) throw mapsError;
         if (maps && maps.length > 0) {
           map = toMapProject(maps[0] as Record<string, unknown>);
+        }
+      }
+
+      // 同步字段模板：登录/未登录均执行
+      if (map && map.field_templates && Array.isArray(map.field_templates)) {
+        const defaultMap = new Map(DEFAULT_LAND_FIELD_TEMPLATES.map((t) => [t.id, t]));
+        const oldTemplates = map.field_templates as FieldTemplate[];
+        let changed = false;
+        let merged = oldTemplates.map((t) => {
+          const def = defaultMap.get(t.id);
+          if (def && (def.name !== t.name || def.sort_order !== t.sort_order)) {
+            changed = true;
+            return { ...t, name: def.name, sort_order: def.sort_order };
+          }
+          return t;
+        });
+        // 补充 DEFAULT 中有但 DB 里没有的新字段
+        const existingIds = new Set(merged.map((t) => t.id));
+        const missing = DEFAULT_LAND_FIELD_TEMPLATES.filter((t) => !existingIds.has(t.id));
+        if (missing.length > 0) {
+          merged = [...merged, ...missing];
+          changed = true;
+        }
+        if (merged.length === 0) {
+          merged = DEFAULT_LAND_FIELD_TEMPLATES;
+          changed = true;
+        }
+        if (changed) {
+          const { data: updated } = await supabase
+            .from('maps')
+            .update({ field_templates: merged })
+            .eq('id', map.id)
+            .select()
+            .single();
+          if (updated) {
+            map = toMapProject(updated as Record<string, unknown>);
+          } else {
+            map = { ...map, field_templates: merged as FieldTemplate[] };
+          }
         }
       }
 
