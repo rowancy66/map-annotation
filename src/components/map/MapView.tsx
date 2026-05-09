@@ -475,20 +475,23 @@ export default function MapView({
       <SearchBox map={mapInstance} />
 
       <div className="absolute top-16 right-4 z-[1000]">
-        <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-white/40 overflow-hidden flex">
+        <div className="backdrop-blur-md rounded-xl shadow-lg overflow-hidden flex"
+          style={{ background: 'rgba(250,248,244,0.9)', border: '1px solid rgba(227,221,208,0.6)' }}>
           <button
             onClick={() => setMapType('vec')}
             className={`px-3.5 py-2 text-xs font-medium transition-all duration-200 first:rounded-l-xl last:rounded-r-xl ${
-              mapType === 'vec' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'
+              mapType === 'vec' ? 'text-white shadow-sm' : 'hover:bg-white/60'
             }`}
+            style={mapType === 'vec' ? { background: '#1a3a3a', color: '#e8ddd0' } : { color: '#5c5242' }}
           >
             矢量
           </button>
           <button
             onClick={() => setMapType('img')}
             className={`px-3.5 py-2 text-xs font-medium transition-all duration-200 first:rounded-l-xl last:rounded-r-xl ${
-              mapType === 'img' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'
+              mapType === 'img' ? 'text-white shadow-sm' : 'hover:bg-white/60'
             }`}
+            style={mapType === 'img' ? { background: '#1a3a3a', color: '#e8ddd0' } : { color: '#5c5242' }}
           >
             卫星
           </button>
@@ -498,7 +501,7 @@ export default function MapView({
       {drawMode !== 'none' && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-gray-900/85 backdrop-blur-md text-white px-4 py-2.5 rounded-xl shadow-xl border border-white/10 text-sm flex items-center gap-3 animate-fade-slide-up">
           <span className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#d4954e' }} />
             {drawMode === 'point' && '点击地图放置标注点'}
             {drawMode === 'line' && '依次点击添加折线顶点，双击结束'}
             {drawMode === 'polygon' && '依次点击添加多边形顶点，双击结束'}
@@ -518,13 +521,16 @@ export default function MapView({
       {/* 右键菜单 */}
       {contextMenu && (
         <div
-          className="fixed z-[5000] bg-white rounded-lg shadow-xl border py-1 min-w-[140px]"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
+          className="fixed z-[5000] rounded-xl shadow-xl border py-1 min-w-[140px] backdrop-blur-sm animate-fade-in"
+          style={{ left: contextMenu.x, top: contextMenu.y, background: 'rgba(250,248,244,0.96)', borderColor: '#e3ddd0' }}
           onClick={(e) => e.stopPropagation()}
         >
           <button
             onClick={handleMovePoint}
-            className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-2"
+            className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 transition-colors"
+            style={{ color: '#2c2416' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(196,85,43,0.08)'; e.currentTarget.style.color = '#c4552b'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#2c2416'; }}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             移动点位
