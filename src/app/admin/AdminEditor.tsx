@@ -599,6 +599,12 @@ export default function AdminEditor() {
               />
             )}
           </div>
+
+          {/* Deerflow 署名 */}
+          <a href="https://deerflow.tech" target="_blank" rel="noopener noreferrer"
+             className="absolute bottom-3 right-3 z-[999] text-[9px] text-gray-300/50 hover:text-gray-500/80 transition-colors duration-300 tracking-widest uppercase pointer-events-auto">
+            Deerflow
+          </a>
         </div>
       </div>
 

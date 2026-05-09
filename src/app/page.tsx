@@ -247,6 +247,12 @@ export default function PublicMapPage() {
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[999] bg-white/70 backdrop-blur-md text-gray-400 px-4 py-2 rounded-xl shadow-lg border border-white/40 text-xs">
             点击标注查看详情 · 右键拖动地图
           </div>
+
+          {/* Deerflow 署名 */}
+          <a href="https://deerflow.tech" target="_blank" rel="noopener noreferrer"
+             className="fixed bottom-3 right-3 z-[9999] text-[9px] text-gray-300/50 hover:text-gray-500/80 transition-colors duration-300 tracking-widest uppercase">
+            Deerflow
+          </a>
         </div>
       </div>
     </div>
