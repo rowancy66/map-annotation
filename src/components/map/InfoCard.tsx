@@ -567,13 +567,49 @@ function PolygonFields({ data, editing, onChange }: { data: any; editing: boolea
       </div>
 
       <Field label="户型">
-        {editing ? (
-          <Input value={getCF(cf, 'houseType')} onChange={(v) => updateCF('houseType', v)} placeholder="如：三室两厅" />
-        ) : (
-          <span className="text-xs" style={{ color: getCF(data.custom_fields || [], 'houseType') ? colors.ink : colors.placeholder }}>
-            {getCF(data.custom_fields || [], 'houseType') || '—'}
-          </span>
-        )}
+        {(editing ? (() => {
+          const h = (() => { try { return JSON.parse(getCF(cf, 'houseType') || '[]'); } catch { return []; } })();
+          const arr = Array.isArray(h) && h.length > 0 ? h : [''];
+          return (
+            <div className="space-y-1.5">
+              {arr.map((item: string, i: number) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <input value={item}
+                    onChange={(e) => {
+                      const updated = [...arr];
+                      updated[i] = e.target.value;
+                      updateCF('houseType', JSON.stringify(updated));
+                    }}
+                    placeholder="如：三室两厅 120㎡"
+                    className="flex-1 px-2 py-1 text-xs rounded-lg outline-none transition"
+                    style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.ink }}
+                    onFocus={focusStyle} onBlur={blurStyle} />
+                  {arr.length > 1 && (
+                    <button onClick={() => updateCF('houseType', JSON.stringify(arr.filter((_: any, j: number) => j !== i)))}
+                      className="text-[10px] px-1 shrink-0" style={{ color: colors.danger }}>×</button>
+                  )}
+                </div>
+              ))}
+              <button onClick={() => updateCF('houseType', JSON.stringify([...arr, '']))}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs transition"
+                style={{ background: colors.bg, border: `1px dashed ${colors.border}`, color: colors.muted }}>
+                <Plus className="w-3 h-3" aria-hidden="true" /> 添加户型
+              </button>
+            </div>
+          );
+        })() : (() => {
+          const h = (() => { try { return JSON.parse(getCF(data.custom_fields || [], 'houseType') || '[]'); } catch { return []; } })();
+          const arr = Array.isArray(h) ? h : (h ? [h] : []);
+          return arr.length > 0 ? (
+            <div className="space-y-0.5">
+              {arr.map((item: string, i: number) => (
+                <span key={i} className="block text-xs" style={{ color: colors.ink }}>{item || '—'}</span>
+              ))}
+            </div>
+          ) : (
+            <span className="text-xs" style={{ color: colors.placeholder }}>—</span>
+          );
+        })())}
       </Field>
 
       {/* 备注 */}
