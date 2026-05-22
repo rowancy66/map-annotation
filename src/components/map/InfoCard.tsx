@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Annotation, PointStyle, LineStyle, PolygonStyle, PRESET_COLORS, PRESET_ICONS, FieldTemplate } from '@/lib/types';
-import { X, Save, Trash2, Loader2 } from 'lucide-react';
+import { X, Save, Trash2, Loader2, Upload, Link2, Plus, ImagePlus } from 'lucide-react';
+import { uploadAnnotationImage, deleteAnnotationImage } from '@/lib/supabase';
 
 // Premium blue palette
 const colors = {
@@ -143,83 +144,95 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
         </div>
 
         {/* 内容 */}
-        <div className="px-3.5 py-2.5 max-h-[40vh] overflow-y-auto space-y-3 text-sm">
-          <Field label="名称">
-            {editing ? (
-              <Input value={editData.name} onChange={(v) => setEditData({ ...editData, name: v })} placeholder="输入名称…" />
-            ) : (
-              <p className="text-sm font-semibold leading-snug" style={{ color: colors.ink }}>
-                {annotation.name || <span style={{ color: colors.placeholder }}>未命名</span>}
-              </p>
-            )}
-          </Field>
-
-          <Field label="描述">
-            {editing ? (
-              <textarea value={editData.description}
-                onChange={(e) => setEditData({ ...editData, description: e.target.value })}
-                rows={2} className="w-full px-2.5 py-1.5 text-sm rounded-lg outline-none resize-none transition"
-                style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.ink }}
-                onFocus={focusStyle} onBlur={blurStyle} placeholder="输入描述…" />
-            ) : (
-              <p className="text-xs leading-relaxed" style={{ color: colors.muted }}>
-                {annotation.description || <span style={{ color: colors.placeholder }}>暂无描述</span>}
-              </p>
-            )}
-          </Field>
-
-          {editing && (
-            <div style={{ background: colors.bg, borderRadius: '8px', padding: '10px' }}>
-              <div className="text-[9px] font-semibold mb-2 tracking-widest uppercase" style={{ color: colors.muted }}>样式</div>
-              <StyleEditor type={annotation.type} style={editData.style}
-                onChange={(style) => setEditData({ ...editData, style })} />
-            </div>
-          )}
-
-          {!editing && annotation.type === 'point' && (
-            <Field label="坐标">
-              <p className="text-[11px] font-mono px-2.5 py-1.5 rounded-lg"
-                style={{ background: colors.bg, color: colors.muted, border: `1px solid ${colors.border}` }}>
-                {(annotation.geometry as { coordinates: [number, number] }).coordinates.join(', ')}
-              </p>
-            </Field>
-          )}
-
-          {fieldTemplates.length > 0 && (
-            <div>
-              <div className="text-[9px] font-semibold mb-1.5 tracking-widest uppercase" style={{ color: colors.muted }}>自定义属性</div>
-              <div className="space-y-1.5">
-                {[...fieldTemplates].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)).map((field) => (
-                  <div key={field.id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg" style={{ background: colors.bg }}>
-                    <span className="text-[10px] font-medium min-w-[4rem]" style={{ color: colors.muted }}>{field.name}</span>
-                    <div className="flex-1">
-                      {editing ? (
-                        field.type === 'select' ? (
-                          <select value={String(getCustomFieldValue(field.id) ?? '')}
-                            onChange={(e) => handleCustomFieldChange(field.id, e.target.value || null)}
-                            className="w-full px-2 py-1 text-xs rounded-lg outline-none transition"
-                            style={{ background: '#ffffff', border: `1px solid ${colors.border}`, color: colors.ink }}>
-                            <option value="">未选择</option>
-                            {field.options?.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
-                          </select>
-                        ) : (
-                          <input type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
-                            value={String(getCustomFieldValue(field.id) ?? '')}
-                            onChange={(e) => handleCustomFieldChange(field.id, field.type === 'number' ? (e.target.value ? Number(e.target.value) : null) : (e.target.value || null))}
-                            className="w-full px-2 py-1 text-xs rounded-lg outline-none transition"
-                            style={{ background: '#ffffff', border: `1px solid ${colors.border}`, color: colors.ink }}
-                            onFocus={focusStyle} onBlur={blurStyle} />
-                        )
-                      ) : (
-                        <span className="text-xs font-medium" style={{ color: colors.ink }}>
-                          {String(getCustomFieldValue(field.id) ?? <span style={{ color: colors.placeholder }}>—</span>)}
-                        </span>
-                      )}
-                    </div>
+        <div className="px-3.5 py-2.5 max-h-[50vh] overflow-y-auto space-y-3 text-sm">
+          {annotation.type === 'polygon' ? (
+            <PolygonFields
+              data={editing ? editData : annotation}
+              editing={editing}
+              onChange={(data) => setEditData(data)}
+            />
+          ) : annotation.type === 'line' ? (
+            <LineFields
+              data={editing ? editData : annotation}
+              editing={editing}
+              onChange={(data) => setEditData(data)}
+            />
+          ) : (
+            <>
+              <Field label="名称">
+                {editing ? (
+                  <Input value={editData.name} onChange={(v) => setEditData({ ...editData, name: v })} placeholder="输入名称…" />
+                ) : (
+                  <p className="text-sm font-semibold leading-snug" style={{ color: colors.ink }}>
+                    {annotation.name || <span style={{ color: colors.placeholder }}>未命名</span>}
+                  </p>
+                )}
+              </Field>
+              <Field label="描述">
+                {editing ? (
+                  <textarea value={editData.description}
+                    onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                    rows={2} className="w-full px-2.5 py-1.5 text-sm rounded-lg outline-none resize-none transition"
+                    style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.ink }}
+                    onFocus={focusStyle} onBlur={blurStyle} placeholder="输入描述…" />
+                ) : (
+                  <p className="text-xs leading-relaxed" style={{ color: colors.muted }}>
+                    {annotation.description || <span style={{ color: colors.placeholder }}>暂无描述</span>}
+                  </p>
+                )}
+              </Field>
+              {editing && (
+                <div style={{ background: colors.bg, borderRadius: '8px', padding: '10px' }}>
+                  <div className="text-[9px] font-semibold mb-2 tracking-widest uppercase" style={{ color: colors.muted }}>样式</div>
+                  <StyleEditor type={annotation.type} style={editData.style}
+                    onChange={(style) => setEditData({ ...editData, style })} />
+                </div>
+              )}
+              {!editing && (
+                <Field label="坐标">
+                  <p className="text-[11px] font-mono px-2.5 py-1.5 rounded-lg"
+                    style={{ background: colors.bg, color: colors.muted, border: `1px solid ${colors.border}` }}>
+                    {(annotation.geometry as { coordinates: [number, number] }).coordinates.join(', ')}
+                  </p>
+                </Field>
+              )}
+              {fieldTemplates.length > 0 && (
+                <div>
+                  <div className="text-[9px] font-semibold mb-1.5 tracking-widest uppercase" style={{ color: colors.muted }}>自定义属性</div>
+                  <div className="space-y-1.5">
+                    {[...fieldTemplates].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)).map((field) => (
+                      <div key={field.id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg" style={{ background: colors.bg }}>
+                        <span className="text-[10px] font-medium min-w-[4rem]" style={{ color: colors.muted }}>{field.name}</span>
+                        <div className="flex-1">
+                          {editing ? (
+                            field.type === 'select' ? (
+                              <select value={String(getCustomFieldValue(field.id) ?? '')}
+                                onChange={(e) => handleCustomFieldChange(field.id, e.target.value || null)}
+                                className="w-full px-2 py-1 text-xs rounded-lg outline-none transition"
+                                style={{ background: '#ffffff', border: `1px solid ${colors.border}`, color: colors.ink }}>
+                                <option value="">未选择</option>
+                                {field.options?.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
+                              </select>
+                            ) : (
+                              <input type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
+                                value={String(getCustomFieldValue(field.id) ?? '')}
+                                onChange={(e) => handleCustomFieldChange(field.id, field.type === 'number' ? (e.target.value ? Number(e.target.value) : null) : (e.target.value || null))}
+                                className="w-full px-2 py-1 text-xs rounded-lg outline-none transition"
+                                style={{ background: '#ffffff', border: `1px solid ${colors.border}`, color: colors.ink }}
+                                onFocus={focusStyle} onBlur={blurStyle} />
+                            )
+                          ) : (
+                            <span className="text-xs font-medium" style={{ color: colors.ink }}>
+                              {String(getCustomFieldValue(field.id) ?? <span style={{ color: colors.placeholder }}>—</span>)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -446,5 +459,256 @@ function Sect({ label, color, children }: { label: string; color: string; childr
       <label className="block text-[10px] font-medium mb-1" style={{ color }}>{label}</label>
       {children}
     </div>
+  );
+}
+
+// ==== 面标注专用字段 ====
+type CFKey = string;
+function getCF(customFields: { fieldId: string; value: string | number | null }[], key: CFKey): string {
+  const f = customFields.find((c) => c.fieldId === key);
+  return f ? String(f.value ?? '') : '';
+}
+function setCF(customFields: { fieldId: string; value: string | number | null }[], key: CFKey, value: string): { fieldId: string; value: string | number | null }[] {
+  const idx = customFields.findIndex((c) => c.fieldId === key);
+  if (idx >= 0) {
+    const updated = [...customFields];
+    updated[idx] = { ...updated[idx], value };
+    return updated;
+  }
+  return [...customFields, { fieldId: key, value }];
+}
+function getCFArr(customFields: { fieldId: string; value: string | number | null }[], key: CFKey): string[] {
+  const f = customFields.find((c) => c.fieldId === key);
+  if (!f || !f.value) return [];
+  try { return JSON.parse(String(f.value)); } catch { return []; }
+}
+function setCFArr(customFields: { fieldId: string; value: string | number | null }[], key: CFKey, arr: any[]): { fieldId: string; value: string | number | null }[] {
+  return setCF(customFields, key, JSON.stringify(arr));
+}
+
+function PolygonFields({ data, editing, onChange }: { data: any; editing: boolean; onChange: (d: any) => void }) {
+  const [uploading, setUploading] = useState(false);
+
+  const cf = data.custom_fields || [];
+  const images = editing ? getCFArr((data as any).custom_fields || [], 'images') : getCFArr(data.custom_fields || [], 'images');
+  const links = editing ? (() => { try { return JSON.parse(getCF((data as any).custom_fields || [], 'links') || '[]'); } catch { return []; } })() : (() => { try { return JSON.parse(getCF(data.custom_fields || [], 'links') || '[]'); } catch { return []; } })();
+
+  const updateName = (v: string) => onChange({ ...data, name: v });
+  const updateCF = (key: CFKey, v: string) => onChange({ ...data, custom_fields: setCF((data).custom_fields || [], key, v) });
+  const updateCFArr = (key: CFKey, arr: any[]) => onChange({ ...data, custom_fields: setCFArr((data).custom_fields || [], key, arr) });
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    const current = getCFArr((data).custom_fields || [], 'images');
+    const newUrls = [...current];
+    for (let i = 0; i < files.length; i++) {
+      const url = await uploadAnnotationImage(files[i]);
+      if (url) newUrls.push(url);
+    }
+    updateCFArr('images', newUrls);
+    setUploading(false);
+  };
+
+  const removeImage = async (url: string) => {
+    await deleteAnnotationImage(url);
+    const current = getCFArr((data).custom_fields || [], 'images');
+    updateCFArr('images', current.filter((u) => u !== url));
+  };
+
+  const addLink = () => {
+    const current = (() => { try { return JSON.parse(getCF((data).custom_fields || [], 'links') || '[]'); } catch { return []; } })();
+    updateCFArr('links', [...current, { title: '', url: '' }]);
+  };
+  const updateLink = (idx: number, field: 'title' | 'url', val: string) => {
+    const current = (() => { try { return JSON.parse(getCF((data).custom_fields || [], 'links') || '[]'); } catch { return []; } })();
+    current[idx] = { ...current[idx], [field]: val };
+    updateCFArr('links', current);
+  };
+  const removeLink = (idx: number) => {
+    const current = (() => { try { return JSON.parse(getCF((data).custom_fields || [], 'links') || '[]'); } catch { return []; } })();
+    updateCFArr('links', current.filter((_: any, i: number) => i !== idx));
+  };
+
+  return (
+    <>
+      {/* 项目名称 */}
+      <Field label="项目名称">
+        {editing ? (
+          <Input value={data.name} onChange={updateName} placeholder="输入项目名称…" />
+        ) : (
+          <p className="text-sm font-semibold leading-snug" style={{ color: colors.ink }}>
+            {data.name || <span style={{ color: colors.placeholder }}>未命名</span>}
+          </p>
+        )}
+      </Field>
+
+      {/* 产品 / 价格 / 户型 */}
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="产品">
+          {editing ? (
+            <Input value={getCF(cf, 'product')} onChange={(v) => updateCF('product', v)} placeholder="如：住宅" />
+          ) : (
+            <span className="text-xs" style={{ color: getCF(data.custom_fields || [], 'product') ? colors.ink : colors.placeholder }}>
+              {getCF(data.custom_fields || [], 'product') || '—'}
+            </span>
+          )}
+        </Field>
+        <Field label="价格">
+          {editing ? (
+            <Input value={getCF(cf, 'price')} onChange={(v) => updateCF('price', v)} placeholder="如：2.5万/㎡" />
+          ) : (
+            <span className="text-xs" style={{ color: getCF(data.custom_fields || [], 'price') ? colors.ink : colors.placeholder }}>
+              {getCF(data.custom_fields || [], 'price') || '—'}
+            </span>
+          )}
+        </Field>
+      </div>
+
+      <Field label="户型">
+        {editing ? (
+          <Input value={getCF(cf, 'houseType')} onChange={(v) => updateCF('houseType', v)} placeholder="如：三室两厅" />
+        ) : (
+          <span className="text-xs" style={{ color: getCF(data.custom_fields || [], 'houseType') ? colors.ink : colors.placeholder }}>
+            {getCF(data.custom_fields || [], 'houseType') || '—'}
+          </span>
+        )}
+      </Field>
+
+      {/* 备注 */}
+      <Field label="备注">
+        {editing ? (
+          <textarea value={getCF(cf, 'notes')}
+            onChange={(e) => updateCF('notes', e.target.value)}
+            rows={2} className="w-full px-2.5 py-1.5 text-xs rounded-lg outline-none resize-none transition"
+            style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.ink }}
+            onFocus={focusStyle} onBlur={blurStyle} placeholder="补充说明…" />
+        ) : (
+          <p className="text-xs leading-relaxed" style={{ color: getCF(data.custom_fields || [], 'notes') ? colors.muted : colors.placeholder }}>
+            {getCF(data.custom_fields || [], 'notes') || '—'}
+          </p>
+        )}
+      </Field>
+
+      {/* 图片 */}
+      <Field label="图片">
+        {editing && (
+          <label className="flex items-center gap-2 px-2.5 py-2 mb-2 rounded-lg cursor-pointer transition text-xs"
+            style={{ background: colors.bg, border: `1px dashed ${colors.border}`, color: colors.muted }}>
+            <Upload className="w-3.5 h-3.5" aria-hidden="true" />
+            {uploading ? '上传中...' : '上传图片'}
+            <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
+          </label>
+        )}
+        {images.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {images.map((url, i) => (
+              <div key={i} className="relative group">
+                <img src={url} alt="" className="w-14 h-14 object-cover rounded-lg" style={{ border: `1px solid ${colors.border}` }} />
+                {editing && (
+                  <button onClick={() => removeImage(url)}
+                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full flex items-center justify-center text-[8px] transition"
+                    style={{ background: colors.danger, color: 'white' }}>×</button>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          !editing && <span className="text-xs" style={{ color: colors.placeholder }}>暂无图片</span>
+        )}
+      </Field>
+
+      {/* 链接 */}
+      <Field label="链接">
+        {editing && (
+          <button onClick={addLink}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition mb-2"
+            style={{ background: colors.bg, border: `1px dashed ${colors.border}`, color: colors.muted }}>
+            <Plus className="w-3 h-3" aria-hidden="true" /> 添加链接
+          </button>
+        )}
+        {links.length > 0 ? (
+          <div className="space-y-1.5">
+            {links.map((link: any, i: number) => (
+              <div key={i} className="flex items-center gap-1.5">
+                {(editing && !link.url) ? (
+                  <>
+                    <input value={link.title || ''} placeholder="标题"
+                      onChange={(e) => updateLink(i, 'title', e.target.value)}
+                      className="flex-1 px-2 py-1 text-[11px] rounded outline-none"
+                      style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.ink }} />
+                    <input value={link.url || ''} placeholder="https://..."
+                      onChange={(e) => updateLink(i, 'url', e.target.value)}
+                      className="flex-1 px-2 py-1 text-[11px] rounded outline-none"
+                      style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.accent }} />
+                    <button onClick={() => removeLink(i)} className="text-[10px] px-1" style={{ color: colors.danger }}>×</button>
+                  </>
+                ) : (
+                  <a href={link.url || '#'} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-xs hover:underline truncate" style={{ color: colors.accent }}>
+                    <Link2 className="w-3 h-3 shrink-0" aria-hidden="true" />
+                    <span className="truncate">{link.title || link.url || '查看链接'}</span>
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          !editing && <span className="text-xs" style={{ color: colors.placeholder }}>暂无链接</span>
+        )}
+      </Field>
+
+      {/* 样式编辑 */}
+      {editing && (
+        <div style={{ background: colors.bg, borderRadius: '8px', padding: '10px' }}>
+          <div className="text-[9px] font-semibold mb-2 tracking-widest uppercase" style={{ color: colors.muted }}>样式</div>
+          <StyleEditor type="polygon" style={data.style}
+            onChange={(style: any) => onChange({ ...data, style })} />
+        </div>
+      )}
+    </>
+  );
+}
+
+// ==== 线标注专用字段 ====
+function LineFields({ data, editing, onChange }: { data: any; editing: boolean; onChange: (d: any) => void }) {
+  const cf = (data).custom_fields || [];
+  const updateCF = (key: CFKey, v: string) => onChange({ ...data, custom_fields: setCF(cf, key, v) });
+
+  return (
+    <>
+      <Field label="名称">
+        {editing ? (
+          <Input value={data.name} onChange={(v) => onChange({ ...data, name: v })} placeholder="输入名称…" />
+        ) : (
+          <p className="text-sm font-semibold leading-snug" style={{ color: colors.ink }}>
+            {data.name || <span style={{ color: colors.placeholder }}>未命名</span>}
+          </p>
+        )}
+      </Field>
+
+      <Field label="备注">
+        {editing ? (
+          <textarea value={getCF(cf, 'notes')}
+            onChange={(e) => updateCF('notes', e.target.value)}
+            rows={2} className="w-full px-2.5 py-1.5 text-xs rounded-lg outline-none resize-none transition"
+            style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.ink }}
+            onFocus={focusStyle} onBlur={blurStyle} placeholder="补充说明…" />
+        ) : (
+          <p className="text-xs leading-relaxed" style={{ color: getCF(data.custom_fields || [], 'notes') ? colors.muted : colors.placeholder }}>
+            {getCF(data.custom_fields || [], 'notes') || '—'}
+          </p>
+        )}
+      </Field>
+
+      {editing && (
+        <div style={{ background: colors.bg, borderRadius: '8px', padding: '10px' }}>
+          <div className="text-[9px] font-semibold mb-2 tracking-widest uppercase" style={{ color: colors.muted }}>样式</div>
+          <StyleEditor type="line" style={data.style}
+            onChange={(style: any) => onChange({ ...data, style })} />
+        </div>
+      )}
+    </>
   );
 }

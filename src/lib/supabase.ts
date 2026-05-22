@@ -17,3 +17,35 @@ export function getSupabase(): SupabaseClient {
 
 // 为了向后兼容，保留默认导出
 export const supabase = typeof window !== 'undefined' ? getSupabase() : getSupabase();
+
+// 图片上传到 Supabase Storage
+export async function uploadAnnotationImage(file: File): Promise<string | null> {
+  const client = getSupabase();
+  const bucket = 'annotation-images';
+  const ext = file.name.split('.').pop() || 'jpg';
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+  const { error } = await client.storage.from(bucket).upload(filename, file, {
+    cacheControl: '3600',
+    upsert: false,
+  });
+
+  if (error) {
+    console.error('图片上传失败:', error.message);
+    return null;
+  }
+
+  const { data } = client.storage.from(bucket).getPublicUrl(filename);
+  return data.publicUrl;
+}
+
+// 删除已上传的图片
+export async function deleteAnnotationImage(url: string): Promise<boolean> {
+  const client = getSupabase();
+  const bucket = 'annotation-images';
+  const filename = url.split('/').pop();
+  if (!filename) return false;
+
+  const { error } = await client.storage.from(bucket).remove([filename]);
+  return !error;
+}
