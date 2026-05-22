@@ -43,6 +43,15 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     }
   }
 
+  // 干掉 Vercel 的长缓存头，否则 Cloudflare 会一直返回旧内容
+  const contentType = headers.get("content-type") || "";
+  if (contentType.includes("text/html")) {
+    headers.set("Cache-Control", "public, max-age=0, must-revalidate");
+  } else {
+    headers.delete("Cache-Control");
+    headers.set("CDN-Cache-Control", "public, max-age=86400");
+  }
+
   return new Response(response.body, {
     status: response.status,
     headers,
