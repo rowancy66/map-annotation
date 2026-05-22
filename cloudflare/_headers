@@ -1,3 +1,4 @@
 /*
-  Cache-Control: public, max-age=0, must-revalidate
-  CDN-Cache-Control: public, max-age=0, must-revalidate
+  Cache-Control: no-store, no-cache, must-revalidate
+  CDN-Cache-Control: no-store, no-cache, must-revalidate
+  Cloudflare-CDN-Cache-Control: no-store, no-cache, must-revalidate
