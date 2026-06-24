@@ -1,18 +1,28 @@
 # MapMark - 地图标注平台
 
-基于天地图的在线地图标注工具，支持点、线、面标注，批量导入导出，自定义字段。
+基于天地图的在线地图标注工具，支持多地图项目管理、点线面标注、分组目录、批量导入导出、自定义字段。
 
 ## ✨ 功能特性
 
-- 🗺️ **天地图底图** - 支持矢量/卫星地图切换
-- 📍 **点标注** - 点击地图添加，支持自定义图标、颜色、大小
-- 📏 **线标注** - 依次点击绘制折线，支持颜色和线宽设置
-- 🟦 **面标注** - 依次点击绘制多边形，支持填充色和透明度
-- 📊 **批量导入** - 支持上传 Excel(.xlsx) / CSV 文件批量落点
-- 📥 **数据导出** - 导出标注数据为 Excel / CSV
-- 🏷️ **自定义字段** - 灵活定义标注属性（文本/数字/日期/选择）
-- 🔐 **用户认证** - 邮箱密码登录 + 微信登录入口
-- 📱 **响应式设计** - 桌面优先，移动端可查看
+### 地图管理
+- 🗺️ **多地图项目** — 按项目组织标注（如"土地成交数据"、"混凝土站点分布"），每张地图独立
+- 📋 **地图列表** — 卡片式展示所有地图，显示标注数量和更新时间
+- 🏷️ **分组目录** — 树形分组组织标注，支持多层子分组
+
+### 标注能力
+- 📍 **点标注** — 自定义图标、颜色、大小，支持右键菜单编辑/移动/删除
+- 📏 **线标注** — 折线绘制，支持颜色、线宽、虚线样式
+- 🟦 **面标注** — 多边形绘制，支持填充色和透明度
+
+### 数据管理
+- 📊 **批量导入** — 支持 Excel(.xlsx) / CSV 文件批量落点，自动列映射
+- 📥 **数据导出** — 导出标注数据为 Excel / CSV
+- 🏷️ **自定义字段模板** — 灵活定义标注属性（文本/数字/日期/选择）
+- 🔍 **高级搜索** — 搜索标注名称、位置、自定义字段值
+
+### 认证
+- 🔐 **管理密码** — 单管理员密码认证，首次部署通过 `/setup` 设置
+- 👤 **公开只读** — 前台地图对访客公开，无需登录即可浏览
 
 ## 🛠️ 技术栈
 
@@ -23,26 +33,30 @@
 | Tailwind CSS 4 | 样式 |
 | Leaflet | 地图渲染 |
 | 天地图 | 底图瓦片服务 |
-| Supabase | 数据库 + 认证 |
+| **Turso** (libSQL) | 数据库 |
 | xlsx | Excel 读写 |
 | PapaParse | CSV 解析 |
 | Vercel | 部署 |
 
 ## 🚀 快速开始
 
-### 1. 克隆项目
+### 1. 克隆并安装
 
 ```bash
-git clone https://github.com/你的用户名/map-annotation.git
+git clone https://github.com/rowancy66/map-annotation.git
 cd map-annotation
 npm install
 ```
 
-### 2. 配置 Supabase
+### 2. 配置 Turso 数据库
 
-1. 在 [Supabase](https://supabase.com) 创建项目
-2. 在 SQL Editor 中运行 `supabase/migrations/001_initial.sql`
-3. 复制项目的 URL 和 anon key
+在 [Turso](https://turso.tech) 创建数据库：
+
+```bash
+turso db create map-annotation
+turso db show map-annotation --url
+turso db tokens create map-annotation
+```
 
 ### 3. 配置环境变量
 
@@ -53,13 +67,15 @@ cp .env.local.example .env.local
 编辑 `.env.local`：
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=你的_supabase_项目_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=你的_supabase_anon_key
-NEXT_PUBLIC_TIANDITU_KEY=e1d6600951ce0b9692ec71ebc7f03170
+# Turso 数据库
+TURSO_DATABASE_URL=libsql://your-db.turso.io
+TURSO_AUTH_TOKEN=your-token
 
-# 微信登录（可选）
-NEXT_PUBLIC_WECHAT_APP_ID=你的微信开放平台_app_id
-WECHAT_APP_SECRET=你的微信开放平台_app_secret
+# Session 加密密钥（随机字符串）
+APP_SESSION_SECRET=your-random-secret
+
+# 天地图（可选，已内置 key）
+NEXT_PUBLIC_TIANDITU_KEY=e1d6600951ce0b9692ec71ebc7f03170
 ```
 
 ### 4. 启动开发
@@ -68,91 +84,98 @@ WECHAT_APP_SECRET=你的微信开放平台_app_secret
 npm run dev
 ```
 
-访问 http://localhost:3000
-
-## 📦 部署到 Vercel
-
-1. 将项目推送到 GitHub
-2. 在 [Vercel](https://vercel.com) 导入项目
-3. 配置环境变量（同 `.env.local` 中的变量）
-4. 部署
-
-## 🎯 使用指南
-
-### 添加标注
-
-1. 点击左侧工具栏选择标注类型（点/线/面）
-2. 在地图上点击放置标注
-3. 线和面：依次点击添加顶点，双击结束
-4. 按 ESC 取消当前绘制
-
-### 编辑标注
-
-1. 点击地图上的标注，弹出信息卡片
-2. 点击"编辑"按钮修改属性
-3. 可修改名称、描述、样式、自定义字段
-
-### 批量导入
-
-1. 点击顶部"导入"按钮
-2. 上传 Excel 或 CSV 文件
-3. 映射列到字段（必须包含经度和纬度列）
-4. 确认导入
-
-导入文件示例：
-
-| 名称 | 纬度 | 经度 | 描述 |
-|------|------|------|------|
-| 天安门 | 39.9087 | 116.3975 | 北京市中心 |
-| 故宫 | 39.9163 | 116.3972 | 明清皇家宫殿 |
-
-### 自定义字段
-
-1. 点击顶部 ⚙️ 设置按钮
-2. 在侧边栏底部展开"自定义字段"
-3. 添加字段（文本/数字/日期/选择）
+首次访问 http://localhost:3000/setup 设置管理密码，然后前往 http://localhost:3000/admin 登录。
 
 ## 📁 项目结构
 
 ```
 src/
-├── app/                    # Next.js 页面
-│   ├── auth/              # 认证页面
-│   ├── dashboard/         # 用户面板
-│   ├── map/               # 地图编辑器（核心页面）
-│   └── layout.tsx         # 根布局
+├── app/
+│   ├── page.tsx                    # 前台地图列表
+│   ├── PublicDashboard.tsx         # 前台地图列表组件
+│   ├── admin/
+│   │   ├── page.tsx                # 管理入口（含登录检测）
+│   │   ├── AdminDashboard.tsx      # 管理员地图列表
+│   │   └── AdminEditor.tsx         # 单地图编辑器
+│   ├── map/[id]/
+│   │   └── page.tsx                # 前台单地图查看
+│   ├── auth/login/
+│   │   └── page.tsx                # 登录页
+│   └── setup/
+│       └── page.tsx                # 首次密码设置
 ├── components/
-│   ├── auth/              # 认证组件
-│   ├── map/               # 地图相关组件
-│   │   ├── MapView.tsx    # 地图视图
-│   │   ├── DrawingToolbar.tsx  # 绘制工具栏
-│   │   ├── InfoCard.tsx   # 信息卡片
-│   │   └── FieldTemplateManager.tsx  # 字段管理
-│   └── import/            # 导入组件
-│       └── ImportDialog.tsx
+│   ├── auth/                       # 认证组件
+│   ├── map/
+│   │   ├── MapView.tsx             # 地图视图
+│   │   ├── DrawingToolbar.tsx      # 绘制工具栏
+│   │   ├── InfoCard.tsx            # 标注信息卡片
+│   │   ├── GroupTree.tsx           # 分组树组件
+│   │   ├── FieldTemplateManager.tsx# 字段模板管理器
+│   │   └── SearchBox.tsx           # 地理搜索
+│   └── import/
+│       └── ImportDialog.tsx        # 批量导入
 ├── lib/
-│   ├── types.ts           # 类型定义
-│   ├── constants.ts       # 天地图配置
-│   ├── supabase.ts        # Supabase 客户端
-│   └── utils.ts           # 工具函数
-└── supabase/
-    └── migrations/        # 数据库迁移脚本
+│   ├── types.ts                    # 类型定义
+│   ├── constants.ts                # 配置常量
+│   ├── api.ts                      # 客户端 API 工具
+│   ├── turso.ts                    # Turso 客户端
+│   └── server/
+│       ├── auth.ts                 # 服务端认证
+│       ├── maps.ts                 # 地图/标注 CRUD
+│       ├── groups.ts               # 分组 CRUD
+│       └── schema.ts               # 数据库 Schema 初始化
+└── app/api/
+    ├── auth/                       # 认证 API
+    ├── map/                        # 地图 API
+    ├── maps/                       # 多地图 API
+    ├── annotations/                # 标注 API
+    └── groups/                     # 分组 API
 ```
+
+## 🎯 使用指南
+
+### 管理员
+
+1. **首次部署** → 访问 `/setup` 设置管理密码
+2. **登录** → `/admin` 输入密码
+3. **创建地图** → 在管理员首页点击「新建地图」
+4. **添加标注** → 进入地图编辑器，使用右侧绘制工具栏
+5. **组织分组** → 侧边栏切换到「分组」视图，右键创建分组
+6. **批量导入** → 上传 Excel/CSV，映射列到字段
+
+### 公开访问
+
+- 前台首页 (`/`) 显示所有地图列表
+- 点击地图卡片进入 `/map/[id]` 只读查看
+
+## 🌐 部署
+
+### Vercel
+
+1. 将项目推送到 GitHub
+2. 在 [Vercel](https://vercel.com) 导入
+3. 配置环境变量
+4. 部署
+
+### 中国加速（可选）
+
+项目包含 Cloudflare Pages 代理配置，详见 `cloudflare/` 和 `functions/` 目录。
 
 ## 🗄️ 数据库 Schema
 
-- **maps** - 地图项目（名称、描述、中心点、缩放、字段模板）
-- **annotations** - 标注（类型、几何、样式、自定义字段）
-- **auth.users** - 用户（Supabase Auth 管理）
-
-所有表启用了 RLS（行级安全），用户只能访问自己的数据。
+| 表 | 说明 |
+|----|------|
+| **maps** | 地图项目（名称、描述、中心点、缩放、字段模板） |
+| **annotations** | 标注（类型、几何、样式、自定义字段、分组） |
+| **groups** | 分组目录（树形结构，支持父子层级） |
+| **settings** | 全局设置（管理密码哈希等） |
+| **sessions** | 管理员登录会话 |
 
 ## ⚠️ 注意事项
 
-1. **天地图 Key**：已内置在代码中，如需更换请修改 `src/lib/constants.ts`
-2. **微信登录**：需要[微信开放平台](https://open.weixin.qq.com/)注册网站应用
-3. **Supabase**：免费额度足够个人使用
-4. **浏览器兼容**：推荐 Chrome / Edge / Safari 最新版
+1. **天地图**：仅在中国大陆可用
+2. **Turso**：免费额度包含 5GB 存储 + 10 亿行读取/月
+3. **管理密码**：通过 `/setup` 设置后存储在 Turso，如需重置需手动操作数据库
 
 ## 📄 License
 
