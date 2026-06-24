@@ -1,78 +1,37 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { User } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
-import { MapProject, Annotation, FieldTemplate } from '@/lib/types';
+import { MapProject, Annotation, FieldTemplate, Group } from '@/lib/types';
 import { DEFAULT_LAND_FIELD_TEMPLATES } from '@/lib/constants';
+import { apiGet, apiSend } from '@/lib/api';
 
-export function useMapData(user: User | null) {
+export function useMapData(isLoggedIn: boolean, mapId?: string) {
   const [mapProject, setMapProject] = useState<MapProject | null>(null);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const toMapProject = (row: Record<string, unknown>): MapProject =>
-    row as unknown as MapProject;
-
-  const toAnnotation = (row: Record<string, unknown>): Annotation =>
-    row as unknown as Annotation;
-
-  const toAnnotations = (rows: Record<string, unknown>[] | null): Annotation[] =>
-    rows ? (rows as unknown as Annotation[]) : [];
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      let map: MapProject | null = null;
+      // 如果提供了 mapId，加载指定地图；否则加载默认地图
+      const url = mapId ? `/api/maps/${mapId}` : '/api/map';
+      const response = await apiGet<{
+        mapProject: MapProject | null;
+        annotations: Annotation[];
+        groups?: Group[];
+      }>(url);
 
-      if (user) {
-        // 已登录：按用户加载地图
-        const { data: maps, error: mapsError } = await supabase
-          .from('maps')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (mapsError) throw mapsError;
-
-        if (!maps || maps.length === 0) {
-          // 无地图时自动创建
-          const { data: newMap, error: insertError } = await supabase
-            .from('maps')
-            .insert({
-              user_id: user.id,
-              name: '土地出让数据',
-              description: '李沧区土地出让标注地图',
-              center: [120.43, 36.16],
-              zoom: 13,
-              field_templates: DEFAULT_LAND_FIELD_TEMPLATES,
-            })
-            .select()
-            .single();
-
-          if (insertError) throw insertError;
-          map = toMapProject(newMap as Record<string, unknown>);
-        } else {
-          map = toMapProject(maps[0] as Record<string, unknown>);
-        }
-      } else {
-        // 未登录：查询所有地图，取第一个（公共查看）
-        const { data: maps, error: mapsError } = await supabase
-          .from('maps')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (mapsError) throw mapsError;
-        if (maps && maps.length > 0) {
-          map = toMapProject(maps[0] as Record<string, unknown>);
-        }
+      if (response.groups) {
+        setGroups(response.groups);
       }
 
-      // 同步字段模板：登录/未登录均执行
+      let map = response.mapProject ? (response.mapProject as unknown as MapProject) : null;
+
+      // 同步字段模板：登录时才写回
       if (map && map.field_templates && Array.isArray(map.field_templates)) {
         const defaultMap = new Map(DEFAULT_LAND_FIELD_TEMPLATES.map((t) => [t.id, t]));
         const oldTemplates = map.field_templates as FieldTemplate[];
@@ -96,16 +55,11 @@ export function useMapData(user: User | null) {
           merged = DEFAULT_LAND_FIELD_TEMPLATES;
           changed = true;
         }
-        if (changed) {
-          const { data: updated } = await supabase
-            .from('maps')
-            .update({ field_templates: merged })
-            .eq('id', map.id)
-            .select()
-            .single();
-          if (updated) {
-            map = toMapProject(updated as Record<string, unknown>);
-          } else {
+        if (changed && isLoggedIn) {
+          try {
+            await apiSend('/api/map', 'PUT', { mapId: map.id, templates: merged });
+            map = { ...map, field_templates: merged as FieldTemplate[] };
+          } catch {
             map = { ...map, field_templates: merged as FieldTemplate[] };
           }
         }
@@ -113,15 +67,10 @@ export function useMapData(user: User | null) {
 
       if (map) {
         setMapProject(map);
-
-        const { data: annos, error: annosError } = await supabase
-          .from('annotations')
-          .select('*')
-          .eq('map_id', map.id)
-          .order('created_at', { ascending: true });
-
-        if (annosError) throw annosError;
-        setAnnotations(toAnnotations(annos as Record<string, unknown>[] | null));
+        setAnnotations(response.annotations as unknown as Annotation[]);
+      } else {
+        setMapProject(null);
+        setAnnotations([]);
       }
     } catch (err) {
       console.error('加载数据失败:', err);
@@ -129,113 +78,92 @@ export function useMapData(user: User | null) {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [isLoggedIn, mapId]);
 
   useEffect(() => {
-    loadData();
+    queueMicrotask(() => {
+      void loadData();
+    });
   }, [loadData]);
 
-  const requireUser = useCallback((op: string): boolean => {
-    if (!user) {
+  const requireAdmin = useCallback((op: string): boolean => {
+    if (!isLoggedIn) {
       console.warn(`${op} 需要登录`);
       return false;
     }
     return true;
-  }, [user]);
+  }, [isLoggedIn]);
 
   const saveAnnotation = useCallback(async (annotation: Annotation): Promise<{ data: Annotation | null; error: string | null }> => {
-    if (!requireUser('保存标注')) return { data: null, error: '需要登录' };
+    if (!requireAdmin('保存标注')) return { data: null, error: '需要登录' };
 
-    const { data, error } = await supabase
-      .from('annotations')
-      .upsert({
-        id: annotation.id,
-        map_id: annotation.map_id,
-        type: annotation.type,
-        geometry: annotation.geometry,
-        name: annotation.name,
-        description: annotation.description,
-        style: annotation.style,
-        custom_fields: annotation.custom_fields,
-      })
-      .select()
-      .single();
-
-    if (error) {
+    try {
+      const result = await apiSend<{ data: Annotation }>('/api/annotations', 'POST', { annotation });
+      return { data: result.data, error: null };
+    } catch (error) {
       console.error('保存标注失败:', error);
-      return { data: null, error: error.message };
+      return { data: null, error: error instanceof Error ? error.message : '保存失败' };
     }
-    return { data: toAnnotation(data as Record<string, unknown>), error: null };
-  }, [requireUser]);
+  }, [requireAdmin]);
 
   const deleteAnnotation = useCallback(async (id: string): Promise<{ error: string | null }> => {
-    if (!requireUser('删除标注')) return { error: '需要登录' };
+    if (!requireAdmin('删除标注')) return { error: '需要登录' };
 
-    const { error } = await supabase.from('annotations').delete().eq('id', id);
-    if (error) {
+    try {
+      await apiSend('/api/annotations', 'DELETE', { id });
+      setAnnotations((prev) => prev.filter((a) => a.id !== id));
+      return { error: null };
+    } catch (error) {
       console.error('删除标注失败:', error);
-      return { error: error.message };
+      return { error: error instanceof Error ? error.message : '删除失败' };
     }
-    setAnnotations((prev) => prev.filter((a) => a.id !== id));
-    return { error: null };
-  }, [requireUser]);
+  }, [requireAdmin]);
 
   const batchDeleteAnnotations = useCallback(async (ids: string[]): Promise<{ error: string | null }> => {
-    if (!requireUser('批量删除')) return { error: '需要登录' };
+    if (!requireAdmin('批量删除')) return { error: '需要登录' };
 
-    const { error } = await supabase.from('annotations').delete().in('id', ids);
-    if (error) {
+    try {
+      await apiSend('/api/annotations', 'DELETE', { ids });
+      setAnnotations((prev) => prev.filter((a) => !ids.includes(a.id)));
+      return { error: null };
+    } catch (error) {
       console.error('批量删除失败:', error);
-      return { error: error.message };
+      return { error: error instanceof Error ? error.message : '批量删除失败' };
     }
-    setAnnotations((prev) => prev.filter((a) => !ids.includes(a.id)));
-    return { error: null };
-  }, [requireUser]);
+  }, [requireAdmin]);
 
   const importAnnotations = useCallback(async (items: Omit<Annotation, 'id' | 'created_at' | 'updated_at'>[]): Promise<{ error: string | null }> => {
-    if (!requireUser('批量导入')) return { error: '需要登录' };
+    if (!requireAdmin('批量导入')) return { error: '需要登录' };
 
-    const newAnnotations: Annotation[] = items.map((item) => ({
-      ...item,
-      id: crypto.randomUUID(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }));
-
-    const { data, error } = await supabase
-      .from('annotations')
-      .insert(newAnnotations)
-      .select();
-
-    if (error) {
+    try {
+      const result = await apiSend<{ data: Annotation[] }>('/api/annotations', 'POST', { annotations: items });
+      setAnnotations((prev) => [...prev, ...result.data]);
+      return { error: null };
+    } catch (error) {
       console.error('批量导入失败:', error);
-      return { error: error.message };
+      return { error: error instanceof Error ? error.message : '批量导入失败' };
     }
-
-    if (data) {
-      setAnnotations((prev) => [...prev, ...toAnnotations(data as Record<string, unknown>[])]);
-    } else {
-      setAnnotations((prev) => [...prev, ...newAnnotations]);
-    }
-    return { error: null };
-  }, [requireUser]);
+  }, [requireAdmin]);
 
   const updateFieldTemplates = useCallback(async (templates: FieldTemplate[], mapId: string): Promise<{ error: string | null }> => {
-    if (!requireUser('更新字段模板')) return { error: '需要登录' };
+    if (!requireAdmin('更新字段模板')) return { error: '需要登录' };
 
-    const { error } = await supabase.from('maps').update({ field_templates: templates }).eq('id', mapId);
-    if (error) {
+    try {
+      await apiSend('/api/map', 'PUT', { mapId, templates });
+      return { error: null };
+    } catch (error) {
       console.error('更新字段模板失败:', error);
-      return { error: error.message };
+      return { error: error instanceof Error ? error.message : '更新字段模板失败' };
     }
-    return { error: null };
-  }, [requireUser]);
+  }, [requireAdmin]);
 
   return {
     mapProject,
     setMapProject,
     annotations,
     setAnnotations,
+    groups,
+    setGroups,
     loading,
     error,
     loadData,

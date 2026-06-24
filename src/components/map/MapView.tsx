@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { TIANDITU_LAYERS, TIANDITU_SUBDOMAINS, DEFAULT_CENTER, DEFAULT_ZOOM } from '@/lib/constants';
-import { Annotation, DrawMode, AnnotationType, PointStyle, LineStyle, PolygonStyle, PRESET_COLORS, PRESET_ICONS } from '@/lib/types';
+import { Annotation, DrawMode, AnnotationType, PointStyle, LineStyle, PolygonStyle, PRESET_COLORS, PRESET_ICONS, Group } from '@/lib/types';
 import SearchBox from './SearchBox';
 
 const DefaultIcon = L.icon({
@@ -38,11 +38,15 @@ interface MapViewProps {
   onMapDrawComplete?: (type: AnnotationType, latlngs: L.LatLng[]) => void;
   onAnnotationClick?: (annotation: Annotation) => void;
   onAnnotationMove?: (annotation: Annotation, newLatLng: L.LatLng) => void;
+  onAnnotationDelete?: (annotation: Annotation) => void;
+  onAnnotationEdit?: (annotation: Annotation) => void;
   drawMode: DrawMode;
   onDrawModeChange: (mode: DrawMode) => void;
   selectedAnnotation?: Annotation | null;
   editingAnnotation?: Annotation | null;
   editable?: boolean;
+  groups?: Group[];
+  onAnnotationMoveToGroup?: (annotationId: string, groupId: string | null) => void;
 }
 
 export default function MapView({
@@ -54,15 +58,17 @@ export default function MapView({
   drawMode,
   onDrawModeChange,
   selectedAnnotation,
-  editingAnnotation,
   editable = true,
+  groups,
+  onAnnotationDelete,
+  onAnnotationEdit,
+  onAnnotationMoveToGroup,
 }: MapViewProps) {
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const drawLayerRef = useRef<L.LayerGroup | null>(null);
   const annotationsLayerRef = useRef<L.LayerGroup | null>(null);
   const tempPointsRef = useRef<L.LatLng[]>([]);
-  const tempLineRef = useRef<L.Polyline | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
   const [mapType, setMapType] = useState<'vec' | 'img'>('vec');
@@ -77,13 +83,10 @@ export default function MapView({
   const imgLayersRef = useRef<L.TileLayer[]>([]);
 
   const annotationsRef = useRef<Annotation[]>(annotations);
-  annotationsRef.current = annotations;
-
   const onAnnotationMoveRef = useRef(onAnnotationMove);
-  onAnnotationMoveRef.current = onAnnotationMove;
-
   const onAnnotationClickRef = useRef(onAnnotationClick);
-  onAnnotationClickRef.current = onAnnotationClick;
+  const onAnnotationDeleteRef = useRef(onAnnotationDelete);
+  const onAnnotationMoveToGroupRef = useRef(onAnnotationMoveToGroup);
 
   const pendingMoveRef = useRef<{
     marker: L.Marker;
@@ -92,6 +95,99 @@ export default function MapView({
   } | null>(null);
 
   const lastClickTimeRef = useRef(0);
+
+  const createCustomIcon = useCallback((style: PointStyle, highlighted = false): L.DivIcon => {
+    const safeIcon = sanitizeIcon(style.icon);
+    const safeColor = sanitizeColor(style.color);
+    const safeSize = sanitizeSize(style.size || 2);
+    const iconData = PRESET_ICONS.find((i) => i.value === safeIcon) || PRESET_ICONS[0];
+    const baseSize = safeSize * 3 + 8;
+    const size = highlighted ? Math.round(baseSize * 1.35) : baseSize;
+
+    return L.divIcon({
+      className: 'custom-marker',
+      html: `<div style="position:relative;display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px">
+        ${highlighted ? `<div style="position:absolute;inset:-4px;border-radius:50%;border:3px solid ${safeColor};opacity:0.5;animation:markerPulse 1.2s ease-in-out infinite"></div>` : ''}
+        <div class="marker-icon" style="
+          width: ${size}px;
+          height: ${size}px;
+          background-color: ${safeColor};
+          border-radius: 50%;
+          border: ${highlighted ? '3px solid #fff' : '2px solid white'};
+          box-shadow: ${highlighted ? '0 0 12px rgba(59,130,246,0.6)' : '0 1px 4px rgba(0,0,0,0.3)'};
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-size: ${size * 0.4}px;
+          cursor: pointer;
+          position:relative;
+          z-index:1;
+        ">
+          ${getIconSvg(iconData.value, size * 0.4)}
+        </div>
+      </div>`,
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+      popupAnchor: [0, -size / 2],
+    });
+  }, []);
+
+  const cleanupTempDrawing = useCallback(() => {
+    tempPointsRef.current = [];
+    drawLayerRef.current?.clearLayers();
+  }, []);
+
+  const updateTempDrawing = useCallback((mouseLatLng?: L.LatLng) => {
+    if (!drawLayerRef.current) return;
+    drawLayerRef.current.clearLayers();
+
+    const points = tempPointsRef.current;
+    if (points.length === 0) return;
+
+    points.forEach((p) => {
+      L.circleMarker(p, {
+        radius: 4,
+        color: '#3B82F6',
+        fillColor: '#3B82F6',
+        fillOpacity: 1,
+        weight: 2,
+      }).addTo(drawLayerRef.current!);
+    });
+
+    if (points.length > 1 || mouseLatLng) {
+      const linePoints = [...points];
+      if (mouseLatLng) linePoints.push(mouseLatLng);
+      if (drawMode === 'polygon' && linePoints.length > 2) {
+        linePoints.push(linePoints[0]);
+      }
+      L.polyline(linePoints, {
+        color: '#3B82F6',
+        weight: 2,
+        dashArray: '6, 6',
+      }).addTo(drawLayerRef.current!);
+    }
+  }, [drawMode]);
+
+  useEffect(() => {
+    annotationsRef.current = annotations;
+  }, [annotations]);
+
+  useEffect(() => {
+    onAnnotationMoveRef.current = onAnnotationMove;
+  }, [onAnnotationMove]);
+
+  useEffect(() => {
+    onAnnotationClickRef.current = onAnnotationClick;
+  }, [onAnnotationClick]);
+
+  useEffect(() => {
+    onAnnotationDeleteRef.current = onAnnotationDelete;
+  }, [onAnnotationDelete]);
+
+  useEffect(() => {
+    onAnnotationMoveToGroupRef.current = onAnnotationMoveToGroup;
+  }, [onAnnotationMoveToGroup]);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -234,13 +330,13 @@ export default function MapView({
 
       layer.addLayer(leafletLayer);
     });
-  }, [annotations, mapReady, selectedAnnotation, drawMode]);
+  }, [annotations, createCustomIcon, drawMode, editable, mapReady, selectedAnnotation]);
 
   useEffect(() => {
     if (!mapRef.current || !selectedAnnotation) return;
     const map = mapRef.current;
     const anno = selectedAnnotation;
-    const geom = anno.geometry as { type: string; coordinates: any };
+    const geom = anno.geometry as { type: string; coordinates: [number, number] | [number, number][] };
 
     if (anno.type === 'point') {
       const [lng, lat] = geom.coordinates;
@@ -335,43 +431,7 @@ export default function MapView({
       map.off('click', handleClick);
       map.off('mousemove', handleMouseMove);
     };
-  }, [drawMode, onMapClick, onMapDrawComplete, onDrawModeChange]);
-
-  const updateTempDrawing = (mouseLatLng?: L.LatLng) => {
-    if (!drawLayerRef.current) return;
-    drawLayerRef.current.clearLayers();
-
-    const points = tempPointsRef.current;
-    if (points.length === 0) return;
-
-    points.forEach((p) => {
-      L.circleMarker(p, {
-        radius: 4,
-        color: '#3B82F6',
-        fillColor: '#3B82F6',
-        fillOpacity: 1,
-        weight: 2,
-      }).addTo(drawLayerRef.current!);
-    });
-
-    if (points.length > 1 || mouseLatLng) {
-      const linePoints = [...points];
-      if (mouseLatLng) linePoints.push(mouseLatLng);
-      if (drawMode === 'polygon' && linePoints.length > 2) {
-        linePoints.push(linePoints[0]);
-      }
-      L.polyline(linePoints, {
-        color: '#3B82F6',
-        weight: 2,
-        dashArray: '6, 6',
-      }).addTo(drawLayerRef.current!);
-    }
-  };
-
-  const cleanupTempDrawing = () => {
-    tempPointsRef.current = [];
-    drawLayerRef.current?.clearLayers();
-  };
+  }, [cleanupTempDrawing, drawMode, onMapClick, onMapDrawComplete, onDrawModeChange, updateTempDrawing]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -388,7 +448,7 @@ export default function MapView({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [drawMode, onDrawModeChange, contextMenu]);
+  }, [cleanupTempDrawing, contextMenu, drawMode, onDrawModeChange]);
 
   // 右键菜单关闭 - 点击空白处关闭
   useEffect(() => {
@@ -414,42 +474,13 @@ export default function MapView({
     setContextMenu(null);
   }, [contextMenu]);
 
-  const createCustomIcon = (style: PointStyle, highlighted = false): L.DivIcon => {
-    const safeIcon = sanitizeIcon(style.icon);
-    const safeColor = sanitizeColor(style.color);
-    const safeSize = sanitizeSize(style.size || 2);
-    const iconData = PRESET_ICONS.find((i) => i.value === safeIcon) || PRESET_ICONS[0];
-    const baseSize = safeSize * 3 + 8;
-    const size = highlighted ? Math.round(baseSize * 1.35) : baseSize;
+  const handleMoveToGroup = useCallback((annotationId: string, groupId: string | null) => {
+    onAnnotationMoveToGroupRef.current?.(annotationId, groupId);
+  }, []);
 
-    return L.divIcon({
-      className: 'custom-marker',
-      html: `<div style="position:relative;display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px">
-        ${highlighted ? `<div style="position:absolute;inset:-4px;border-radius:50%;border:3px solid ${safeColor};opacity:0.5;animation:markerPulse 1.2s ease-in-out infinite"></div>` : ''}
-        <div class="marker-icon" style="
-          width: ${size}px;
-          height: ${size}px;
-          background-color: ${safeColor};
-          border-radius: 50%;
-          border: ${highlighted ? '3px solid #fff' : '2px solid white'};
-          box-shadow: ${highlighted ? '0 0 12px rgba(59,130,246,0.6)' : '0 1px 4px rgba(0,0,0,0.3)'};
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-size: ${size * 0.4}px;
-          cursor: pointer;
-          position:relative;
-          z-index:1;
-        ">
-          ${getIconSvg(iconData.value, size * 0.4)}
-        </div>
-      </div>`,
-      iconSize: [size, size],
-      iconAnchor: [size / 2, size / 2],
-      popupAnchor: [0, -size / 2],
-    });
-  };
+  const handleDeleteFromMenu = useCallback((annotation: Annotation) => {
+    onAnnotationDeleteRef.current?.(annotation);
+  }, []);
 
   return (
     <div className="relative w-full h-full">
@@ -521,10 +552,20 @@ export default function MapView({
       {/* 右键菜单 */}
       {contextMenu && (
         <div
-          className="fixed z-[5000] rounded-xl shadow-xl border py-1 min-w-[140px] backdrop-blur-sm animate-fade-in"
+          className="fixed z-[5000] rounded-xl shadow-xl border py-1 min-w-[160px] backdrop-blur-sm animate-fade-in"
           style={{ left: contextMenu.x, top: contextMenu.y, background: 'rgba(250,248,244,0.96)', borderColor: '#e3ddd0' }}
           onClick={(e) => e.stopPropagation()}
         >
+          <button
+            onClick={() => { onAnnotationClickRef.current?.(contextMenu.annotation); setContextMenu(null); }}
+            className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 transition-colors"
+            style={{ color: '#2c2416' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(59,130,246,0.08)'; e.currentTarget.style.color = '#3b82f6'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#2c2416'; }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            编辑属性
+          </button>
           <button
             onClick={handleMovePoint}
             className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 transition-colors"
@@ -532,9 +573,49 @@ export default function MapView({
             onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(196,85,43,0.08)'; e.currentTarget.style.color = '#c4552b'; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#2c2416'; }}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             移动点位
           </button>
+          {groups && groups.length > 0 && (
+            <div className="border-t border-gray-100">
+              <div className="px-4 py-1.5 text-xs text-gray-400">移动到分组</div>
+              <button
+                onClick={() => {
+                  contextMenu.annotation;
+                  handleMoveToGroup(contextMenu.annotation.id, null);
+                  setContextMenu(null);
+                }}
+                className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-gray-600"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                取消分组
+              </button>
+              {groups.slice(0, 5).map((g) => (
+                <button
+                  key={g.id}
+                  onClick={() => {
+                    handleMoveToGroup(contextMenu.annotation.id, g.id);
+                    setContextMenu(null);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 truncate text-gray-600"
+                  style={{ paddingLeft: '48px' }}
+                >
+                  {g.name}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="border-t border-gray-100">
+            <button
+              onClick={() => { handleDeleteFromMenu(contextMenu.annotation); setContextMenu(null); }}
+              className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 transition-colors text-red-600"
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              删除标注
+            </button>
+          </div>
         </div>
       )}
     </div>

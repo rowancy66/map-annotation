@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { FieldTemplate, FieldType } from '@/lib/types';
-import { Plus, Trash2, GripVertical, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, ChevronDown } from 'lucide-react';
 
 interface FieldTemplateManagerProps {
   templates: FieldTemplate[];

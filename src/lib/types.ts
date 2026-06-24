@@ -60,10 +60,23 @@ export interface CustomFieldValue {
   value: string | number | null;
 }
 
+// ===== 分组 =====
+export interface Group {
+  id: string;
+  map_id: string;
+  name: string;
+  parent_id: string | null;
+  color: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 // ===== 标注 =====
 export interface Annotation {
   id: string;
   map_id: string;
+  group_id?: string;
   type: AnnotationType;
   geometry: Geometry;
   name: string;
@@ -87,13 +100,11 @@ export interface MapProject {
   updated_at: string;
 }
 
-// ===== 用户 =====
-export interface UserProfile {
-  id: string;
-  email: string;
-  nickname: string;
-  avatar_url?: string;
-  created_at: string;
+// ===== 标注统计数据 =====
+export interface AnnotationCounts {
+  point: number;
+  line: number;
+  polygon: number;
 }
 
 // ===== 绘制模式 =====
@@ -142,28 +153,4 @@ export interface ImportPreview {
   lngColumn: string | null;
 }
 
-// ===== Supabase 数据库行类型 =====
-export interface AnnotationRow {
-  id: string;
-  map_id: string;
-  type: AnnotationType;
-  geometry: Geometry;
-  name: string;
-  description: string;
-  style: AnnotationStyle;
-  custom_fields: CustomFieldValue[];
-  created_at: string;
-  updated_at: string;
-}
-
-export interface MapProjectRow {
-  id: string;
-  user_id: string;
-  name: string;
-  description: string;
-  center: [number, number];
-  zoom: number;
-  field_templates: FieldTemplate[];
-  created_at: string;
-  updated_at: string;
-}
+// ===== 导入相关 =====

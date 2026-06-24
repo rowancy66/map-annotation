@@ -1,36 +1,41 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from './AuthProvider';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, LogIn } from 'lucide-react';
+import { Lock, LogIn, AlertCircle } from 'lucide-react';
+import { apiGet } from '@/lib/api';
 
-interface LoginFormProps {
-  redirectTo?: string;
-}
-
-export default function LoginForm({ redirectTo = '/admin' }: LoginFormProps) {
-  const { signInWithEmail } = useAuth();
+export default function LoginForm({ redirectTo = '/admin' }: { redirectTo?: string }) {
+  const { login } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [needsSetup, setNeedsSetup] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    apiGet<{ loggedIn: boolean }>('/api/auth/session').then((data) => {
+      if (data.loggedIn) {
+        router.replace(redirectTo);
+      }
+    }).catch(() => {});
+  }, [redirectTo, router]);
+
+  // 检测是否已设置管理密码
+  useEffect(() => {
+    fetch('/api/auth/setup', { method: 'HEAD' }).then((res) => {
+      setNeedsSetup(res.status === 404 || res.status === 405);
+    }).catch(() => setNeedsSetup(true));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setEmailNotConfirmed(false);
     setLoading(true);
-    const { error } = await signInWithEmail(email, password);
+    const { error } = await login(password);
     if (error) {
-      if (error === 'Email not confirmed') {
-        setEmailNotConfirmed(true);
-        setError('');
-      } else {
-        setError(error === 'Invalid login credentials' ? '邮箱或密码错误' : error);
-      }
+      setError(error === '密码错误' ? '密码错误' : error);
     } else {
       router.push(redirectTo);
     }
@@ -61,7 +66,7 @@ export default function LoginForm({ redirectTo = '/admin' }: LoginFormProps) {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-white/90 tracking-tight">地图标注平台</h1>
-          <p className="text-white/40 mt-2 text-sm font-light">登录以管理你的地图标注</p>
+          <p className="text-white/40 mt-2 text-sm font-light">管理员登录</p>
         </div>
 
         {/* 卡片 */}
@@ -70,23 +75,7 @@ export default function LoginForm({ redirectTo = '/admin' }: LoginFormProps) {
           <div className="relative bg-[#111627]/90 backdrop-blur-xl rounded-2xl border border-white/[0.06] p-7 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-white/60 mb-1.5 tracking-wide">邮箱</label>
-                <div className="relative group">
-                  <Mail aria-hidden="true" className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-amber-400/70 transition-colors duration-300" />
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your@email.com"
-                    required
-                    className="w-full pl-11 pr-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white/90 placeholder-white/20 focus:border-amber-500/40 focus:bg-white/[0.06] focus:ring-0 outline-none transition-all duration-300 shadow-sm"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-white/60 mb-1.5 tracking-wide">密码</label>
+                <label className="block text-sm font-medium text-white/60 mb-1.5 tracking-wide">管理密码</label>
                 <div className="relative group">
                   <Lock aria-hidden="true" className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-amber-400/70 transition-colors duration-300" />
                   <input
@@ -94,7 +83,7 @@ export default function LoginForm({ redirectTo = '/admin' }: LoginFormProps) {
                     autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="输入密码…"
+                    placeholder="输入管理密码…"
                     required
                     className="w-full pl-11 pr-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white/90 placeholder-white/20 focus:border-amber-500/40 focus:bg-white/[0.06] focus:ring-0 outline-none transition-all duration-300 shadow-sm"
                   />
@@ -102,20 +91,9 @@ export default function LoginForm({ redirectTo = '/admin' }: LoginFormProps) {
               </div>
 
               {error && (
-                <div className="text-red-400/90 text-sm bg-red-500/10 border border-red-500/20 p-3 rounded-xl backdrop-blur-sm">{error}</div>
-              )}
-
-              {emailNotConfirmed && (
-                <div className="text-amber-300/90 text-sm bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl backdrop-blur-sm">
-                  <p className="font-medium mb-1 text-amber-200">邮箱尚未确认</p>
-                  <p className="text-amber-300/70 mb-2">请前往注册邮箱点击确认链接后再登录。</p>
-                  <p className="text-amber-400/50 text-xs">
-                    没有收到邮件？检查垃圾邮件，或在
-                    <a href="https://supabase.com/dashboard/project/dybmtnyiiynfgjzzeljt/auth/users"
-                       target="_blank" rel="noopener noreferrer"
-                       className="text-amber-400/80 underline mx-1 hover:text-amber-300">Supabase 控制台</a>
-                    手动确认用户。
-                  </p>
+                <div className="text-red-400/90 text-sm bg-red-500/10 border border-red-500/20 p-3 rounded-xl backdrop-blur-sm flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
+                  {error}
                 </div>
               )}
 
@@ -138,9 +116,9 @@ export default function LoginForm({ redirectTo = '/admin' }: LoginFormProps) {
             </form>
 
             <p className="mt-6 text-center text-sm text-white/30">
-              还没有账号？{' '}
-              <a href="/auth/register" className="text-amber-400/80 hover:text-amber-300 font-medium transition-colors duration-200">
-                注册
+              首次使用？{' '}
+              <a href="/setup" className="text-amber-400/80 hover:text-amber-300 font-medium transition-colors duration-200">
+                设置管理密码
               </a>
             </p>
           </div>

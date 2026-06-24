@@ -18,7 +18,7 @@ async function checkConnection() {
   console.log(`   URL: ${supabaseUrl}`);
   
   // 尝试查询 maps 表
-  const { data, error } = await supabase.from('maps').select('id').limit(1);
+  const { error } = await supabase.from('maps').select('id').limit(1);
   
   if (error) {
     if (error.code === '42P01') {

@@ -292,7 +292,7 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
                   <AlertCircle aria-hidden="true" className="w-5 h-5 shrink-0 mt-0.5" />
                   <div>
                     <p className="font-medium">需要映射经纬度列</p>
-                    <p className="mt-1 text-yellow-600">请在下方为"纬度"和"经度"选择对应的列，否则无法在地图上标注位置。</p>
+                    <p className="mt-1 text-yellow-600">请在下方为“纬度”和“经度”选择对应的列，否则无法在地图上标注位置。</p>
                   </div>
                 </div>
               ) : (

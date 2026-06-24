@@ -1,56 +1,95 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Database, CheckCircle2, AlertCircle, Copy, ExternalLink, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { apiSend } from '@/lib/api';
+import { Lock, ShieldCheck, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function SetupPage() {
-  const [dbStatus, setDbStatus] = useState<'checking' | 'ready' | 'not_initialized'>('checking');
-  const [copied, setCopied] = useState(false);
+  const router = useRouter();
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [alreadySet, setAlreadySet] = useState<boolean | null>(null);
+  const [checking, setChecking] = useState(true);
 
+  // 检测是否已设置密码
   useEffect(() => {
-    checkDatabase();
-  }, []);
+    fetch('/api/auth/session')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.loggedIn) {
+          router.replace('/admin');
+          return;
+        }
+        // 用 HEAD 检测 setup 端点是否存在
+        return fetch('/api/auth/setup', { method: 'HEAD' });
+      })
+      .then((res) => {
+        if (res) {
+          // 如果 setup 端点返回 405，说明已存在（因为 HEAD 不支持）
+          // 如果返回 200，说明可用
+          setAlreadySet(res.status === 405);
+        }
+        setChecking(false);
+      })
+      .catch(() => {
+        setAlreadySet(false);
+        setChecking(false);
+      });
+  }, [router]);
 
-  const checkDatabase = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (password.length < 6) {
+      setError('密码至少需要 6 个字符');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('两次输入的密码不一致');
+      return;
+    }
+
+    setLoading(true);
     try {
-      const { error } = await supabase.from('maps').select('id').limit(1);
-      if (error) {
-        setDbStatus('not_initialized');
-      } else {
-        setDbStatus('ready');
-      }
-    } catch {
-      setDbStatus('not_initialized');
+      await apiSend('/api/auth/setup', 'POST', { password, confirmPassword });
+      router.push('/admin');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '设置失败');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const copySQL = () => {
-    navigator.clipboard.writeText(MIGRATION_SQL);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  if (dbStatus === 'checking') {
+  if (checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0e1a]">
+        <div className="flex items-center gap-3 text-white/40 text-sm">
+          <Loader2 className="animate-spin h-5 w-5" />
+          检测系统状态...
+        </div>
       </div>
     );
   }
 
-  if (dbStatus === 'ready') {
+  if (alreadySet) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-[#0a0e1a]">
         <div className="text-center">
-          <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">数据库已就绪</h1>
-          <p className="text-gray-500 mb-6">所有表已创建，可以开始使用</p>
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-5">
+            <ShieldCheck className="w-8 h-8" aria-hidden="true" />
+          </div>
+          <h1 className="text-xl font-bold text-white/90 mb-2">密码已设置</h1>
+          <p className="text-white/40 text-sm mb-6">管理密码已设置，请直接登录</p>
           <a
             href="/auth/login"
-            className="inline-flex px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
+            className="inline-block px-6 py-3 bg-gradient-to-r from-amber-500/90 to-amber-600/90 text-[#0a0e1a] rounded-xl font-semibold hover:from-amber-400 hover:to-amber-500 transition-all duration-300"
           >
-            进入应用
+            去登录
           </a>
         </div>
       </div>
@@ -58,181 +97,105 @@ export default function SetupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-3xl mx-auto px-4">
-        {/* 标题 */}
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-[#0a0e1a]">
+      {/* 装饰性格线背景 */}
+      <div className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)`,
+          backgroundSize: '40px 40px'
+        }}
+      />
+      {/* 渐变光晕 */}
+      <div className="absolute top-1/4 -left-48 w-[30rem] h-[30rem] bg-amber-500/10 rounded-full blur-[120px]" />
+      <div className="absolute bottom-1/4 -right-48 w-[30rem] h-[30rem] bg-blue-500/10 rounded-full blur-[120px]" />
+
+      <div className="w-full max-w-sm relative animate-fade-slide-up">
+        {/* Logo */}
         <div className="text-center mb-8">
-          <Database className="w-16 h-16 text-blue-600 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">数据库初始化</h1>
-          <p className="text-gray-500">首次使用需要初始化数据库，只需一步操作</p>
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400/90 to-amber-600/90 text-white mb-5 shadow-lg shadow-amber-500/20 animate-float backdrop-blur-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-8 h-8">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+              <circle cx="12" cy="10" r="3" fill="white" stroke="none"/>
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-white/90 tracking-tight">设置管理密码</h1>
+          <p className="text-white/40 mt-2 text-sm font-light">首次使用，请设置管理员密码</p>
         </div>
 
-        {/* 步骤 */}
-        <div className="space-y-6">
-          {/* Step 1 */}
-          <div className="bg-white rounded-xl shadow-sm border p-6">
-            <div className="flex items-start gap-4">
-              <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">1</div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 mb-1">打开 Supabase SQL 编辑器</h3>
-                <p className="text-sm text-gray-500 mb-3">点击下方按钮，在 Supabase 控制台打开 SQL 编辑器</p>
-                <a
-                  href="https://supabase.com/dashboard/project/dybmtnyiiynfgjzzeljt/sql/new"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  打开 SQL 编辑器
-                </a>
-              </div>
-            </div>
-          </div>
-
-          {/* Step 2 */}
-          <div className="bg-white rounded-xl shadow-sm border p-6">
-            <div className="flex items-start gap-4">
-              <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">2</div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 mb-1">复制并执行以下 SQL</h3>
-                <p className="text-sm text-gray-500 mb-3">将下方 SQL 复制到 SQL 编辑器中，然后点击 "Run" 执行</p>
-                <button
-                  onClick={copySQL}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition"
-                >
-                  {copied ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                  {copied ? '已复制' : '复制 SQL'}
-                </button>
-                <div className="mt-3 bg-gray-900 text-green-400 p-4 rounded-lg text-xs font-mono overflow-x-auto max-h-60 overflow-y-auto">
-                  <pre>{MIGRATION_SQL}</pre>
+        {/* 卡片 */}
+        <div className="relative">
+          <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-b from-white/10 to-white/5 blur-[1px]" />
+          <div className="relative bg-[#111627]/90 backdrop-blur-xl rounded-2xl border border-white/[0.06] p-7 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-white/60 mb-1.5 tracking-wide">管理密码</label>
+                <div className="relative group">
+                  <Lock aria-hidden="true" className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-amber-400/70 transition-colors duration-300" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="至少 6 个字符…"
+                    autoComplete="new-password"
+                    required
+                    className="w-full pl-11 pr-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white/90 placeholder-white/20 focus:border-amber-500/40 focus:bg-white/[0.06] focus:ring-0 outline-none transition-all duration-300 shadow-sm"
+                  />
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Step 3 */}
-          <div className="bg-white rounded-xl shadow-sm border p-6">
-            <div className="flex items-start gap-4">
-              <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">3</div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 mb-1">验证并开始使用</h3>
-                <p className="text-sm text-gray-500 mb-3">SQL 执行成功后，点击下方按钮验证数据库</p>
-                <button
-                  onClick={checkDatabase}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition"
-                >
-                  验证数据库
-                </button>
+              <div>
+                <label className="block text-sm font-medium text-white/60 mb-1.5 tracking-wide">确认密码</label>
+                <div className="relative group">
+                  <Lock aria-hidden="true" className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-amber-400/70 transition-colors duration-300" />
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="再次输入密码…"
+                    autoComplete="new-password"
+                    required
+                    className="w-full pl-11 pr-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white/90 placeholder-white/20 focus:border-amber-500/40 focus:bg-white/[0.06] focus:ring-0 outline-none transition-all duration-300 shadow-sm"
+                  />
+                </div>
               </div>
-            </div>
+
+              {error && (
+                <div className="text-red-400/90 text-sm bg-red-500/10 border border-red-500/20 p-3 rounded-xl backdrop-blur-sm flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-gradient-to-r from-amber-500/90 to-amber-600/90 text-[#0a0e1a] rounded-xl font-semibold tracking-wide hover:from-amber-400 hover:to-amber-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
+              >
+                <ShieldCheck aria-hidden="true" className="w-4 h-4" />
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="animate-spin h-4 w-4" aria-hidden="true" />
+                    设置中...
+                  </span>
+                ) : '设置密码'}
+              </button>
+            </form>
+
+            <p className="mt-6 text-center text-sm text-white/30">
+              已有密码？{' '}
+              <a href="/auth/login" className="text-amber-400/80 hover:text-amber-300 font-medium transition-colors duration-200">
+                去登录
+              </a>
+            </p>
           </div>
         </div>
+
+        {/* Deerflow 署名 */}
+        <a href="https://deerflow.tech" target="_blank" rel="noopener noreferrer"
+           className="fixed bottom-4 right-4 text-[10px] text-white/15 hover:text-white/30 transition-colors duration-300 tracking-widest uppercase">
+          Deerflow
+        </a>
       </div>
     </div>
   );
 }
-
-const MIGRATION_SQL = `-- 地图标注平台 - 初始化数据库 Schema
-
--- 1. 地图项目表
-CREATE TABLE IF NOT EXISTS maps (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  name TEXT NOT NULL DEFAULT '我的地图',
-  description TEXT DEFAULT '',
-  center JSONB DEFAULT '[116.4074, 39.9042]'::jsonb,
-  zoom INTEGER DEFAULT 12,
-  field_templates JSONB DEFAULT '[]'::jsonb,
-  created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT now() NOT NULL
-);
-
--- 2. 标注表
-CREATE TABLE IF NOT EXISTS annotations (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  map_id UUID REFERENCES maps(id) ON DELETE CASCADE NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('point', 'line', 'polygon')),
-  geometry JSONB NOT NULL,
-  name TEXT DEFAULT '',
-  description TEXT DEFAULT '',
-  style JSONB DEFAULT '{}'::jsonb,
-  custom_fields JSONB DEFAULT '[]'::jsonb,
-  created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT now() NOT NULL
-);
-
--- 3. 索引
-CREATE INDEX IF NOT EXISTS idx_maps_user_id ON maps(user_id);
-CREATE INDEX IF NOT EXISTS idx_annotations_map_id ON annotations(map_id);
-CREATE INDEX IF NOT EXISTS idx_annotations_type ON annotations(type);
-
--- 4. RLS（行级安全策略）
-ALTER TABLE maps ENABLE ROW LEVEL SECURITY;
-ALTER TABLE annotations ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view own maps" ON maps
-  FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can create own maps" ON maps
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own maps" ON maps
-  FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own maps" ON maps
-  FOR DELETE USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can view own annotations" ON annotations
-  FOR SELECT USING (
-    EXISTS (SELECT 1 FROM maps WHERE maps.id = annotations.map_id AND maps.user_id = auth.uid())
-  );
-CREATE POLICY "Users can create own annotations" ON annotations
-  FOR INSERT WITH CHECK (
-    EXISTS (SELECT 1 FROM maps WHERE maps.id = annotations.map_id AND maps.user_id = auth.uid())
-  );
-CREATE POLICY "Users can update own annotations" ON annotations
-  FOR UPDATE USING (
-    EXISTS (SELECT 1 FROM maps WHERE maps.id = annotations.map_id AND maps.user_id = auth.uid())
-  );
-CREATE POLICY "Users can delete own annotations" ON annotations
-  FOR DELETE USING (
-    EXISTS (SELECT 1 FROM maps WHERE maps.id = annotations.map_id AND maps.user_id = auth.uid())
-  );
-
--- 5. 自动更新 updated_at 触发器
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER update_maps_updated_at
-  BEFORE UPDATE ON maps
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_annotations_updated_at
-  BEFORE UPDATE ON annotations
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- 6. 新用户注册时自动创建默认地图
--- 关键：SECURITY DEFINER SET search_path = '' 绕过 RLS
--- 异常处理确保地图创建失败不阻塞注册
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER
-SECURITY DEFINER SET search_path = ''
-LANGUAGE plpgsql
-AS $$
-BEGIN
-  INSERT INTO public.maps (user_id, name, description)
-  VALUES (NEW.id, '我的地图', '默认地图项目');
-  RETURN NEW;
-EXCEPTION
-  WHEN OTHERS THEN
-    RETURN NEW;
-END;
-$$;
-
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();`;

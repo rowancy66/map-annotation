@@ -1,106 +1,63 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
-import { DEFAULT_LAND_FIELD_TEMPLATES } from '@/lib/constants';
+import { apiGet, apiSend } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
+  isLoggedIn: boolean;
   loading: boolean;
-  signInWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUpWithEmail: (email: string, password: string, nickname: string) => Promise<{ error: string | null; needsConfirmation: boolean }>;
-  signOut: () => Promise<void>;
+  login: (password: string) => Promise<{ error: string | null }>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // 获取当前会话
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    // 监听认证状态变化
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+    let active = true;
+    apiGet<{ loggedIn: boolean }>('/api/auth/session')
+      .then((data) => {
+        if (!active) return;
+        setIsLoggedIn(data.loggedIn);
         setLoading(false);
-      }
-    );
+      })
+      .catch(() => {
+        if (!active) return;
+        setIsLoggedIn(false);
+        setLoading(false);
+      });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const signInWithEmail = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return { error: error.message };
-    return { error: null };
-  }, []);
-
-  const signUpWithEmail = useCallback(async (email: string, password: string, nickname: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { nickname },
-        emailRedirectTo: `${window.location.origin}/auth/login`,
-      },
-    });
-    if (error) return { error: error.message };
-
-    // 应用层兜底：注册成功后确保用户有带土地出让数据模板的默认地图
-    if (data.user) {
-      try {
-        const { data: existingMaps, error: mapError } = await supabase
-          .from('maps')
-          .select('id')
-          .eq('user_id', data.user.id)
-          .limit(1);
-        if (!mapError && (!existingMaps || existingMaps.length === 0)) {
-          await supabase
-            .from('maps')
-            .insert({
-              user_id: data.user.id,
-              name: '土地出让数据',
-              description: '李沧区土地出让标注地图',
-              center: [120.43, 36.16],
-              zoom: 13,
-              field_templates: DEFAULT_LAND_FIELD_TEMPLATES,
-            });
-        }
-      } catch {
-        // 静默忽略，不影响注册
-      }
+  const login = useCallback(async (password: string) => {
+    try {
+      const result = await apiSend<{ loggedIn: boolean }>('/api/auth/login', 'POST', { password });
+      setIsLoggedIn(result.loggedIn);
+      return { error: null };
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : '登录失败' };
     }
+  }, []);
 
-    // 不直接跳转，让 RegisterForm 控制流程
-    // 如果 session 存在，说明邮箱确认已关闭，用户已自动登录
-    const needsConfirmation = !data.session;
-    if (!needsConfirmation) {
+  const logout = useCallback(async () => {
+    try {
+      await apiSend('/api/auth/logout', 'POST');
+    } finally {
+      setIsLoggedIn(false);
       router.push('/admin');
     }
-    return { error: null, needsConfirmation };
-  }, [router]);
-
-  const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
-    router.push('/');
   }, [router]);
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signInWithEmail, signUpWithEmail, signOut }}>
+    <AuthContext.Provider value={{ isLoggedIn, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

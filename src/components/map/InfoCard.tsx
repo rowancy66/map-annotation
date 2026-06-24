@@ -1,8 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Annotation, PointStyle, LineStyle, PolygonStyle, PRESET_COLORS, PRESET_ICONS, FieldTemplate } from '@/lib/types';
-import { X, Save, Trash2, Loader2, Upload, Link2, Plus, ImagePlus } from 'lucide-react';
+import { X, Save, Trash2, Loader2, Upload, Link2, Plus } from 'lucide-react';
 import { uploadAnnotationImage, deleteAnnotationImage } from '@/lib/supabase';
 
 // Premium blue palette

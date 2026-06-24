@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { Annotation, FieldTemplate } from '@/lib/types';
 import L from 'leaflet';
 
@@ -27,7 +27,9 @@ export function useAnnotationActions(
 
   // 修复 #5: 用 ref 追踪 selectedAnnotation，避免闭包陷阱
   const selectedAnnotationRef = useRef<Annotation | null>(null);
-  selectedAnnotationRef.current = selectedAnnotation;
+  useEffect(() => {
+    selectedAnnotationRef.current = selectedAnnotation;
+  }, [selectedAnnotation]);
 
   // 修复 #12: 预构建 fieldTemplate Map
   const fieldTemplateMap = useMemo(() => {

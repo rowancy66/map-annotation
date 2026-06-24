@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/auth/AuthProvider';
 import DrawingToolbar from '@/components/map/DrawingToolbar';
 import InfoCard from '@/components/map/InfoCard';
 import FieldTemplateManager from '@/components/map/FieldTemplateManager';
 import ImportDialog from '@/components/import/ImportDialog';
+import GroupTree from '@/components/map/GroupTree';
 import { useMapData } from '@/hooks/useMapData';
 import { useAnnotationActions } from '@/hooks/useAnnotationActions';
+import { apiSend } from '@/lib/api';
 import {
   Annotation,
   DrawMode,
@@ -46,21 +48,23 @@ const MapView = dynamic(() => import('@/components/map/MapView'), {
   ),
 });
 
-export default function AdminEditor() {
-  const { user, signOut } = useAuth();
+export default function AdminEditor({ mapId }: { mapId?: string }) {
+  const { isLoggedIn, logout } = useAuth();
 
   const {
     mapProject,
     setMapProject,
     annotations,
     setAnnotations,
+    groups,
+    setGroups,
     loading,
     saveAnnotation,
     deleteAnnotation,
     batchDeleteAnnotations,
     importAnnotations,
     updateFieldTemplates,
-  } = useMapData(user);
+  } = useMapData(isLoggedIn, mapId);
 
   const {
     selectedAnnotation,
@@ -92,9 +96,27 @@ export default function AdminEditor() {
 
   const [drawMode, setDrawMode] = useState<DrawMode>('none');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarTab, setSidebarTab] = useState<'list' | 'groups'>('list');
   const [importOpen, setImportOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [batchDeleteConfirm, setBatchDeleteConfirm] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+
+  // 分组标注计数
+  const annotationCountByGroup = useMemo(() => {
+    const counts: Record<string, number> = {};
+    annotations.forEach((a) => {
+      const gid = a.group_id || '__ungrouped__';
+      counts[gid] = (counts[gid] || 0) + 1;
+    });
+    return counts;
+  }, [annotations]);
+
+  // 按分组过滤标注
+  const filteredByGroup = useMemo(() => {
+    if (selectedGroupId === null) return filteredAnnotations;
+    return filteredAnnotations.filter((a) => a.group_id === selectedGroupId);
+  }, [selectedGroupId, filteredAnnotations]);
 
   const handleMapClick = useCallback(async (latlng: L.LatLng) => {
     if (drawMode !== 'point' || !mapProject) return;
@@ -236,6 +258,18 @@ export default function AdminEditor() {
     await handleBatchDelete();
   }, [handleBatchDelete]);
 
+  const handleMoveAnnotationToGroup = useCallback(async (annotationId: string, groupId: string | null) => {
+    setAnnotations((prev) =>
+      prev.map((a) => (a.id === annotationId ? { ...a, group_id: groupId ?? undefined } : a))
+    );
+    try {
+      await apiSend('/api/annotations', 'PUT', { annotationIds: [annotationId], groupId });
+    } catch {
+      // 乐观失败回滚将被 loadData 修正
+      loadData();
+    }
+  }, [loadData]);
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50">
@@ -249,6 +283,14 @@ export default function AdminEditor() {
       {/* 顶部栏 */}
       <header className="h-12 bg-white/70 backdrop-blur-xl border-b border-white/30 shadow-sm flex items-center justify-between px-4 z-50 shrink-0">
         <div className="flex items-center gap-3">
+          <Link
+            href="/admin"
+            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100/80 rounded-lg transition"
+            title="返回地图列表"
+            aria-label="返回地图列表"
+          >
+            <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+          </Link>
           <Link
             href="/"
             className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100/80 rounded-lg transition"
@@ -321,11 +363,11 @@ export default function AdminEditor() {
 
           {/* 用户 */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400 hidden sm:inline max-w-[120px] truncate">
-              {user?.email}
+            <span className="text-xs text-gray-400 hidden sm:inline font-medium">
+              管理员
             </span>
             <button
-              onClick={signOut}
+              onClick={logout}
               className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg transition"
               title="退出登录"
               aria-label="退出登录"
@@ -386,9 +428,30 @@ export default function AdminEditor() {
           } overflow-hidden`}
         >
           <div className="w-80 h-full flex flex-col">
-            {/* 侧边栏头部 */}
+            {/* 侧边栏头部 + Tab */}
             <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-transparent to-blue-50/30">
-              <h2 className="text-sm font-semibold text-gray-900">标注列表</h2>
+              <div className="flex items-center gap-1 bg-gray-100/80 rounded-lg p-0.5">
+                <button
+                  onClick={() => setSidebarTab('list')}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition ${
+                    sidebarTab === 'list'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  列表
+                </button>
+                <button
+                  onClick={() => setSidebarTab('groups')}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition ${
+                    sidebarTab === 'groups'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  分组
+                </button>
+              </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-400 font-mono">{annotations.length} 个</span>
                 <button
@@ -407,38 +470,40 @@ export default function AdminEditor() {
               </div>
             </div>
 
-            {/* 搜索 */}
-            <div className="px-3 py-2 border-b border-gray-100">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="搜索编号、位置..."
-                  className="w-full pl-9 pr-8 py-2 bg-gray-50/80 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition"
-                />
+            {/* 搜索（列表模式） */}
+            {sidebarTab === 'list' && (
+              <div className="px-3 py-2 border-b border-gray-100">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="搜索编号、位置..."
+                    className="w-full pl-9 pr-8 py-2 bg-gray-50/80 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      aria-label="清除搜索"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 transition"
+                    >
+                      <X className="w-3.5 h-3.5" aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
                 {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    aria-label="清除搜索"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 transition"
-                  >
-                    <X className="w-3.5 h-3.5" aria-hidden="true" />
-                  </button>
+                  <p className="text-xs text-gray-400 mt-1">找到 {filteredAnnotations.length} 条结果</p>
                 )}
               </div>
-              {searchQuery && (
-                <p className="text-xs text-gray-400 mt-1">找到 {filteredAnnotations.length} 条结果</p>
-              )}
-            </div>
+            )}
 
             {/* 批量操作栏 */}
-            {batchMode && (
+            {sidebarTab === 'list' && batchMode && (
               <div className="px-3 py-2 border-b bg-gradient-to-r from-blue-50/80 to-indigo-50/50 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <button onClick={handleSelectAll} className="text-xs text-blue-600 hover:text-blue-800 font-medium" aria-label={selectedIds.size === filteredAnnotations.length && filteredAnnotations.length > 0 ? '取消全选' : '全选'}>
-                    {selectedIds.size === filteredAnnotations.length && filteredAnnotations.length > 0 ? '取消全选' : '全选'}
+                  <button onClick={handleSelectAll} className="text-xs text-blue-600 hover:text-blue-800 font-medium" aria-label={selectedIds.size === filteredByGroup.length && filteredByGroup.length > 0 ? '取消全选' : '全选'}>
+                    {selectedIds.size === filteredByGroup.length && filteredByGroup.length > 0 ? '取消全选' : '全选'}
                   </button>
                   <span className="text-xs text-gray-500">已选 {selectedIds.size} 个</span>
                 </div>
@@ -454,28 +519,39 @@ export default function AdminEditor() {
               </div>
             )}
 
-            {/* 标注列表 */}
+            {/* 标注列表 / 分组树 */}
             <div className="flex-1 overflow-y-auto">
-              {filteredAnnotations.length === 0 ? (
-                <div className="p-8 text-center text-sm text-gray-400">
-                  <div className="text-3xl mb-3 opacity-30">📍</div>
-                  {searchQuery ? '没有找到匹配的标注' : '暂无标注'}<br />
-                  {!searchQuery && (
-                    <span className="text-xs text-gray-300">点击右侧工具在地图上添加</span>
-                  )}
-                </div>
+              {sidebarTab === 'groups' ? (
+                <GroupTree
+                  groups={groups}
+                  mapId={mapProject?.id || ''}
+                  selectedGroupId={selectedGroupId}
+                  onSelectGroup={setSelectedGroupId}
+                  onGroupsChange={loadData}
+                  annotationCountByGroup={annotationCountByGroup}
+                />
               ) : (
-                <div className="divide-y divide-gray-50">
-                  {filteredAnnotations.map((anno) => (
-                    <div
-                      key={anno.id}
-                      onClick={() => handleAnnotationClick(anno)}
-                      className={`w-full px-4 py-3 text-left hover:bg-blue-50/50 transition-all duration-150 cursor-pointer border-l-2 ${
-                        selectedAnnotation?.id === anno.id
-                          ? 'bg-blue-50/70 border-l-blue-500 shadow-sm'
-                          : 'border-l-transparent hover:border-l-gray-200'
-                      }`}
-                    >
+                <>
+                  {filteredByGroup.length === 0 ? (
+                    <div className="p-8 text-center text-sm text-gray-400">
+                      <div className="text-3xl mb-3 opacity-30">📍</div>
+                      {searchQuery ? '没有找到匹配的标注' : selectedGroupId ? '该分组暂无标注' : '暂无标注'}<br />
+                      {!searchQuery && !selectedGroupId && (
+                        <span className="text-xs text-gray-300">点击右侧工具在地图上添加</span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-50">
+                      {filteredByGroup.map((anno) =>
+                        <div
+                          key={anno.id}
+                          onClick={() => handleAnnotationClick(anno)}
+                          className={`w-full px-4 py-3 text-left hover:bg-blue-50/50 transition-all duration-150 cursor-pointer border-l-2 ${
+                            selectedAnnotation?.id === anno.id
+                              ? 'bg-blue-50/70 border-l-blue-500 shadow-sm'
+                              : 'border-l-transparent hover:border-l-gray-200'
+                          }`}
+                        >
                       <div className="flex items-center gap-2.5">
                         {batchMode && (
                           <button
@@ -541,8 +617,10 @@ export default function AdminEditor() {
                         </div>
                       )}
                     </div>
-                  ))}
-                </div>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -576,10 +654,13 @@ export default function AdminEditor() {
             onMapDrawComplete={handleDrawComplete}
             onAnnotationClick={handleAnnotationClick}
             onAnnotationMove={handleAnnotationMove}
+            onAnnotationDelete={(anno) => handleDeleteAnnotation(anno.id)}
+            onAnnotationMoveToGroup={handleMoveAnnotationToGroup}
             drawMode={drawMode}
             onDrawModeChange={setDrawMode}
             selectedAnnotation={selectedAnnotation}
             editable={true}
+            groups={groups}
           />
 
           <div className="absolute right-4 top-28 z-[1000] flex flex-col gap-3 items-end">
