@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>纸本经典 · 风格预览</title>
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Literata', Georgia, serif; background: #f6f1e8; color: #2d2418; height: 100vh; display: flex; flex-direction: column; }
+
+/* top bar */
+header {
+  height: 52px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; background: #fcf9f4; border-bottom: 1px solid #e5ddd0;
+}
+header .left { display: flex; align-items: center; gap: 14px; }
+header .logo { width: 32px; height: 32px; border-radius: 8px; background: #c0392b; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #f6f1e8; font-weight: 600; }
+header h1 { font-size: 14px; font-weight: 600; color: #2d2418; letter-spacing: -0.01em; }
+header .badge { font-size: 10px; padding: 2px 10px; background: #e5ddd0; color: #5a4a38; border-radius: 20px; font-weight: 500; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.03em; }
+header .actions { display: flex; align-items: center; gap: 4px; }
+header .actions span { font-size: 12px; color: #8c7d6b; padding: 6px 12px; cursor: default; font-family: 'JetBrains Mono', monospace; }
+header .actions span:hover { background: #ede7db; border-radius: 6px; }
+
+/* main */
+.main { flex: 1; display: flex; overflow: hidden; }
+
+/* sidebar */
+.sidebar { width: 320px; background: #fcf9f4; border-right: 1px solid #e5ddd0; display: flex; flex-direction: column; }
+.sidebar-tabs { display: flex; gap: 0; padding: 0; border-bottom: 1px solid #e5ddd0; }
+.sidebar-tabs span { padding: 10px 20px; font-size: 12px; cursor: default; color: #8c7d6b; border-bottom: 2px solid transparent; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.03em; }
+.sidebar-tabs .active { color: #2d2418; border-bottom-color: #c0392b; font-weight: 500; }
+.sidebar-search { padding: 12px 16px; border-bottom: 1px solid #e5ddd0; }
+.sidebar-search input { width: 100%; padding: 8px 12px; border-radius: 0; border: 1px solid #e5ddd0; background: #fcf9f4; font-size: 12px; color: #2d2418; outline: none; font-family: 'JetBrains Mono', monospace; }
+.sidebar-search input:focus { border-color: #c0392b; }
+.sidebar-list { flex: 1; overflow-y: auto; padding: 4px 0; }
+.item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; cursor: default; background: transparent; }
+.item.active { background: #ede7db; }
+.dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; border: 1.5px solid; }
+.dot.point { background: #c0392b; border-color: #c0392b; }
+.dot.line { background: #2c6b9e; border-color: #2c6b9e; }
+.dot.polygon { background: #7a5a3a; border-color: #7a5a3a; }
+.item-text { flex: 1; min-width: 0; }
+.item-text .name { font-size: 13px; font-weight: 500; color: #2d2418; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-text .desc { font-size: 11px; color: #8c7d6b; margin-top: 1px; font-family: 'JetBrains Mono', monospace; }
+.item-tag { font-size: 10px; padding: 1px 8px; background: #ede7db; color: #5a4a38; font-weight: 500; font-family: 'JetBrains Mono', monospace; }
+.sidebar-footer { padding: 8px 16px; border-top: 1px solid #e5ddd0; font-size: 11px; color: #8c7d6b; display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; }
+
+/* map area */
+.map-area { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: #efe8dd; }
+.map-area .texture { position: absolute; inset: 0; opacity: 0.03; background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, #2d2418 2px, #2d2418 3px), repeating-linear-gradient(90deg, transparent, transparent 2px, #2d2418 2px, #2d2418 3px); background-size: 60px 60px; }
+.map-area .center-text { font-size: 14px; color: #b8ab9a; letter-spacing: 0.05em; font-family: 'JetBrains Mono', monospace; z-index: 1; }
+
+/* drawing toolbar */
+.toolbar { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 3px; padding: 6px; background: #fcf9f4; border: 1px solid #e5ddd0; }
+.toolbar .tool { width: 44px; height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #8c7d6b; font-size: 10px; cursor: default; }
+.toolbar .tool.active { background: #2d2418; color: #f6f1e8; font-weight: 500; }
+.toolbar .tool svg { width: 18px; height: 18px; margin-bottom: 1px; }
+
+/* InfoCard */
+.infocard { position: absolute; right: 80px; top: 20px; width: 320px; background: #fcf9f4; border: 1px solid #e5ddd0; padding: 20px; }
+.infocard .title { font-size: 14px; font-weight: 600; color: #2d2418; margin-bottom: 14px; display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid #e5ddd0; }
+.infocard .field { margin-bottom: 12px; }
+.infocard .field label { font-size: 10px; color: #8c7d6b; display: block; margin-bottom: 4px; letter-spacing: 0.05em; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; }
+.infocard .field input { width: 100%; padding: 8px 10px; border: 1px solid #e5ddd0; background: #f6f1e8; font-size: 12px; color: #2d2418; outline: none; font-family: 'Literata', Georgia, serif; }
+.infocard .actions { display: flex; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid #e5ddd0; }
+.infocard .actions .btn { flex: 1; padding: 9px; border: 1px solid; font-size: 12px; cursor: default; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.03em; background: transparent; }
+.infocard .actions .btn.primary { background: #2d2418; color: #f6f1e8; border-color: #2d2418; }
+.infocard .actions .btn.danger { border-color: #c0392b; color: #c0392b; }
+
+.style-label { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #8c7d6b; letter-spacing: 0.1em; font-family: 'JetBrains Mono', monospace; z-index: 100; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="left">
+    <div class="logo">📍</div>
+    <h1>李沧区地块数据</h1>
+    <span class="badge">EDIT</span>
+  </div>
+  <div class="actions">
+    <span>IMPORT</span>
+    <span>EXPORT</span>
+    <div class="btn" style="padding:6px 12px; cursor:default;">⚙</div>
+  </div>
+</header>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-tabs">
+      <span class="active">列表</span>
+      <span>分组</span>
+    </div>
+    <div class="sidebar-search">
+      <input type="text" placeholder="搜索标注..." />
+    </div>
+    <div class="sidebar-list">
+      <div class="item active">
+        <div class="dot point"></div>
+        <div class="item-text">
+          <div class="name">地块 A-01</div>
+          <div class="desc">面积 45.2 亩</div>
+        </div>
+        <span class="item-tag">点</span>
+      </div>
+      <div class="item">
+        <div class="dot polygon"></div>
+        <div class="item-text">
+          <div class="name">规划区域 B</div>
+          <div class="desc">容积率 2.5</div>
+        </div>
+        <span class="item-tag">面</span>
+      </div>
+      <div class="item">
+        <div class="dot line"></div>
+        <div class="item-text">
+          <div class="name">地铁 3 号线</div>
+          <div class="desc">长度 12.3 km</div>
+        </div>
+        <span class="item-tag">线</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">3 标注 · 2 分组</div>
+  </div>
+
+  <div class="map-area">
+    <div class="texture"></div>
+    <div class="center-text">地图区域</div>
+    <div class="toolbar">
+      <div class="tool active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        选择
+      </div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>点</div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 9 11 14 14 20 4"/></svg>线</div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 9 18 21 6 21 2 9"/></svg>面</div>
+    </div>
+
+    <div class="infocard">
+      <div class="title">
+        <span>地块 A-01</span>
+        <span style="cursor:default;">✕</span>
+      </div>
+      <div class="field"><label>名称</label><input type="text" value="地块 A-01" /></div>
+      <div class="field"><label>面积 (㎡)</label><input type="text" value="45.2" /></div>
+      <div class="field"><label>容积率</label><input type="text" value="2.5" /></div>
+      <div class="actions">
+        <button class="btn primary">保存</button>
+        <button class="btn danger">删除</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="style-label">STYLE C · 纸本经典 · serif + 暖白底</div>
+</body>
+</html>

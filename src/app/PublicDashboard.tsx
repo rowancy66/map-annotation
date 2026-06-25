@@ -29,28 +29,28 @@ export default function PublicDashboard() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center" style={{ background: '#f5f0e8' }}>
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#c4552b' }} />
+      <div className="h-screen flex items-center justify-center" style={{ background: '#f2eee8' }}>
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#78a587' }} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen" style={{ background: '#f5f0e8' }}>
+    <div className="min-h-screen" style={{ background: '#f2eee8' }}>
       {/* 顶栏 */}
-      <header className="h-14 flex items-center justify-between px-6" style={{ background: '#1a3a3a', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <header className="h-14 flex items-center justify-between px-6" style={{ background: '#faf8f4', borderBottom: '1px solid rgba(150,175,155,0.08)' }}>
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-8 h-8 rounded" style={{ background: '#c4552b' }}>
+          <div className="flex items-center justify-center w-8 h-8 rounded" style={{ background: '#78a587' }}>
             <MapPin className="w-4 h-4 text-white" />
           </div>
-          <h1 className="text-base font-semibold tracking-wide" style={{ color: '#e8ddd0' }}>地图标注平台</h1>
+          <h1 className="text-base font-semibold" style={{ color: '#3a403c' }}>地图标注平台</h1>
         </div>
         <a
           href="/admin"
           className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-200"
-          style={{ color: '#d4954e', border: '1px solid rgba(212,149,78,0.25)', background: 'rgba(212,149,78,0.08)' }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(212,149,78,0.18)'; e.currentTarget.style.borderColor = 'rgba(212,149,78,0.4)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(212,149,78,0.08)'; e.currentTarget.style.borderColor = 'rgba(212,149,78,0.25)'; }}
+          style={{ color: '#78a587', border: '1px solid rgba(120,165,135,0.2)', background: 'rgba(120,165,135,0.06)' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(120,165,135,0.12)'; e.currentTarget.style.borderColor = 'rgba(120,165,135,0.3)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(120,165,135,0.06)'; e.currentTarget.style.borderColor = 'rgba(120,165,135,0.2)'; }}
         >
           <LogIn className="w-3.5 h-3.5" />
           后台管理
@@ -60,8 +60,8 @@ export default function PublicDashboard() {
       {/* 主体 */}
       <main className="max-w-5xl mx-auto px-6 py-8">
         <div className="mb-6">
-          <h2 className="text-xl font-bold" style={{ color: '#2c2416' }}>所有地图</h2>
-          <p className="text-sm mt-1" style={{ color: '#8c8273' }}>共 {maps.length} 张地图</p>
+          <h2 className="text-xl font-bold" style={{ color: '#3a403c' }}>所有地图</h2>
+          <p className="text-sm mt-1" style={{ color: '#8a928c' }}>共 {maps.length} 张地图</p>
         </div>
 
         {/* 地图卡片网格 */}
@@ -71,25 +71,25 @@ export default function PublicDashboard() {
               key={map.id}
               onClick={() => router.push(`/map/${map.id}`)}
               className="bg-white rounded-xl border shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer"
-              style={{ borderColor: '#e3ddd0' }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#c4552b'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e3ddd0'; }}
+              style={{ borderColor: '#e0e4dc' }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#78a587'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e0e4dc'; }}
             >
               {/* 缩略图区域 */}
-              <div className="h-36 flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #faf8f4 0%, #ede7db 100%)' }}>
+              <div className="h-36 flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f2eee8 0%, #ece7e0 100%)' }}>
                 <div className="text-center">
-                  <MapPin className="w-10 h-10 mx-auto mb-1" style={{ color: '#c4552b', opacity: 0.4 }} />
-                  <p className="text-xs font-mono" style={{ color: '#8c8273' }}>{map.annotation_count} 个标注</p>
+                  <MapPin className="w-10 h-10 mx-auto mb-1" style={{ color: '#78a587', opacity: 0.3 }} />
+                  <p className="text-xs font-mono" style={{ color: '#aab2ac' }}>{map.annotation_count} 个标注</p>
                 </div>
               </div>
 
               {/* 信息区域 */}
               <div className="p-4">
-                <h3 className="font-semibold text-sm truncate" style={{ color: '#2c2416' }}>{map.name}</h3>
+                <h3 className="font-semibold text-sm truncate" style={{ color: '#3a403c' }}>{map.name}</h3>
                 {map.description && (
-                  <p className="text-xs mt-1 line-clamp-2" style={{ color: '#8c8273' }}>{map.description}</p>
+                  <p className="text-xs mt-1 line-clamp-2" style={{ color: '#8a928c' }}>{map.description}</p>
                 )}
-                <div className="flex items-center gap-3 mt-3 text-xs" style={{ color: '#8c8273' }}>
+                <div className="flex items-center gap-3 mt-3 text-xs" style={{ color: '#8a928c' }}>
                   <span className="flex items-center gap-1">
                     <Layers className="w-3 h-3" />
                     {map.annotation_count} 条
@@ -106,8 +106,8 @@ export default function PublicDashboard() {
           {/* 空状态 */}
           {maps.length === 0 && (
             <div className="col-span-full text-center py-16">
-              <MapPin className="w-12 h-12 mx-auto mb-3" style={{ color: '#e3ddd0' }} />
-              <p style={{ color: '#8c8273' }}>暂无地图</p>
+              <MapPin className="w-12 h-12 mx-auto mb-3" style={{ color: '#d0d4ce' }} />
+              <p style={{ color: '#aab2ac' }}>暂无地图</p>
             </div>
           )}
         </div>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>翡翠 · 墨底金缮</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: #0a0e0c; color: #c8d0cc; height: 100vh; display: flex; flex-direction: column; }
+body::before { content: ''; position: fixed; inset: 0; opacity: 0.012; z-index: 9999; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+header { height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; background: rgba(10,14,12,0.9); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(93,175,140,0.06); }
+header .left { display: flex; align-items: center; gap: 16px; }
+header .logo { width: 30px; height: 30px; border: 1px solid rgba(93,175,140,0.25); display: flex; align-items: center; justify-content: center; font-family: 'Newsreader', serif; font-size: 12px; color: #5daf8c; font-weight: 400; background: transparent; letter-spacing: 0.05em; }
+header h1 { font-size: 14px; font-weight: 400; color: #d8e0dc; letter-spacing: 0.02em; }
+header .badge { font-size: 9px; padding: 3px 10px; letter-spacing: 0.08em; border: 1px solid rgba(93,175,140,0.12); color: #5daf8c; font-weight: 400; text-transform: uppercase; background: transparent; }
+header .actions { display: flex; align-items: center; gap: 6px; }
+header .actions span { font-size: 12px; color: #5a6860; padding: 6px 12px; cursor: default; }
+header .actions span:hover { color: #8a9890; }
+
+.main { flex: 1; display: flex; overflow: hidden; }
+.sidebar { width: 320px; background: rgba(10,14,12,0.88); backdrop-filter: blur(12px); border-right: 1px solid rgba(93,175,140,0.04); display: flex; flex-direction: column; }
+.sidebar-pad { padding: 20px 24px 0; }
+.sidebar-tabs { display: flex; gap: 0; margin-bottom: 16px; }
+.sidebar-tabs span { font-size: 11px; cursor: default; color: #5a6860; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 24px; padding-bottom: 6px; border-bottom: 1px solid transparent; }
+.sidebar-tabs .active { color: #5daf8c; border-bottom-color: #5daf8c; }
+.sidebar-search input { width: 100%; padding: 10px 0; border: none; border-bottom: 1px solid rgba(93,175,140,0.05); background: transparent; font-size: 12px; color: #c8d0cc; outline: none; font-family: 'Inter', sans-serif; font-weight: 300; }
+.sidebar-search input:focus { border-bottom-color: rgba(93,175,140,0.15); }
+.sidebar-search input::placeholder { color: #5a6860; }
+.sidebar-list { flex: 1; overflow-y: auto; margin-top: 4px; }
+.item { display: flex; align-items: center; gap: 14px; padding: 14px 24px; cursor: default; border-left: 2px solid transparent; }
+.item.active { background: rgba(93,175,140,0.02); border-left-color: #5daf8c; }
+.item .marker { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.item .marker.point { background: #5daf8c; }
+.item .marker.line { background: #6a8a7a; }
+.item .marker.polygon { background: #8a9a8a; }
+.item-text { flex: 1; min-width: 0; }
+.item-text .name { font-size: 13px; font-weight: 400; color: #d8e0dc; }
+.item-text .desc { font-size: 11px; color: #5a6860; margin-top: 2px; font-weight: 300; }
+.item-tag { font-size: 9px; padding: 2px 8px; border: 1px solid rgba(93,175,140,0.08); color: #5daf8c; letter-spacing: 0.05em; background: transparent; }
+.sidebar-footer { padding: 12px 24px; border-top: 1px solid rgba(93,175,140,0.04); font-size: 11px; color: #5a6860; display: flex; justify-content: space-between; font-weight: 300; }
+
+.map-area { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: #0c110e; overflow: hidden; }
+.map-area .vignette { position: absolute; inset: 0; box-shadow: inset 0 0 120px rgba(0,0,0,0.3); pointer-events: none; }
+.map-area .center-text { font-size: 12px; color: #1a2820; letter-spacing: 0.12em; z-index: 1; text-transform: uppercase; font-weight: 300; }
+
+.toolbar { position: absolute; right: 24px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 6px; padding: 10px; background: rgba(10,14,12,0.85); backdrop-filter: blur(16px); border: 1px solid rgba(93,175,140,0.04); }
+.toolbar .tool { width: 44px; height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #5a6860; font-size: 9px; cursor: default; letter-spacing: 0.05em; }
+.toolbar .tool.active { background: rgba(93,175,140,0.08); color: #5daf8c; }
+.toolbar .tool svg { width: 18px; height: 18px; margin-bottom: 2px; stroke-width: 1.2; }
+
+.infocard { position: absolute; right: 84px; top: 24px; width: 320px; background: rgba(10,14,12,0.88); backdrop-filter: blur(24px); border: 1px solid rgba(93,175,140,0.04); padding: 28px; }
+.infocard .title { font-size: 15px; font-weight: 400; color: #d8e0dc; margin-bottom: 20px; display: flex; justify-content: space-between; font-family: 'Newsreader', serif; }
+.infocard .field { margin-bottom: 14px; }
+.infocard .field label { font-size: 9px; color: #5a6860; display: block; margin-bottom: 4px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 400; }
+.infocard .field input { width: 100%; padding: 8px 0; border: none; border-bottom: 1px solid rgba(93,175,140,0.05); background: transparent; font-size: 13px; color: #c8d0cc; outline: none; font-family: 'Inter', sans-serif; font-weight: 300; }
+.infocard .field input:focus { border-bottom-color: rgba(93,175,140,0.15); }
+.infocard .actions { display: flex; gap: 8px; margin-top: 24px; }
+.infocard .actions .btn { flex: 1; padding: 10px; border: none; font-size: 10px; cursor: default; letter-spacing: 0.08em; text-transform: uppercase; font-family: 'Inter', sans-serif; font-weight: 400; }
+.infocard .actions .btn.primary { background: #5daf8c; color: #0a0e0c; }
+.infocard .actions .btn.danger { border: 1px solid rgba(93,175,140,0.08); color: #5daf8c; background: transparent; }
+
+.style-label { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); font-size: 9px; color: rgba(255,255,255,0.06); letter-spacing: 0.15em; z-index: 100; }
+</style>
+</head>
+<body>
+<header>
+  <div class="left"><div class="logo">玉</div><h1>李沧区地块数据</h1><span class="badge">Edit</span></div>
+  <div class="actions"><span>导入</span><span>导出</span><span>⚙</span></div>
+</header>
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-pad">
+      <div class="sidebar-tabs"><span class="active">列表</span><span>分组</span></div>
+      <div class="sidebar-search"><input type="text" placeholder="搜索标注" /></div>
+    </div>
+    <div class="sidebar-list">
+      <div class="item active"><div class="marker point"></div><div class="item-text"><div class="name">地块 A-01</div><div class="desc">面积 45.2 亩 · 容积率 2.5</div></div><span class="item-tag">点</span></div>
+      <div class="item"><div class="marker polygon"></div><div class="item-text"><div class="name">规划区域 B</div><div class="desc">占地 120 亩 · 容积率 1.8</div></div><span class="item-tag">面</span></div>
+      <div class="item"><div class="marker line"></div><div class="item-text"><div class="name">地铁 3 号线</div><div class="desc">全长 12.3 km · 5 站</div></div><span class="item-tag">线</span></div>
+    </div>
+    <div class="sidebar-footer">3 个标注 · 2 个分组</div>
+  </div>
+  <div class="map-area">
+    <div class="vignette"></div><div class="center-text">地图区域</div>
+    <div class="toolbar">
+      <div class="tool active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>选择</div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>点</div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="4 17 9 11 14 14 20 4"/></svg>线</div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 22 9 18 21 6 21 2 9"/></svg>面</div>
+    </div>
+    <div class="infocard">
+      <div class="title"><span>地块 A-01</span><span style="color:#5a6860;cursor:default;">✕</span></div>
+      <div class="field"><label>名称</label><input type="text" value="地块 A-01" /></div>
+      <div class="field"><label>面积 (㎡)</label><input type="text" value="45.2" /></div>
+      <div class="field"><label>容积率</label><input type="text" value="2.5" /></div>
+      <div class="actions"><button class="btn primary">保存</button><button class="btn danger">删除</button></div>
+    </div>
+  </div>
+</div>
+<div class="style-label">壹 · 墨玉 · 深底翡翠绿 + 细金线</div>
+</body>
+</html>

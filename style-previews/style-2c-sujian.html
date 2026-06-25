@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>青瓷 · 素简</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: #ffffff; color: #2a302c; height: 100vh; display: flex; flex-direction: column; }
+
+header { height: 48px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: #ffffff; border-bottom: 1px solid #f0f0ee; }
+header .left { display: flex; align-items: center; gap: 12px; }
+header .logo { width: 22px; height: 22px; background: #8ab8a0; display: flex; align-items: center; justify-content: center; font-size: 9px; color: #ffffff; font-weight: 500; letter-spacing: 0.05em; }
+header h1 { font-size: 13px; font-weight: 400; color: #2a302c; }
+header .badge { font-size: 9px; padding: 2px 8px; color: #8ab8a0; border: 1px solid rgba(138,184,160,0.12); letter-spacing: 0.04em; }
+header .actions { display: flex; gap: 4px; }
+header .actions span { font-size: 11px; color: #8a928c; padding: 4px 10px; cursor: default; }
+
+.main { flex: 1; display: flex; overflow: hidden; }
+.sidebar { width: 280px; background: #ffffff; border-right: 1px solid #f0f0ee; display: flex; flex-direction: column; }
+.sidebar-pad { padding: 16px 16px 0; }
+.sidebar-tabs { display: flex; gap: 16px; margin-bottom: 12px; }
+.sidebar-tabs span { font-size: 11px; cursor: default; color: #c0c4be; font-weight: 400; letter-spacing: 0.02em; }
+.sidebar-tabs .active { color: #2a302c; font-weight: 500; }
+.sidebar-search input { width: 100%; padding: 6px 10px; border: 1px solid #f0f0ee; background: #fafafa; font-size: 12px; color: #2a302c; outline: none; font-family: 'Inter', sans-serif; font-weight: 300; }
+.sidebar-search input:focus { border-color: #8ab8a0; }
+.sidebar-search input::placeholder { color: #c0c4be; }
+.sidebar-list { flex: 1; overflow-y: auto; margin-top: 2px; }
+.item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; cursor: default; }
+.item.active { background: #fafafa; border-left: 2px solid #8ab8a0; }
+.item .num { font-size: 10px; color: #c0c4be; width: 16px; font-variant-numeric: tabular-nums; }
+.item-text { flex: 1; min-width: 0; }
+.item-text .name { font-size: 13px; font-weight: 400; color: #2a302c; }
+.item-text .desc { font-size: 11px; color: #a0a8a2; margin-top: 1px; }
+.sidebar-footer { padding: 8px 16px; border-top: 1px solid #f0f0ee; font-size: 10px; color: #c0c4be; display: flex; justify-content: space-between; }
+
+.map-area { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: #f8f8f6; }
+.map-area .center-text { font-size: 11px; color: #d0d4ce; letter-spacing: 0.08em; z-index: 1; font-weight: 300; }
+
+.toolbar { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 2px; padding: 6px; background: #ffffff; border: 1px solid #f0f0ee; }
+.toolbar .tool { width: 38px; height: 38px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #a0a8a2; font-size: 8px; cursor: default; }
+.toolbar .tool.active { background: #8ab8a0; color: #ffffff; }
+.toolbar .tool svg { width: 14px; height: 14px; margin-bottom: 1px; stroke-width: 1.2; }
+
+.infocard { position: absolute; right: 68px; top: 16px; width: 280px; background: #ffffff; border: 1px solid #f0f0ee; padding: 20px; }
+.infocard .title { font-size: 14px; font-weight: 400; color: #2a302c; margin-bottom: 14px; display: flex; justify-content: space-between; }
+.infocard .field { margin-bottom: 10px; }
+.infocard .field label { font-size: 9px; color: #bcc0bc; display: block; margin-bottom: 2px; }
+.infocard .field input { width: 100%; padding: 6px 0; border: none; border-bottom: 1px solid #f0f0ee; background: transparent; font-size: 12px; color: #2a302c; outline: none; font-family: 'Inter', sans-serif; font-weight: 300; }
+.infocard .field input:focus { border-bottom-color: #8ab8a0; }
+.infocard .actions { display: flex; gap: 6px; margin-top: 14px; }
+.infocard .actions .btn { flex: 1; padding: 7px; border: none; font-size: 10px; cursor: default; font-weight: 400; }
+.infocard .actions .btn.primary { background: #8ab8a0; color: #ffffff; }
+.infocard .actions .btn.danger { border: 1px solid rgba(138,184,160,0.08); color: #8ab8a0; background: transparent; }
+
+.style-label { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 8px; color: rgba(0,0,0,0.04); letter-spacing: 0.1em; z-index: 100; }
+</style>
+</head>
+<body>
+<header>
+  <div class="left"><div class="logo">◎</div><h1>地块数据</h1><span class="badge">编辑</span></div>
+  <div class="actions"><span>导入</span><span>导出</span><span>⚙</span></div>
+</header>
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-pad">
+      <div class="sidebar-tabs"><span class="active">列表</span><span>分组</span></div>
+      <div class="sidebar-search"><input type="text" placeholder="搜索" /></div>
+    </div>
+    <div class="sidebar-list">
+      <div class="item active"><span class="num">01</span><div class="item-text"><div class="name">地块 A-01</div><div class="desc">45.2 亩</div></div></div>
+      <div class="item"><span class="num">02</span><div class="item-text"><div class="name">规划区域 B</div><div class="desc">120 亩</div></div></div>
+      <div class="item"><span class="num">03</span><div class="item-text"><div class="name">地铁 3 号线</div><div class="desc">12.3 km</div></div></div>
+    </div>
+    <div class="sidebar-footer">3 个标注</div>
+  </div>
+  <div class="map-area">
+    <div class="center-text">地图</div>
+    <div class="toolbar">
+      <div class="tool active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>选</div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>点</div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="4 17 9 11 14 14 20 4"/></svg>线</div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 22 9 18 21 6 21 2 9"/></svg>面</div>
+    </div>
+    <div class="infocard">
+      <div class="title"><span>地块 A-01</span><span style="color:#c0c4be;">✕</span></div>
+      <div class="field"><label>名称</label><input type="text" value="地块 A-01" /></div>
+      <div class="field"><label>面积 (㎡)</label><input type="text" value="45.2" /></div>
+      <div class="field"><label>容积率</label><input type="text" value="2.5" /></div>
+      <div class="actions"><button class="btn primary">保存</button><button class="btn danger">删除</button></div>
+    </div>
+  </div>
+</div>
+<div class="style-label">青瓷 · 素简 · 纯白 · 极致简约</div>
+</body>
+</html>

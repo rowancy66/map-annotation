@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工业图纸 · 风格预览</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Space Grotesk', sans-serif; background: #e6e9ef; color: #1a1f2b; height: 100vh; display: flex; flex-direction: column; }
+
+/* top bar */
+header {
+  height: 48px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; background: #1a1f2b; border-bottom: 2px solid #e85d3a;
+}
+header .left { display: flex; align-items: center; gap: 12px; }
+header .logo { width: 28px; height: 28px; background: #e85d3a; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #ffffff; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+header h1 { font-size: 13px; font-weight: 500; color: #d6dae0; letter-spacing: -0.01em; }
+header .badge { font-size: 10px; padding: 2px 10px; background: transparent; color: #e85d3a; border: 1px solid rgba(232,93,58,0.4); font-weight: 600; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em; }
+header .actions { display: flex; align-items: center; gap: 4px; }
+header .actions span { font-size: 11px; color: #7a808c; padding: 6px 10px; cursor: default; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.03em; }
+header .actions span:hover { background: rgba(255,255,255,0.04); border-radius: 4px; }
+
+/* main */
+.main { flex: 1; display: flex; overflow: hidden; }
+
+/* sidebar */
+.sidebar { width: 320px; background: #f0f2f6; border-right: 1px solid #cdd2db; display: flex; flex-direction: column; }
+.sidebar-tabs { display: flex; padding: 0; border-bottom: 1px solid #cdd2db; }
+.sidebar-tabs span { padding: 10px 20px; font-size: 11px; cursor: default; color: #7a808c; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em; border-bottom: 2px solid transparent; }
+.sidebar-tabs .active { color: #e85d3a; border-bottom-color: #e85d3a; font-weight: 600; }
+.sidebar-search { padding: 10px 16px; border-bottom: 1px solid #cdd2db; }
+.sidebar-search input { width: 100%; padding: 7px 10px; border: 1px solid #cdd2db; background: #ffffff; font-size: 11px; color: #1a1f2b; outline: none; font-family: 'JetBrains Mono', monospace; }
+.sidebar-search input:focus { border-color: #e85d3a; box-shadow: 0 0 0 1px #e85d3a; }
+.sidebar-list { flex: 1; overflow-y: auto; padding: 4px 0; }
+.item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; cursor: default; }
+.item.active { background: #ffffff; box-shadow: inset 2px 0 0 #e85d3a; }
+.dot { width: 6px; height: 6px; flex-shrink: 0; }
+.dot.point { background: #e85d3a; }
+.dot.line { background: #2b7be4; }
+.dot.polygon { background: #1a1f2b; }
+.item-text { flex: 1; min-width: 0; }
+.item-text .name { font-size: 12px; font-weight: 600; color: #1a1f2b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em; }
+.item-text .desc { font-size: 10px; color: #7a808c; margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+.item-tag { font-size: 9px; padding: 1px 6px; border: 1px solid; font-weight: 600; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em; }
+.item-tag.point { border-color: rgba(232,93,58,0.3); color: #e85d3a; }
+.item-tag.line { border-color: rgba(43,123,228,0.3); color: #2b7be4; }
+.item-tag.polygon { border-color: rgba(26,31,43,0.3); color: #1a1f2b; }
+.sidebar-footer { padding: 8px 16px; border-top: 1px solid #cdd2db; font-size: 10px; color: #7a808c; display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; }
+
+/* map area */
+.map-area { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: #dce0e8; }
+.map-area .grid { position: absolute; inset: 0; opacity: 0.15; background-image: linear-gradient(#b0b8c4 1px, transparent 1px), linear-gradient(90deg, #b0b8c4 1px, transparent 1px); background-size: 40px 40px; }
+.map-area .center-text { font-size: 13px; color: #8c94a0; font-family: 'JetBrains Mono', monospace; z-index: 1; }
+
+/* toolbar */
+.toolbar { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 2px; padding: 4px; background: #ffffff; border: 1px solid #cdd2db; }
+.toolbar .tool { width: 42px; height: 42px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #7a808c; font-size: 9px; cursor: default; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.03em; }
+.toolbar .tool.active { background: #1a1f2b; color: #ffffff; font-weight: 600; }
+.toolbar .tool svg { width: 16px; height: 16px; margin-bottom: 1px; }
+
+/* InfoCard */
+.infocard { position: absolute; right: 80px; top: 20px; width: 300px; background: #ffffff; border: 1px solid #cdd2db; box-shadow: 4px 4px 0 rgba(26,31,43,0.06); }
+.infocard .title { font-size: 13px; font-weight: 600; color: #1a1f2b; padding: 16px 16px 12px; display: flex; justify-content: space-between; border-bottom: 1px solid #cdd2db; }
+.infocard .body { padding: 14px 16px; }
+.infocard .field { margin-bottom: 10px; }
+.infocard .field label { font-size: 9px; color: #7a808c; display: block; margin-bottom: 3px; letter-spacing: 0.08em; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; }
+.infocard .field input { width: 100%; padding: 7px 9px; border: 1px solid #cdd2db; background: #f4f5f8; font-size: 12px; color: #1a1f2b; outline: none; font-family: 'Space Grotesk', sans-serif; }
+.infocard .actions { display: flex; gap: 6px; margin-top: 14px; }
+.infocard .actions .btn { flex: 1; padding: 8px; border: none; font-size: 10px; cursor: default; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em; text-transform: uppercase; }
+.infocard .actions .btn.primary { background: #e85d3a; color: #ffffff; font-weight: 600; }
+.infocard .actions .btn.danger { background: transparent; color: #e85d3a; border: 1px solid #e85d3a; }
+
+.style-label { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); font-size: 10px; color: #7a808c; letter-spacing: 0.12em; font-family: 'JetBrains Mono', monospace; z-index: 100; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="left">
+    <div class="logo">M</div>
+    <h1>李沧区地块数据</h1>
+    <span class="badge">EDIT</span>
+  </div>
+  <div class="actions">
+    <span>IMPORT</span>
+    <span>EXPORT</span>
+    <span>⚙</span>
+  </div>
+</header>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-tabs">
+      <span class="active">LIST</span>
+      <span>GROUP</span>
+    </div>
+    <div class="sidebar-search">
+      <input type="text" placeholder="搜索标注..." />
+    </div>
+    <div class="sidebar-list">
+      <div class="item active">
+        <div class="dot point"></div>
+        <div class="item-text"><div class="name">地块 A-01</div><div class="desc">45.2 亩</div></div>
+        <span class="item-tag point">PNT</span>
+      </div>
+      <div class="item">
+        <div class="dot polygon"></div>
+        <div class="item-text"><div class="name">规划区域 B</div><div class="desc">容积 2.5</div></div>
+        <span class="item-tag polygon">POL</span>
+      </div>
+      <div class="item">
+        <div class="dot line"></div>
+        <div class="item-text"><div class="name">地铁 3 号线</div><div class="desc">12.3 km</div></div>
+        <span class="item-tag line">LIN</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">3 ITEMS · 2 GROUPS</div>
+  </div>
+
+  <div class="map-area">
+    <div class="grid"></div>
+    <div class="center-text">MAP AREA</div>
+    <div class="toolbar">
+      <div class="tool active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>SEL</div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>PNT</div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 9 11 14 14 20 4"/></svg>LIN</div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 9 18 21 6 21 2 9"/></svg>POL</div>
+    </div>
+
+    <div class="infocard">
+      <div class="title"><span>地块 A-01</span><span style="cursor:default;">✕</span></div>
+      <div class="body">
+        <div class="field"><label>Name</label><input type="text" value="地块 A-01" /></div>
+        <div class="field"><label>Area (㎡)</label><input type="text" value="45.2" /></div>
+        <div class="field"><label>FAR</label><input type="text" value="2.5" /></div>
+        <div class="actions">
+          <button class="btn primary">Save</button>
+          <button class="btn danger">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="style-label">STYLE D · 工业图纸 · #e85d3a accent · monospace</div>
+</body>
+</html>

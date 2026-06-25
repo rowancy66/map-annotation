@@ -260,14 +260,14 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
                   : 'border-gray-300'
               }`}
               style={{
-                borderColor: isDragging ? '#5b7b5a' : undefined,
-                background: isDragging ? '#e8f0e7' : undefined,
+                borderColor: isDragging ? '#78a587' : undefined,
+                background: isDragging ? 'rgba(120,165,135,0.04)' : undefined,
               }}
-              onMouseEnter={(e) => { if (!isDragging) { e.currentTarget.style.borderColor = '#5b7b5a'; e.currentTarget.style.background = '#e8f0e7/50'; }}}
+              onMouseEnter={(e) => { if (!isDragging) { e.currentTarget.style.borderColor = '#78a587'; e.currentTarget.style.background = 'rgba(120,165,135,0.02)'; }}}
               onMouseLeave={(e) => { if (!isDragging) { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.background = ''; }}}
             >
-              <Upload aria-hidden="true" className={`w-12 h-12 mx-auto mb-4 ${isDragging ? '' : 'text-gray-400'}`} style={{ color: isDragging ? '#5b7b5a' : undefined }} />
-              <p className={`mb-2 ${isDragging ? 'font-medium' : 'text-gray-600'}`} style={{ color: isDragging ? '#5b7b5a' : undefined }}>
+              <Upload aria-hidden="true" className={`w-12 h-12 mx-auto mb-4 ${isDragging ? '' : 'text-gray-400'}`} style={{ color: isDragging ? '#78a587' : undefined }} />
+              <p className={`mb-2 ${isDragging ? 'font-medium' : 'text-gray-600'}`} style={{ color: isDragging ? '#78a587' : undefined }}>
                 {isDragging ? '松开鼠标即可上传' : '点击或拖拽文件到此处上传'}
               </p>
               <p className="text-sm text-gray-400">支持 .xlsx, .csv 格式</p>
@@ -354,9 +354,9 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
                 onClick={handleImport}
                 disabled={!preview?.latColumn || !preview?.lngColumn || importing}
                 className="px-6 py-2 text-sm text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
-              style={{ background: '#5b7b5a' }}
-              onMouseEnter={(e) => { if (!importing) e.currentTarget.style.background = '#4a6a49'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = '#5b7b5a'; }}
+              style={{ background: '#78a587' }}
+              onMouseEnter={(e) => { if (!importing) e.currentTarget.style.background = '#6a9580'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#78a587'; }}
               >
                 {importing ? (
                   <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />

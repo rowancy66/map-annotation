@@ -106,7 +106,7 @@ export default function FieldTemplateManager({ templates, onChange }: FieldTempl
           ))}
           <button
             onClick={addField}
-            className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-[#5b7b5a] hover:text-[#5b7b5a] transition flex items-center justify-center gap-1"
+            className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-[#78a587] hover:text-[#78a587] transition flex items-center justify-center gap-1"
           >
             <Plus className="w-4 h-4" /> 添加字段
           </button>

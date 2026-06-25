@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>粗野主义 · 风格预览</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Space Grotesk', sans-serif; background: #ffffff; color: #111111; height: 100vh; display: flex; flex-direction: column; }
+
+header { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: #111111; }
+header .left { display: flex; align-items: center; gap: 12px; }
+header .logo { width: 24px; height: 24px; background: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #111111; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+header h1 { font-size: 12px; font-weight: 600; color: #ffffff; letter-spacing: -0.01em; text-transform: uppercase; }
+header .badge { font-size: 9px; padding: 2px 8px; background: #ffffff; color: #111111; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+header .actions { display: flex; }
+header .actions span { font-size: 11px; color: #888888; padding: 6px 10px; cursor: default; font-family: 'JetBrains Mono', monospace; border-left: 1px solid #222222; }
+
+.main { flex: 1; display: flex; overflow: hidden; }
+.sidebar { width: 300px; background: #ffffff; border-right: 1px solid #dddddd; display: flex; flex-direction: column; }
+.sidebar-tabs { display: flex; border-bottom: 1px solid #dddddd; }
+.sidebar-tabs span { padding: 10px 16px; font-size: 10px; cursor: default; color: #888888; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid transparent; }
+.sidebar-tabs .active { color: #111111; border-bottom-color: #111111; font-weight: 700; }
+.sidebar-search { padding: 8px 12px; border-bottom: 1px solid #dddddd; }
+.sidebar-search input { width: 100%; padding: 6px 10px; border: 1px solid #dddddd; background: #ffffff; font-size: 11px; color: #111111; outline: none; font-family: 'JetBrains Mono', monospace; border-radius: 0; }
+.sidebar-search input:focus { border-color: #111111; }
+.sidebar-list { flex: 1; overflow-y: auto; }
+.item { display: flex; align-items: center; gap: 8px; padding: 10px 12px; cursor: default; border-bottom: 1px solid #eeeeee; }
+.item.active { background: #111111; color: #ffffff; }
+.dot { width: 6px; height: 6px; flex-shrink: 0; }
+.dot.point { background: #111111; }
+.dot.line { background: #555555; }
+.dot.polygon { background: #999999; }
+.item.active .dot { background: #ffffff; }
+.item-text { flex: 1; min-width: 0; }
+.item-text .name { font-size: 12px; font-weight: 600; }
+.item-text .desc { font-size: 10px; color: #888888; }
+.item.active .item-text .desc { color: #aaaaaa; }
+.item-tag { font-size: 9px; padding: 1px 5px; border: 1px solid #dddddd; font-family: 'JetBrains Mono', monospace; }
+.item.active .item-tag { border-color: #ffffff; color: #ffffff; }
+.sidebar-footer { padding: 8px 12px; border-top: 1px solid #dddddd; font-size: 10px; color: #888888; font-family: 'JetBrains Mono', monospace; display: flex; justify-content: space-between; }
+
+.map-area { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: #f5f5f5; }
+.map-area .center-text { font-size: 12px; color: #cccccc; font-family: 'JetBrains Mono', monospace; z-index: 1; letter-spacing: 0.1em; text-transform: uppercase; }
+
+.toolbar { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 2px; padding: 4px; background: #ffffff; border: 1px solid #dddddd; }
+.toolbar .tool { width: 40px; height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #888888; font-size: 8px; cursor: default; font-family: 'JetBrains Mono', monospace; }
+.toolbar .tool.active { background: #111111; color: #ffffff; }
+.toolbar .tool svg { width: 16px; height: 16px; }
+
+.infocard { position: absolute; right: 70px; top: 12px; width: 280px; background: #ffffff; border: 1px solid #dddddd; box-shadow: 4px 4px 0 #111111; }
+.infocard .title { font-size: 12px; font-weight: 700; color: #111111; padding: 12px 14px 8px; display: flex; justify-content: space-between; text-transform: uppercase; letter-spacing: 0.03em; }
+.infocard .body { padding: 8px 14px 14px; }
+.infocard .field { margin-bottom: 8px; }
+.infocard .field label { font-size: 8px; color: #888888; display: block; margin-bottom: 2px; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; }
+.infocard .field input { width: 100%; padding: 6px 8px; border: 1px solid #dddddd; background: #ffffff; font-size: 11px; color: #111111; outline: none; font-family: 'Space Grotesk', sans-serif; border-radius: 0; }
+.infocard .actions { display: flex; gap: 4px; margin-top: 10px; }
+.infocard .actions .btn { flex: 1; padding: 6px; border: none; font-size: 10px; cursor: default; font-family: 'JetBrains Mono', monospace; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+.infocard .actions .btn.primary { background: #111111; color: #ffffff; }
+.infocard .actions .btn.danger { background: #ffffff; color: #111111; border: 1px solid #111111; }
+
+.style-label { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 9px; color: #cccccc; letter-spacing: 0.15em; font-family: 'JetBrains Mono', monospace; z-index: 100; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<header>
+  <div class="left"><div class="logo">M</div><h1>李沧区地块数据</h1><span class="badge">EDIT</span></div>
+  <div class="actions"><span>IMP</span><span>EXP</span><span>⚙</span></div>
+</header>
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-tabs"><span class="active">LIST</span><span>GROUP</span></div>
+    <div class="sidebar-search"><input type="text" placeholder="SEARCH..." /></div>
+    <div class="sidebar-list">
+      <div class="item active"><div class="dot point"></div><div class="item-text"><div class="name">地块 A-01</div><div class="desc">面积 45.2 亩</div></div><span class="item-tag">点</span></div>
+      <div class="item"><div class="dot polygon"></div><div class="item-text"><div class="name">规划区域 B</div><div class="desc">容积率 2.5</div></div><span class="item-tag">面</span></div>
+      <div class="item"><div class="dot line"></div><div class="item-text"><div class="name">地铁 3 号线</div><div class="desc">长度 12.3 km</div></div><span class="item-tag">线</span></div>
+    </div>
+    <div class="sidebar-footer">3 ITEMS · 2 GROUPS</div>
+  </div>
+  <div class="map-area">
+    <div class="center-text">MAP AREA</div>
+    <div class="toolbar">
+      <div class="tool active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>SEL</div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>PNT</div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 9 11 14 14 20 4"/></svg>LIN</div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 9 18 21 6 21 2 9"/></svg>POL</div>
+    </div>
+    <div class="infocard">
+      <div class="title"><span>地块 A-01</span><span>✕</span></div>
+      <div class="body">
+        <div class="field"><label>名称</label><input type="text" value="地块 A-01" /></div>
+        <div class="field"><label>面积 (㎡)</label><input type="text" value="45.2" /></div>
+        <div class="field"><label>容积率</label><input type="text" value="2.5" /></div>
+        <div class="actions"><button class="btn primary">保存</button><button class="btn danger">删除</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="style-label">STYLE F · 粗野主义 · 黑白 · 无圆角 · 高对比</div>
+</body>
+</html>
