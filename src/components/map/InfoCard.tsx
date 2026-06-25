@@ -8,18 +8,18 @@ import { Annotation, PointStyle, LineStyle, PolygonStyle, PRESET_COLORS, PRESET_
 import { X, Save, Trash2, Loader2, Upload, Link2, Plus } from 'lucide-react';
 import { uploadAnnotationImage, deleteAnnotationImage } from '@/lib/supabase';
 
-// Premium blue palette
+// Warm earth palette
 const colors = {
   surface: '#ffffff',
-  bg: '#f8fafc',
-  border: '#e2e8f0',
-  ink: '#1e293b',
-  muted: '#64748b',
-  faint: '#94a3b8',
+  bg: '#faf8f4',
+  border: '#e8e2d6',
+  ink: '#2c2416',
+  muted: '#7a7d7a',
+  faint: '#a8aba3',
   placeholder: '#cbd5e1',
-  accent: '#2563eb',
-  accentSoft: 'rgba(37,99,235,0.08)',
-  danger: '#ef4444',
+  accent: '#5b7b5a',
+  accentSoft: 'rgba(91,123,90,0.08)',
+  danger: '#c1694f',
 };
 
 interface InfoCardProps {

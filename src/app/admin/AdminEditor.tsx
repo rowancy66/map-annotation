@@ -300,12 +300,12 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
           >
             <Home className="w-4 h-4" aria-hidden="true" />
           </Link>
-          <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm shadow-blue-200">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #5b7b5a, #4a6a49)', boxShadow: '0 2px 6px rgba(91,123,90,0.3)' }}>
             <MapPin className="w-4 h-4 text-white" aria-hidden="true" />
           </div>
           <h1 className="text-sm font-semibold text-gray-900">
             {mapProject?.name || '地图标注平台'}
-            <span className="ml-2 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-medium">管理</span>
+            <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: '#f5e8e3', color: '#c1694f' }}>管理</span>
           </h1>
         </div>
 
@@ -351,8 +351,9 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
           <button
             onClick={() => setShowSettings(!showSettings)}
             className={`p-1.5 rounded-lg transition ${
-              showSettings ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100/80'
+              showSettings ? 'text-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100/80'
             }`}
+            style={showSettings ? { background: '#5b7b5a' } : undefined}
             title="设置"
             aria-label="设置"
           >
@@ -481,7 +482,9 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="搜索编号、位置..."
-                    className="w-full pl-9 pr-8 py-2 bg-gray-50/80 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition"
+                    className="w-full pl-9 pr-8 py-2 bg-gray-50/80 border border-gray-200 rounded-lg text-sm outline-none transition"
+                    onFocus={(e) => { e.currentTarget.style.borderColor = '#5b7b5a'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(91,123,90,0.15)'; e.currentTarget.style.background = '#ffffff'; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.background = ''; }}
                   />
                   {searchQuery && (
                     <button
@@ -547,11 +550,12 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                         <div
                           key={anno.id}
                           onClick={() => handleAnnotationClick(anno)}
-                          className={`w-full px-4 py-3 text-left hover:bg-blue-50/50 transition-all duration-150 cursor-pointer border-l-2 ${
+                          className={`w-full px-4 py-3 text-left hover:bg-[#e8f0e7]/50 transition-all duration-150 cursor-pointer border-l-2 ${
                             selectedAnnotation?.id === anno.id
-                              ? 'bg-blue-50/70 border-l-blue-500 shadow-sm'
-                              : 'border-l-transparent hover:border-l-gray-200'
+                              ? 'border-l-[#5b7b5a] shadow-sm'
+                              : 'border-l-transparent hover:border-l-[#c9a96e]'
                           }`}
+                          style={selectedAnnotation?.id === anno.id ? { background: '#e8f0e7' } : undefined}
                         >
                       <div className="flex items-center gap-2.5">
                         {batchMode && (
@@ -567,7 +571,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                             aria-label={selectedIds.has(anno.id) ? '取消选择' : '选择'}
                           >
                             {selectedIds.has(anno.id) ? (
-                              <CheckSquare className="w-4 h-4 text-blue-600" aria-hidden="true" />
+                              <CheckSquare className="w-4 h-4" style={{ color: '#5b7b5a' }} aria-hidden="true" />
                             ) : (
                               <Square className="w-4 h-4 text-gray-400" aria-hidden="true" />
                             )}

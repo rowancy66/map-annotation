@@ -75,27 +75,28 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+      <div className="h-screen flex items-center justify-center" style={{ background: '#faf5eb' }}>
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#5b7b5a' }} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: '#faf5eb' }}>
       {/* 顶栏 */}
-      <header className="h-14 bg-white border-b border-gray-200 shadow-sm flex items-center justify-between px-6">
+      <header className="h-14 flex items-center justify-between px-6" style={{ background: '#4a5a4a', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: '#c1694f' }}>
             <MapPin className="w-4 h-4 text-white" />
           </div>
-          <h1 className="text-base font-semibold text-gray-900">地图标注平台</h1>
+          <h1 className="text-base font-semibold tracking-wide" style={{ color: '#e8ddd0' }}>地图标注平台</h1>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-400">管理员</span>
+          <span className="text-sm" style={{ color: '#a8aba3' }}>管理员</span>
           <button
             onClick={logout}
-            className="text-sm text-gray-400 hover:text-red-500 transition px-2 py-1 rounded hover:bg-gray-100"
+            className="text-sm transition px-2 py-1 rounded hover:bg-white/10"
+            style={{ color: '#a8aba3' }}
           >
             退出登录
           </button>
@@ -112,7 +113,10 @@ export default function AdminDashboard() {
           </div>
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 text-white rounded-xl font-medium transition shadow-sm"
+            style={{ background: '#5b7b5a' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#4a6a49'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = '#5b7b5a'; }}
           >
             <Plus className="w-4 h-4" />
             新建地图
@@ -127,10 +131,10 @@ export default function AdminDashboard() {
               className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden group"
             >
               {/* 缩略图区域 */}
-              <div className="h-36 bg-gradient-to-br from-blue-50 to-indigo-50 relative flex items-center justify-center">
+              <div className="h-36 relative flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #faf5eb, #ede7db)' }}>
                 <div className="text-center">
-                  <MapPin className="w-10 h-10 text-blue-300 mx-auto mb-1" />
-                  <p className="text-xs text-blue-400 font-mono">{map.annotation_count} 个标注</p>
+                  <MapPin className="w-10 h-10 mx-auto mb-1" style={{ color: '#c1694f', opacity: 0.4 }} />
+                  <p className="text-xs font-mono" style={{ color: '#8b7d6b' }}>{map.annotation_count} 个标注</p>
                 </div>
                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                   <button
@@ -139,7 +143,7 @@ export default function AdminDashboard() {
                     title="编辑"
                     aria-label="编辑"
                   >
-                    <Edit3 className="w-3.5 h-3.5 text-blue-600" />
+                    <Edit3 className="w-3.5 h-3.5" style={{ color: '#5b7b5a' }} />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); setDeleteConfirm(map.id); }}
@@ -195,8 +199,10 @@ export default function AdminDashboard() {
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="例如：土地成交数据"
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
-                  autoFocus
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none transition"
+                    onFocus={(e) => { e.currentTarget.style.borderColor = '#5b7b5a'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(91,123,90,0.15)'; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.boxShadow = 'none'; }}
+                    autoFocus
                 />
               </div>
               <div>
@@ -206,7 +212,9 @@ export default function AdminDashboard() {
                   onChange={(e) => setNewDesc(e.target.value)}
                   placeholder="地图用途说明..."
                   rows={2}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none resize-none"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none resize-none"
+                    onFocus={(e) => { e.currentTarget.style.borderColor = '#5b7b5a'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(91,123,90,0.15)'; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.boxShadow = 'none'; }}
                 />
               </div>
             </div>
@@ -220,7 +228,10 @@ export default function AdminDashboard() {
               <button
                 onClick={handleCreate}
                 disabled={!newName.trim() || creating}
-                className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-40 transition flex items-center gap-2"
+                className="px-4 py-2 text-white rounded-xl text-sm font-medium disabled:opacity-40 transition flex items-center gap-2"
+                style={{ background: newName.trim() && !creating ? '#5b7b5a' : '#a8aba3' }}
+                onMouseEnter={(e) => { if (newName.trim() && !creating) e.currentTarget.style.background = '#4a6a49'; }}
+                onMouseLeave={(e) => { if (newName.trim() && !creating) e.currentTarget.style.background = '#5b7b5a'; }}
               >
                 {creating && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 创建
