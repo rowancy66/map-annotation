@@ -31,8 +31,8 @@ export function useMapData(isLoggedIn: boolean, mapId?: string) {
 
       let map = response.mapProject ? (response.mapProject as unknown as MapProject) : null;
 
-      // 同步字段模板：登录时才写回
-      if (map && map.field_templates && Array.isArray(map.field_templates)) {
+      // 同步字段模板：仅对默认地图执行
+      if (map && !mapId && map.field_templates && Array.isArray(map.field_templates)) {
         const defaultMap = new Map(DEFAULT_LAND_FIELD_TEMPLATES.map((t) => [t.id, t]));
         const oldTemplates = map.field_templates as FieldTemplate[];
         let changed = false;
@@ -51,8 +51,7 @@ export function useMapData(isLoggedIn: boolean, mapId?: string) {
           merged = [...merged, ...missing];
           changed = true;
         }
-        // 只有默认地图（没有指定 mapId）才强制填充默认模板
-        if (merged.length === 0 && !mapId) {
+        if (merged.length === 0) {
           merged = DEFAULT_LAND_FIELD_TEMPLATES;
           changed = true;
         }
