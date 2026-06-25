@@ -107,10 +107,13 @@ export default function GroupTree({
         <div
           className={`group flex items-center gap-1 px-2 py-1.5 rounded-lg cursor-pointer transition-all text-sm ${
             isSelected
-              ? 'bg-blue-100 text-blue-700 font-medium'
+              ? 'font-medium'
               : 'text-gray-700 hover:bg-gray-100'
           }`}
-          style={{ paddingLeft: `${12 + depth * 16}px` }}
+          style={Object.assign(
+            { paddingLeft: `${12 + depth * 16}px` },
+            isSelected ? { background: '#e8f0e7', color: '#5b7b5a' } : {}
+          )}
           onClick={() => onSelectGroup(isSelected ? null : group.id)}
           onContextMenu={(e) => handleContextMenu(e, group)}
         >
@@ -140,9 +143,10 @@ export default function GroupTree({
               type="text"
               value={renameValue}
               onChange={(e) => setRenameValue(e.target.value)}
-              onBlur={() => handleRename(group.id)}
+              onBlur={(e) => { handleRename(group.id); e.currentTarget.style.borderColor = '#5b7b5a'; }}
               onKeyDown={(e) => { if (e.key === 'Enter') handleRename(group.id); if (e.key === 'Escape') setRenaming(null); }}
-              className="flex-1 min-w-0 px-1 py-0.5 border border-blue-300 rounded text-sm outline-none focus:ring-1 focus:ring-blue-500"
+              className="flex-1 min-w-0 px-1 py-0.5 border rounded text-sm outline-none"
+              style={{ borderColor: '#5b7b5a', boxShadow: '0 0 0 1px rgba(91,123,90,0.2)' }}
               autoFocus
               onClick={(e) => e.stopPropagation()}
             />
@@ -179,9 +183,10 @@ export default function GroupTree({
       <div
         className={`flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer text-sm mb-1 ${
           selectedGroupId === null
-            ? 'bg-blue-100 text-blue-700 font-medium'
+            ? 'font-medium'
             : 'text-gray-700 hover:bg-gray-100'
         }`}
+        style={selectedGroupId === null ? { background: '#e8f0e7', color: '#5b7b5a' } : undefined}
         onClick={() => onSelectGroup(null)}
       >
         <FolderOpen className="w-4 h-4 text-gray-400" />

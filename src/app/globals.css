@@ -1,15 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #f5f0e8;
-  --surface: #faf8f4;
+  --bg: #faf5eb;
+  --surface: #ffffff;
   --ink: #2c2416;
-  --muted: #8c8273;
-  --border: #e3ddd0;
-  --accent: #c4552b;
-  --accent-soft: #c4552b15;
-  --deep: #1a3a3a;
-  --gold: #d4954e;
+  --muted: #7a7d7a;
+  --faint: #a8aba3;
+  --border: #e8e2d6;
+  --primary: #5b7b5a;
+  --primary-light: #e8f0e7;
+  --accent: #c1694f;
+  --accent-light: #f5e8e3;
+  --danger: #c1694f;
+  --deep: #4a5a4a;
+  --gold: #c9a96e;
 }
 
 @theme inline {
@@ -18,6 +22,7 @@
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-primary: var(--primary);
   --color-accent: var(--accent);
   --color-deep: var(--deep);
   --color-gold: var(--gold);
@@ -79,7 +84,7 @@ body {
   100% { background-position: 200% 0; }
 }
 .skeleton-shimmer {
-  background: linear-gradient(90deg, #e8e2d8 25%, #ddd6ca 50%, #e8e2d8 75%);
+  background: linear-gradient(90deg, #e8e2d6 25%, #ddd6ca 50%, #e8e2d6 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }
@@ -95,7 +100,7 @@ body {
   width: 100%;
   height: 100%;
   z-index: 1;
-  background: #ede7db !important;
+	background: #e3dccf !important;
 }
 .custom-marker {
   background: transparent !important;
@@ -114,9 +119,9 @@ body {
   font-size: 13px !important;
 }
 .leaflet-control-zoom a {
-  color: #2c2416 !important;
-  background: #faf8f4 !important;
-  border-color: #e3ddd0 !important;
+  color: #5b7b5a !important;
+  background: #ffffff !important;
+  border-color: #e8e2d6 !important;
 }
 
 /* ========== 滚动条 ========== */
