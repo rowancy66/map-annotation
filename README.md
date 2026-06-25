@@ -17,7 +17,7 @@
 ### 数据管理
 - 📊 **批量导入** — 支持 Excel(.xlsx) / CSV 文件批量落点，自动列映射
 - 📥 **数据导出** — 导出标注数据为 Excel / CSV
-- 🏷️ **自定义字段模板** — 灵活定义标注属性（文本/数字/日期/选择）
+- 🏷️ **自定义字段模板** — 灵活定义标注属性（文本/数字/日期/选择），新建地图从空模板起步，自由添加字段
 - 🔍 **高级搜索** — 搜索标注名称、位置、自定义字段值
 
 ### 认证
@@ -91,45 +91,25 @@ npm run dev
 ```
 src/
 ├── app/
-│   ├── page.tsx                    # 前台地图列表
-│   ├── PublicDashboard.tsx         # 前台地图列表组件
-│   ├── admin/
-│   │   ├── page.tsx                # 管理入口（含登录检测）
-│   │   ├── AdminDashboard.tsx      # 管理员地图列表
-│   │   └── AdminEditor.tsx         # 单地图编辑器
-│   ├── map/[id]/
-│   │   └── page.tsx                # 前台单地图查看
-│   ├── auth/login/
-│   │   └── page.tsx                # 登录页
-│   └── setup/
-│       └── page.tsx                # 首次密码设置
-├── components/
-│   ├── auth/                       # 认证组件
-│   ├── map/
-│   │   ├── MapView.tsx             # 地图视图
-│   │   ├── DrawingToolbar.tsx      # 绘制工具栏
-│   │   ├── InfoCard.tsx            # 标注信息卡片
-│   │   ├── GroupTree.tsx           # 分组树组件
-│   │   ├── FieldTemplateManager.tsx# 字段模板管理器
-│   │   └── SearchBox.tsx           # 地理搜索
-│   └── import/
-│       └── ImportDialog.tsx        # 批量导入
+│   ├── admin/AdminDashboard.tsx     # 管理员地图列表
+│   ├── admin/AdminEditor.tsx        # 单地图编辑器
+│   ├── map/[id]/page.tsx            # 前台单地图查看
+│   └── api/                         # 认证、地图、标注、分组 API
+├── components/map/
+│   ├── MapView.tsx                  # 地图视图（Leaflet）
+│   ├── InfoCard.tsx                 # 标注详情卡片
+│   ├── FieldTemplateManager.tsx     # 自定义字段模板编辑器
+│   ├── DrawingToolbar.tsx           # 点/线/面绘制工具栏
+│   └── GroupTree.tsx                # 分组树
+├── hooks/useMapData.ts              # 地图数据管理与同步
 ├── lib/
-│   ├── types.ts                    # 类型定义
-│   ├── constants.ts                # 配置常量
-│   ├── api.ts                      # 客户端 API 工具
-│   ├── turso.ts                    # Turso 客户端
-│   └── server/
-│       ├── auth.ts                 # 服务端认证
-│       ├── maps.ts                 # 地图/标注 CRUD
-│       ├── groups.ts               # 分组 CRUD
-│       └── schema.ts               # 数据库 Schema 初始化
+│   ├── types.ts                     # 类型定义
+│   ├── constants.ts                 # 配置常量
+│   └── server/                      # 服务端 CRUD + 认证 + Schema
 └── app/api/
-    ├── auth/                       # 认证 API
-    ├── map/                        # 地图 API
-    ├── maps/                       # 多地图 API
-    ├── annotations/                # 标注 API
-    └── groups/                     # 分组 API
+docs/
+├── plans/                           # 实现计划
+└── superpowers/specs/               # 设计规格文档
 ```
 
 ## 🎯 使用指南
@@ -165,7 +145,7 @@ src/
 
 | 表 | 说明 |
 |----|------|
-| **maps** | 地图项目（名称、描述、中心点、缩放、字段模板） |
+| **maps** | 地图项目（名称、描述、中心点、缩放、字段模板、设置） |
 | **annotations** | 标注（类型、几何、样式、自定义字段、分组） |
 | **groups** | 分组目录（树形结构，支持父子层级） |
 | **settings** | 全局设置（管理密码哈希等） |

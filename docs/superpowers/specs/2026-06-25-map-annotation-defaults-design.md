@@ -1,27 +1,30 @@
-# 地图标注自定义默认名称与字段模板设计
+# 地图标注自定义字段模板设计
 
 ## 概述
 
-新建地图时不再强制预填土地出让相关字段模板（面积、容积率等），改为空模板起步。用户可在编辑器侧边栏为地图配置点/线/面的默认创建名称。
+新建地图时不再强制预填土地出让相关字段模板（面积、容积率等），改为空模板起步。用户在编辑器侧边栏自由定义字段模板，字段名称输入框支持中文输入法。
 
 ## 目标
 
-- 在不影响默认地图（"我的地图"）的前提下，让新建地图自由定义点/线/面名称
+- 在不影响默认地图（"我的地图"）的前提下，让新建地图从空字段模板起步
 - 新建地图不再预填土地出让字段，从空模板开始
+- 字段名称输入框支持中文输入法
 - 改动最小，不引入冗余功能
 
 ## 改动范围
 
 ### 1. 数据层
 
-#### 新增 `MapSettings` 类型（`src/lib/types.ts`）
+`MapProject` 增加 `settings` 字段（`MapSettings`），目前保留供后续扩展使用。
+
+#### `MapSettings` 类型（`src/lib/types.ts`）
 
 ```typescript
 export interface MapSettings {
   defaultNames: {
-    point: string;   // 创建点时默认名称
-    line: string;    // 创建线时默认名称
-    polygon: string; // 创建面时默认名称
+    point: string;
+    line: string;
+    polygon: string;
   };
 }
 ```
@@ -63,26 +66,26 @@ if (body.settings) updates.settings = body.settings;
 
 ### 3. UI 层
 
-#### `AdminEditor.tsx`
+#### AdminEditor.tsx
 
-**a) 侧边栏新增「标注默认名称」配置面板**
+侧边栏设置面板只保留字段模板管理器（`FieldTemplateManager`）：
+- 新建地图的字段模板为空数组
+- 用户在面板中点击「自定义字段」展开，可自由添加/编辑/删除字段
+- 字段模板修改后自动通过 API 保存
 
-位于字段模板管理器附近，包含三个输入框：
-- 点标注默认名称
-- 线标注默认名称
-- 面标注默认名称
+#### FieldTemplateManager.tsx
 
-修改后点击「保存」按钮，调用 `PUT /api/maps/[id]` 更新。
+字段名称输入框使用 uncontrolled 模式以支持中文输入法：
+- `defaultValue` 替代 `value`
+- `onBlur` 触发保存，而非 `onChange` 实时保存
+- 避免 React 受控组件在 IME 输入法组合过程中打断用户输入
 
-**b) 创建标注时使用地图配置**
+#### 标注创建
 
-| 位置 | 当前 | 改为 |
-|------|------|------|
-| `handleMapClick` (创建点) | `name: ''` | `name: mapProject?.settings.defaultNames.point ?? ''` |
-| `handleDrawComplete` (创建线) | `name: '新线路'` | `name: mapProject?.settings.defaultNames.line ?? '新线路'` |
-| `handleDrawComplete` (创建面) | `name: '新区域'` | `name: mapProject?.settings.defaultNames.polygon ?? '新区域'` |
-
-保留硬编码兜底以兼容已有地图（无 `settings` 字段时 fallback）。
+创建点/线/面时恢复使用原始硬编码名称：
+- 点：空字符串（用户后续编辑填写）
+- 线：「新线路」
+- 面：「新区域」
 
 ### 4. 不受影响的部分
 
@@ -94,22 +97,16 @@ if (body.settings) updates.settings = body.settings;
 ## 数据流
 
 ```
-用户修改默认名称
-  → AdminEditor 侧边栏
-  → PUT /api/maps/[id] { settings: { defaultNames: {...} } }
-  → updateMap() 更新 maps.settings
-  → 下次加载地图时 rowToMapProject() 解析 settings
-
-用户创建标注
-  → handleMapClick / handleDrawComplete
-  → 读取 mapProject.settings.defaultNames
-  → 填入 annotation.name
-  → 保存到数据库
+用户在字段模板编辑器中添加/编辑字段
+  → FieldTemplateManager.onChange → handleFieldTemplatesChange
+  → PUT /api/map { mapId, templates }
+  → updateFieldTemplates() 更新 maps.field_templates
+  → setMapProject 更新本地状态
 ```
 
 ## 向后兼容
 
-- 已有地图没有 `settings` 列，迁移后初始值为 `'{}'`
-- `rowToMapProject` 解析时，`settings` 为空对象时使用默认值 `{ defaultNames: { point: '', line: '', polygon: '' } }`
-- 创建标注时，如果 settings 中对应名称为空字符串，使用硬编码兜底
-- 已有地图已有 `field_templates` 数据不受影响
+- 已有地图的 `field_templates` 数据不受影响
+- 新建地图的字段模板为空数组，不强制预填土地字段
+- 默认地图（"我的地图"）保留 `DEFAULT_LAND_FIELD_TEMPLATES`
+- `useMapData` 中的字段同步逻辑仅在加载默认地图时执行
