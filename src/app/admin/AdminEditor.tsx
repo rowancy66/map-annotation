@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/auth/AuthProvider';
 import DrawingToolbar from '@/components/map/DrawingToolbar';
@@ -16,6 +16,7 @@ import {
   DrawMode,
   AnnotationType,
   FieldTemplate,
+  MapSettings,
 } from '@/lib/types';
 import {
   Upload,
@@ -64,6 +65,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
     batchDeleteAnnotations,
     importAnnotations,
     updateFieldTemplates,
+    updateMapSettings,
     loadData,
   } = useMapData(isLoggedIn, mapId);
 
@@ -102,6 +104,18 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
   const [showSettings, setShowSettings] = useState(false);
   const [batchDeleteConfirm, setBatchDeleteConfirm] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [defaultNames, setDefaultNames] = useState<MapSettings['defaultNames']>({
+    point: '',
+    line: '',
+    polygon: '',
+  });
+
+  // 同步 defaultNames 到本地状态
+  useEffect(() => {
+    if (mapProject?.settings?.defaultNames) {
+      setDefaultNames(mapProject.settings.defaultNames);
+    }
+  }, [mapProject?.settings?.defaultNames]);
 
   // 分组标注计数
   const annotationCountByGroup = useMemo(() => {
@@ -127,7 +141,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
       map_id: mapProject.id,
       type: 'point',
       geometry: { type: 'Point', coordinates: [latlng.lng, latlng.lat] },
-      name: '',
+      name: mapProject?.settings?.defaultNames?.point ?? '',
       description: '',
       style: { color: '#EF4444', icon: 'map-pin', size: 2 },
       custom_fields: [],
@@ -154,7 +168,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
         map_id: mapProject.id,
         type: 'line',
         geometry: { type: 'LineString', coordinates },
-        name: '新线路',
+        name: mapProject?.settings?.defaultNames?.line || '新线路',
         description: '',
         style: { color: '#3B82F6', width: 3 },
         custom_fields: [],
@@ -167,7 +181,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
         map_id: mapProject.id,
         type: 'polygon',
         geometry: { type: 'Polygon', coordinates },
-        name: '新区域',
+        name: mapProject?.settings?.defaultNames?.polygon || '新区域',
         description: '',
         style: { color: '#8B5CF6', fillColor: '#8B5CF6', fillOpacity: 0.3, width: 2 },
         custom_fields: [],
@@ -248,6 +262,17 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
     }
     setMapProject({ ...mapProject, field_templates: templates });
   }, [mapProject, updateFieldTemplates, setMapProject]);
+
+  const handleDefaultNamesChange = useCallback(async (names: MapSettings['defaultNames']) => {
+    if (!mapProject) return;
+    const settings: MapSettings = { defaultNames: names };
+    const { error } = await updateMapSettings(settings, mapProject.id);
+    if (error) {
+      alert(`更新默认名称失败: ${error}`);
+      return;
+    }
+    setMapProject({ ...mapProject, settings });
+  }, [mapProject, updateMapSettings, setMapProject]);
 
   const onBatchDeleteClick = useCallback(() => {
     if (selectedIds.size === 0) return;
@@ -627,7 +652,52 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
 
             {/* 设置面板 */}
             {showSettings && mapProject && (
-              <div className="border-t border-gray-100">
+              <div className="border-t border-gray-100 space-y-2">
+                {/* 标注默认名称 */}
+                <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <span className="text-sm font-medium text-gray-700">标注默认名称</span>
+                  </div>
+                  <div className="px-4 pb-4 space-y-3 pt-3">
+                    <div className="grid grid-cols-3 gap-2 items-center">
+                      <label className="text-xs text-gray-500">点标注</label>
+                      <input
+                        type="text"
+                        value={defaultNames.point}
+                        onChange={(e) => setDefaultNames((prev) => ({ ...prev, point: e.target.value }))}
+                        placeholder="留空则不填"
+                        className="col-span-2 px-2 py-1.5 border rounded text-sm"
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 items-center">
+                      <label className="text-xs text-gray-500">线标注</label>
+                      <input
+                        type="text"
+                        value={defaultNames.line}
+                        onChange={(e) => setDefaultNames((prev) => ({ ...prev, line: e.target.value }))}
+                        placeholder="留空则不填"
+                        className="col-span-2 px-2 py-1.5 border rounded text-sm"
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 items-center">
+                      <label className="text-xs text-gray-500">面标注</label>
+                      <input
+                        type="text"
+                        value={defaultNames.polygon}
+                        onChange={(e) => setDefaultNames((prev) => ({ ...prev, polygon: e.target.value }))}
+                        placeholder="留空则不填"
+                        className="col-span-2 px-2 py-1.5 border rounded text-sm"
+                      />
+                    </div>
+                    <button
+                      onClick={() => handleDefaultNamesChange(defaultNames)}
+                      className="w-full py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
+                    >
+                      保存默认名称
+                    </button>
+                  </div>
+                </div>
+
                 <FieldTemplateManager
                   templates={mapProject.field_templates}
                   onChange={handleFieldTemplatesChange}

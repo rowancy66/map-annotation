@@ -69,6 +69,12 @@ export function ensureSchema() {
       } catch {
         // 列不存在导致索引失败，忽略
       }
+      // 为已有 maps 表迁移 settings 列
+      try {
+        await turso.execute("ALTER TABLE maps ADD COLUMN settings TEXT NOT NULL DEFAULT '{}'");
+      } catch {
+        // 列已存在，忽略
+      }
     })();
   }
 

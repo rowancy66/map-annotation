@@ -87,6 +87,15 @@ export interface Annotation {
   updated_at: string;
 }
 
+// ===== 地图设置 =====
+export interface MapSettings {
+  defaultNames: {
+    point: string;
+    line: string;
+    polygon: string;
+  };
+}
+
 // ===== 地图 =====
 export interface MapProject {
   id: string;
@@ -96,6 +105,7 @@ export interface MapProject {
   center: [number, number]; // [lng, lat]
   zoom: number;
   field_templates: FieldTemplate[];
+  settings: MapSettings;
   created_at: string;
   updated_at: string;
 }
