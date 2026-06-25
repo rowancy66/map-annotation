@@ -48,14 +48,17 @@ export default function FieldTemplateManager({ templates, onChange }: FieldTempl
           {templates.length === 0 && (
             <p className="text-sm text-gray-400 py-3 text-center">暂无自定义字段，点击下方添加</p>
           )}
-          {templates.map((field) => (
+              {templates.map((field) => (
               <div key={field.id} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg">
                 <div className="flex-1 grid grid-cols-2 gap-2">
                   <input
                     type="text"
-                    value={field.name}
-                    onChange={(e) => {
-                      updateField(field.id, { name: e.target.value });
+                    key={'name-' + field.id}
+                    defaultValue={field.name}
+                    onBlur={(e) => {
+                      if (e.target.value !== field.name) {
+                        updateField(field.id, { name: e.target.value });
+                      }
                     }}
                     placeholder="字段名称"
                     className="px-2 py-1.5 border rounded text-sm"
