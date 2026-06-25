@@ -49,15 +49,25 @@ export default function FieldTemplateManager({ templates, onChange }: FieldTempl
             <p className="text-sm text-gray-400 py-3 text-center">暂无自定义字段，点击下方添加</p>
           )}
           {templates.map((field) => (
-            <div key={field.id} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg">
-              <div className="flex-1 grid grid-cols-2 gap-2">
-                <input
-                  type="text"
-                  value={field.name}
-                  onChange={(e) => updateField(field.id, { name: e.target.value })}
-                  placeholder="字段名称"
-                  className="px-2 py-1.5 border rounded text-sm"
-                />
+              <div key={field.id} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg">
+                <div className="flex-1 grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={field.name}
+                    data-composing="false"
+                    onCompositionStart={(e) => { (e.target as HTMLElement).dataset.composing = 'true'; }}
+                    onCompositionEnd={(e) => {
+                      (e.target as HTMLElement).dataset.composing = 'false';
+                      updateField(field.id, { name: (e.target as HTMLInputElement).value });
+                    }}
+                    onChange={(e) => {
+                      if ((e.target as HTMLElement).dataset.composing !== 'true') {
+                        updateField(field.id, { name: e.target.value });
+                      }
+                    }}
+                    placeholder="字段名称"
+                    className="px-2 py-1.5 border rounded text-sm"
+                  />
                 <select
                   value={field.type}
                   onChange={(e) => updateField(field.id, { type: e.target.value as FieldType })}
