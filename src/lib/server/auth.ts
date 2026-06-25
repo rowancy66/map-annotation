@@ -5,7 +5,14 @@ import { ensureSchema } from './schema';
 
 const SESSION_COOKIE = 'mapmark_session';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
-const SESSION_SECRET = process.env.APP_SESSION_SECRET || 'dev-session-secret';
+const SESSION_SECRET = (() => {
+  const secret = process.env.APP_SESSION_SECRET;
+  if (!secret) {
+    console.warn('[auth] APP_SESSION_SECRET 未设置，使用不安全的内置密钥。请在 .env.local 中配置。');
+    return 'dev-session-secret';
+  }
+  return secret;
+})();
 const ADMIN_USER_ID = 'admin';
 
 export const SESSION_COOKIE_NAME = SESSION_COOKIE;

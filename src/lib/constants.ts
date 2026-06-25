@@ -1,5 +1,5 @@
 // 天地图配置
-export const TIANDITU_KEY = 'e1d6600951ce0b9692ec71ebc7f03170';
+export const TIANDITU_KEY = process.env.NEXT_PUBLIC_TIANDITU_KEY || 'e1d6600951ce0b9692ec71ebc7f03170';
 
 // 天地图瓦片服务 URL 模板
 export const TIANDITU_LAYERS = {
