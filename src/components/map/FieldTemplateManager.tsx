@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { FieldTemplate, FieldType } from '@/lib/types';
 import { Plus, Trash2, ChevronDown } from 'lucide-react';
 
@@ -11,6 +11,7 @@ interface FieldTemplateManagerProps {
 
 export default function FieldTemplateManager({ templates, onChange }: FieldTemplateManagerProps) {
   const [expanded, setExpanded] = useState(false);
+  const composingRef = useRef<Set<string>>(new Set());
 
   const addField = () => {
     const newField: FieldTemplate = {
@@ -54,16 +55,15 @@ export default function FieldTemplateManager({ templates, onChange }: FieldTempl
                   <input
                     type="text"
                     value={field.name}
-                    data-composing="false"
-                    onCompositionStart={(e) => { (e.target as HTMLElement).dataset.composing = 'true'; }}
-                    onCompositionEnd={(e) => {
-                      (e.target as HTMLElement).dataset.composing = 'false';
-                      updateField(field.id, { name: (e.target as HTMLInputElement).value });
-                    }}
                     onChange={(e) => {
-                      if ((e.target as HTMLElement).dataset.composing !== 'true') {
+                      if (!composingRef.current.has(field.id)) {
                         updateField(field.id, { name: e.target.value });
                       }
+                    }}
+                    onCompositionStart={() => composingRef.current.add(field.id)}
+                    onCompositionEnd={(e) => {
+                      composingRef.current.delete(field.id);
+                      updateField(field.id, { name: (e.target as HTMLInputElement).value });
                     }}
                     placeholder="字段名称"
                     className="px-2 py-1.5 border rounded text-sm"
