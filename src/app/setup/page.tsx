@@ -97,23 +97,23 @@ export default function SetupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-[#0a0e1a]">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ background: '#0a0e0c' }}>
       {/* 装饰性格线背景 */}
-      <div className="absolute inset-0 opacity-[0.03]"
+      <div className="absolute inset-0 opacity-[0.025]"
         style={{
-          backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)`,
+          backgroundImage: `radial-gradient(circle at 1px 1px, rgba(120,165,135,0.3) 1px, transparent 0)`,
           backgroundSize: '40px 40px'
         }}
       />
       {/* 渐变光晕 */}
-      <div className="absolute top-1/4 -left-48 w-[30rem] h-[30rem] bg-amber-500/10 rounded-full blur-[120px]" />
-      <div className="absolute bottom-1/4 -right-48 w-[30rem] h-[30rem] bg-blue-500/10 rounded-full blur-[120px]" />
+      <div className="absolute top-1/4 -left-48 w-[30rem] h-[30rem] rounded-full blur-[120px]" style={{ background: 'rgba(120,165,135,0.06)' }} />
+      <div className="absolute bottom-1/4 -right-48 w-[30rem] h-[30rem] rounded-full blur-[120px]" style={{ background: 'rgba(120,165,135,0.04)' }} />
 
       <div className="w-full max-w-sm relative animate-fade-slide-up">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400/90 to-amber-600/90 text-white mb-5 shadow-lg shadow-amber-500/20 animate-float backdrop-blur-sm">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-8 h-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-5 animate-float backdrop-blur-sm shadow-lg" style={{ background: 'linear-gradient(135deg, #78a587, #5a8a70)', boxShadow: '0 8px 32px rgba(120,165,135,0.15)' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-8 h-8 text-white">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
               <circle cx="12" cy="10" r="3" fill="white" stroke="none"/>
             </svg>
@@ -169,7 +169,10 @@ export default function SetupPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-gradient-to-r from-amber-500/90 to-amber-600/90 text-[#0a0e1a] rounded-xl font-semibold tracking-wide hover:from-amber-400 hover:to-amber-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
+                className="w-full py-3 rounded-xl font-semibold tracking-wide disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg"
+                style={{ background: 'linear-gradient(135deg, #78a587, #5a8a70)', color: '#0a0e0c', boxShadow: '0 8px 32px rgba(120,165,135,0.15)' }}
+                onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = 'linear-gradient(135deg, #8ab8a0, #6a9a80)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'linear-gradient(135deg, #78a587, #5a8a70)'; }}
               >
                 <ShieldCheck aria-hidden="true" className="w-4 h-4" />
                 {loading ? (
