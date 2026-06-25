@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { isLoggedIn } from '@/lib/server/auth';
 import { listMaps, createMap } from '@/lib/server/maps';
 
 export async function GET() {

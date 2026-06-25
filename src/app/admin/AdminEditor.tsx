@@ -64,6 +64,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
     batchDeleteAnnotations,
     importAnnotations,
     updateFieldTemplates,
+    loadData,
   } = useMapData(isLoggedIn, mapId);
 
   const {
