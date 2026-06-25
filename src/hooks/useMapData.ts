@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { MapProject, Annotation, FieldTemplate, Group } from '@/lib/types';
+import { MapProject, Annotation, FieldTemplate, Group, MapSettings } from '@/lib/types';
 import { DEFAULT_LAND_FIELD_TEMPLATES } from '@/lib/constants';
 import { apiGet, apiSend } from '@/lib/api';
 
@@ -51,7 +51,8 @@ export function useMapData(isLoggedIn: boolean, mapId?: string) {
           merged = [...merged, ...missing];
           changed = true;
         }
-        if (merged.length === 0) {
+        // 只有默认地图（没有指定 mapId）才强制填充默认模板
+        if (merged.length === 0 && !mapId) {
           merged = DEFAULT_LAND_FIELD_TEMPLATES;
           changed = true;
         }
@@ -157,6 +158,18 @@ export function useMapData(isLoggedIn: boolean, mapId?: string) {
     }
   }, [requireAdmin]);
 
+  const updateMapSettings = useCallback(async (settings: MapSettings, mapId: string): Promise<{ error: string | null }> => {
+    if (!requireAdmin('更新地图设置')) return { error: '需要登录' };
+
+    try {
+      await apiSend(`/api/maps/${mapId}`, 'PUT', { settings });
+      return { error: null };
+    } catch (error) {
+      console.error('更新地图设置失败:', error);
+      return { error: error instanceof Error ? error.message : '更新地图设置失败' };
+    }
+  }, [requireAdmin]);
+
   return {
     mapProject,
     setMapProject,
@@ -172,5 +185,6 @@ export function useMapData(isLoggedIn: boolean, mapId?: string) {
     batchDeleteAnnotations,
     importAnnotations,
     updateFieldTemplates,
+    updateMapSettings,
   };
 }

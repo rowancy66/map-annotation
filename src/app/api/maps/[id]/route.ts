@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { isLoggedIn } from '@/lib/server/auth';
 import { getMapById, getOrCreateDefaultMap, listAnnotations, updateMap, deleteMap } from '@/lib/server/maps';
 import { listGroups } from '@/lib/server/groups';
+import { MapSettings } from '@/lib/types';
 
 export async function GET(
   _request: Request,
@@ -36,11 +37,12 @@ export async function PUT(
     return NextResponse.json({ error: '参数不完整' }, { status: 400 });
   }
 
-  const updates: { name?: string; description?: string; center?: [number, number]; zoom?: number } = {};
+  const updates: { name?: string; description?: string; center?: [number, number]; zoom?: number; settings?: MapSettings } = {};
   if (typeof body.name === 'string') updates.name = body.name.trim();
   if (typeof body.description === 'string') updates.description = body.description.trim();
   if (Array.isArray(body.center)) updates.center = body.center;
   if (typeof body.zoom === 'number') updates.zoom = body.zoom;
+  if (body.settings && typeof body.settings === 'object') updates.settings = body.settings;
 
   await updateMap(id, updates);
   return NextResponse.json({ ok: true });

@@ -1,11 +1,12 @@
 import { turso } from '@/lib/turso';
 import { DEFAULT_LAND_FIELD_TEMPLATES } from '@/lib/constants';
-import { Annotation, FieldTemplate, MapProject } from '@/lib/types';
+import { Annotation, FieldTemplate, MapProject, MapSettings } from '@/lib/types';
 import { ensureSchema } from './schema';
 
 const ADMIN_USER_ID = 'admin';
 
 function rowToMapProject(row: Record<string, unknown>): MapProject {
+  const rawSettings = row.settings ? JSON.parse(String(row.settings)) : {};
   return {
     id: String(row.id),
     user_id: String(row.user_id),
@@ -14,6 +15,13 @@ function rowToMapProject(row: Record<string, unknown>): MapProject {
     center: JSON.parse(String(row.center || '[120.43,36.16]')),
     zoom: Number(row.zoom || 13),
     field_templates: JSON.parse(String(row.field_templates || '[]')),
+    settings: {
+      defaultNames: {
+        point: rawSettings?.defaultNames?.point ?? '',
+        line: rawSettings?.defaultNames?.line ?? '',
+        polygon: rawSettings?.defaultNames?.polygon ?? '',
+      },
+    },
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
   };
@@ -76,6 +84,7 @@ export async function getOrCreateDefaultMap() {
     center: [120.43, 36.16] as [number, number],
     zoom: 13,
     field_templates: DEFAULT_LAND_FIELD_TEMPLATES,
+    settings: { defaultNames: { point: '', line: '', polygon: '' } },
     created_at: now,
     updated_at: now,
   } satisfies MapProject;
@@ -178,20 +187,21 @@ export async function listMaps() {
   });
 }
 
-export async function createMap(name: string, description: string, fieldTemplates?: FieldTemplate[]) {
+export async function createMap(name: string, description: string, fieldTemplates?: FieldTemplate[], settings?: MapSettings) {
   await ensureSchema();
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
-  const templates = fieldTemplates || DEFAULT_LAND_FIELD_TEMPLATES;
+  const templates = fieldTemplates || [];
+  const mapSettings = settings || { defaultNames: { point: '', line: '', polygon: '' } };
   await turso.execute({
-    sql: `INSERT INTO maps (id, user_id, name, description, center, zoom, field_templates, created_at, updated_at)
-          VALUES (?, 'admin', ?, ?, ?, 13, ?, ?, ?)`,
-    args: [id, name, description, stringifyJson([120.43, 36.16]), stringifyJson(templates), now, now],
+    sql: `INSERT INTO maps (id, user_id, name, description, center, zoom, field_templates, settings, created_at, updated_at)
+          VALUES (?, 'admin', ?, ?, ?, 13, ?, ?, ?, ?)`,
+    args: [id, name, description, stringifyJson([120.43, 36.16]), stringifyJson(templates), stringifyJson(mapSettings), now, now],
   });
   return getMapById(id);
 }
 
-export async function updateMap(mapId: string, updates: { name?: string; description?: string; center?: [number, number]; zoom?: number }) {
+export async function updateMap(mapId: string, updates: { name?: string; description?: string; center?: [number, number]; zoom?: number; settings?: MapSettings }) {
   await ensureSchema();
   const now = new Date().toISOString();
   const sets: string[] = ['updated_at = ?'];
@@ -200,6 +210,7 @@ export async function updateMap(mapId: string, updates: { name?: string; descrip
   if (updates.description !== undefined) { sets.push('description = ?'); args.push(updates.description); }
   if (updates.center !== undefined) { sets.push('center = ?'); args.push(stringifyJson(updates.center)); }
   if (updates.zoom !== undefined) { sets.push('zoom = ?'); args.push(updates.zoom); }
+  if (updates.settings !== undefined) { sets.push('settings = ?'); args.push(stringifyJson(updates.settings)); }
   args.push(mapId);
   await turso.execute({ sql: `UPDATE maps SET ${sets.join(', ')} WHERE id = ?`, args });
 }
