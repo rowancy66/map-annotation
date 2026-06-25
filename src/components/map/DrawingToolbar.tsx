@@ -28,7 +28,7 @@ export default function DrawingToolbar({ drawMode, onDrawModeChange, annotationC
               ? 'text-white scale-105'
               : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
           }`}
-          style={drawMode === tool.mode ? { background: 'linear-gradient(135deg, #5b7b5a, #4a6a49)', boxShadow: '0 2px 8px rgba(91,123,90,0.3)' } : undefined}
+          style={drawMode === tool.mode ? { background: '#78a587', boxShadow: '0 2px 8px rgba(120,165,135,0.2)' } : undefined}
           title={tool.label}
         >
           {tool.icon}
@@ -37,7 +37,7 @@ export default function DrawingToolbar({ drawMode, onDrawModeChange, annotationC
             <span className={`absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full text-[10px] flex items-center justify-center font-bold px-1 ${
               drawMode === tool.mode ? 'text-[#5b7b5a]' : 'text-[#5b7b5a]'
             }`}
-            style={{ background: drawMode === tool.mode ? '#ffffff' : '#e8f0e7' }}>
+            style={{ background: drawMode === tool.mode ? '#ffffff' : '#e8eee8' }}>
               {tool.count}
             </span>
           )}

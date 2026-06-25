@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>青瓷 · 金玉</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: #e8e4dc; color: #3a3834; height: 100vh; display: flex; flex-direction: column; }
+
+header { height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 36px; background: #f5f2ec; border-bottom: 1px solid rgba(180,160,130,0.08); }
+header .left { display: flex; align-items: center; gap: 18px; }
+header .logo { width: 32px; height: 32px; background: #78a587; display: flex; align-items: center; justify-content: center; font-family: 'Newsreader', serif; font-size: 13px; color: #ffffff; font-weight: 400; }
+header h1 { font-size: 14px; font-weight: 400; color: #3a3834; letter-spacing: 0.02em; }
+header .badge { font-size: 9px; padding: 3px 12px; background: rgba(180,160,130,0.1); color: #8a7a6a; font-weight: 400; letter-spacing: 0.06em; }
+header .actions { display: flex; align-items: center; gap: 8px; }
+header .actions span { font-size: 12px; color: #8a8a84; padding: 6px 12px; cursor: default; }
+header .actions .active { color: #78a587; }
+
+.main { flex: 1; display: flex; overflow: hidden; }
+.sidebar { width: 300px; background: #faf8f4; border-right: 1px solid rgba(180,160,130,0.06); display: flex; flex-direction: column; }
+.sidebar-pad { padding: 24px 20px 0; }
+.sidebar-tabs { display: flex; gap: 0; margin-bottom: 20px; }
+.sidebar-tabs span { font-size: 11px; cursor: default; color: #aab0aa; letter-spacing: 0.04em; margin-right: 24px; }
+.sidebar-tabs .active { color: #3a3834; font-weight: 500; }
+.sidebar-search input { width: 100%; padding: 9px 12px; border: none; background: #f2eee8; font-size: 12px; color: #3a3834; outline: none; font-family: 'Inter', sans-serif; font-weight: 300; border-radius: 6px; }
+.sidebar-search input::placeholder { color: #bcc0b8; }
+.sidebar-list { flex: 1; overflow-y: auto; margin-top: 8px; }
+.item { display: flex; align-items: center; gap: 12px; padding: 14px 20px; cursor: default; border-left: 2px solid transparent; }
+.item.active { border-left-color: #78a587; background: rgba(120,165,135,0.03); }
+.item .marker { width: 6px; height: 6px; border-radius: 1px; flex-shrink: 0; transform: rotate(45deg); }
+.item .marker.point { background: #78a587; }
+.item .marker.line { background: #a0b0a0; }
+.item .marker.polygon { background: #c0c8b8; }
+.item-text { flex: 1; min-width: 0; }
+.item-text .name { font-size: 13px; font-weight: 400; color: #3a3834; }
+.item-text .desc { font-size: 11px; color: #8a8a84; margin-top: 1px; }
+.item-tag { font-size: 9px; padding: 1px 8px; background: rgba(120,165,135,0.06); color: #78a587; letter-spacing: 0.04em; }
+.sidebar-footer { padding: 12px 20px; border-top: 1px solid rgba(180,160,130,0.04); font-size: 11px; color: #8a8a84; display: flex; justify-content: space-between; }
+
+.map-area { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: #e4dfd7; }
+.map-area .center-text { font-size: 12px; color: #c4c0b6; letter-spacing: 0.1em; z-index: 1; font-weight: 300; }
+
+.toolbar { position: absolute; right: 24px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 4px; padding: 8px; background: #faf8f4; border: 1px solid rgba(180,160,130,0.06); }
+.toolbar .tool { width: 44px; height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #8a8a84; font-size: 9px; cursor: default; }
+.toolbar .tool.active { background: #78a587; color: #ffffff; }
+.toolbar .tool svg { width: 16px; height: 16px; margin-bottom: 2px; stroke-width: 1.2; }
+
+.infocard { position: absolute; right: 80px; top: 24px; width: 320px; background: #faf8f4; padding: 28px; }
+.infocard .title { font-size: 15px; font-weight: 400; color: #3a3834; margin-bottom: 20px; display: flex; justify-content: space-between; font-family: 'Newsreader', serif; }
+.infocard .field { margin-bottom: 14px; }
+.infocard .field label { font-size: 9px; color: #aab0aa; display: block; margin-bottom: 4px; letter-spacing: 0.06em; text-transform: uppercase; }
+.infocard .field input { width: 100%; padding: 8px 0; border: none; border-bottom: 1px solid rgba(180,160,130,0.08); background: transparent; font-size: 13px; color: #3a3834; outline: none; font-family: 'Inter', sans-serif; font-weight: 300; }
+.infocard .field input:focus { border-bottom-color: #78a587; }
+.infocard .actions { display: flex; gap: 8px; margin-top: 24px; }
+.infocard .actions .btn { flex: 1; padding: 10px; border: none; font-size: 10px; cursor: default; letter-spacing: 0.06em; text-transform: uppercase; font-family: 'Inter', sans-serif; font-weight: 400; }
+.infocard .actions .btn.primary { background: #78a587; color: #ffffff; }
+.infocard .actions .btn.danger { border: 1px solid rgba(120,165,135,0.08); color: #78a587; background: transparent; }
+
+.style-label { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 9px; color: rgba(0,0,0,0.05); letter-spacing: 0.12em; z-index: 100; }
+</style>
+</head>
+<body>
+<header>
+  <div class="left"><div class="logo">玉</div><h1>李沧区地块数据</h1><span class="badge">编辑</span></div>
+  <div class="actions"><span class="active">导入</span><span>导出</span><span>⚙</span></div>
+</header>
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-pad">
+      <div class="sidebar-tabs"><span class="active">列表</span><span>分组</span></div>
+      <div class="sidebar-search"><input type="text" placeholder="搜索标注" /></div>
+    </div>
+    <div class="sidebar-list">
+      <div class="item active"><div class="marker point"></div><div class="item-text"><div class="name">地块 A-01</div><div class="desc">面积 45.2 亩 · 容积率 2.5</div></div><span class="item-tag">点</span></div>
+      <div class="item"><div class="marker polygon"></div><div class="item-text"><div class="name">规划区域 B</div><div class="desc">占地 120 亩 · 容积率 1.8</div></div><span class="item-tag">面</span></div>
+      <div class="item"><div class="marker line"></div><div class="item-text"><div class="name">地铁 3 号线</div><div class="desc">全长 12.3 km · 5 站</div></div><span class="item-tag">线</span></div>
+    </div>
+    <div class="sidebar-footer">3 个标注 · 2 个分组</div>
+  </div>
+  <div class="map-area">
+    <div class="center-text">地图区域</div>
+    <div class="toolbar">
+      <div class="tool active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>选择</div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>点</div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="4 17 9 11 14 14 20 4"/></svg>线</div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 22 9 18 21 6 21 2 9"/></svg>面</div>
+    </div>
+    <div class="infocard">
+      <div class="title"><span>地块 A-01</span><span style="color:#aab0aa;cursor:default;">✕</span></div>
+      <div class="field"><label>名称</label><input type="text" value="地块 A-01" /></div>
+      <div class="field"><label>面积 (㎡)</label><input type="text" value="45.2" /></div>
+      <div class="field"><label>容积率</label><input type="text" value="2.5" /></div>
+      <div class="actions"><button class="btn primary">保存</button><button class="btn danger">删除</button></div>
+    </div>
+  </div>
+</div>
+<div class="style-label">青瓷 · 金玉 · 暖灰底 · 翡翠方点 · 干练</div>
+</body>
+</html>

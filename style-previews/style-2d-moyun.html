@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>青瓷 · 墨韵</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: #f5f2ec; color: #1c1e1c; height: 100vh; display: flex; flex-direction: column; }
+
+header { height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; background: #1c1e1c; }
+header .left { display: flex; align-items: center; gap: 14px; }
+header .logo { width: 28px; height: 28px; background: #8ab8a0; display: flex; align-items: center; justify-content: center; font-family: 'Newsreader', serif; font-size: 11px; color: #1c1e1c; font-weight: 500; }
+header h1 { font-size: 14px; font-weight: 400; color: #d8dcd8; letter-spacing: 0.02em; }
+header .badge { font-size: 9px; padding: 2px 10px; border: 1px solid rgba(138,184,160,0.15); color: #8ab8a0; font-weight: 400; background: transparent; letter-spacing: 0.06em; }
+header .actions { display: flex; align-items: center; gap: 4px; }
+header .actions span { font-size: 12px; color: #5a605a; padding: 6px 10px; cursor: default; }
+
+.main { flex: 1; display: flex; overflow: hidden; }
+.sidebar { width: 300px; background: #ffffff; border-right: 1px solid rgba(180,175,165,0.06); display: flex; flex-direction: column; }
+.sidebar-pad { padding: 20px 20px 0; }
+.sidebar-tabs { display: flex; gap: 24px; margin-bottom: 16px; }
+.sidebar-tabs span { font-size: 11px; cursor: default; color: #b0b4ae; letter-spacing: 0.04em; }
+.sidebar-tabs .active { color: #1c1e1c; font-weight: 500; }
+.sidebar-search input { width: 100%; padding: 8px 0; border: none; border-bottom: 1px solid #f0eeea; background: transparent; font-size: 12px; color: #1c1e1c; outline: none; font-family: 'Inter', sans-serif; font-weight: 300; }
+.sidebar-search input:focus { border-bottom-color: #8ab8a0; }
+.sidebar-search input::placeholder { color: #c0c4be; }
+.sidebar-list { flex: 1; overflow-y: auto; }
+.item { display: flex; align-items: center; gap: 12px; padding: 14px 20px; cursor: default; }
+.item.active { background: #f8f6f2; }
+.item-text { flex: 1; min-width: 0; }
+.item-text .name { font-size: 13px; font-weight: 400; color: #1c1e1c; }
+.item-text .desc { font-size: 11px; color: #a0a4a0; margin-top: 1px; }
+.item-badge { font-size: 9px; padding: 2px 8px; border-radius: 10px; background: #f0eeea; color: #5a605a; letter-spacing: 0.02em; }
+.sidebar-footer { padding: 10px 20px; border-top: 1px solid #f0eeea; font-size: 11px; color: #a0a4a0; display: flex; justify-content: space-between; }
+
+.map-area { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: #f0ece4; }
+.map-area .center-text { font-size: 12px; color: #d0ccc2; letter-spacing: 0.1em; z-index: 1; font-weight: 300; }
+
+.toolbar { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 4px; padding: 8px; background: #ffffff; border: 1px solid #f0eeea; }
+.toolbar .tool { width: 42px; height: 42px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #a0a4a0; font-size: 9px; cursor: default; }
+.toolbar .tool.active { background: #1c1e1c; color: #ffffff; }
+.toolbar .tool svg { width: 16px; height: 16px; margin-bottom: 2px; stroke-width: 1.2; }
+
+.infocard { position: absolute; right: 76px; top: 20px; width: 300px; background: #ffffff; padding: 24px; }
+.infocard .title { font-size: 15px; font-weight: 400; color: #1c1e1c; margin-bottom: 18px; display: flex; justify-content: space-between; font-family: 'Newsreader', serif; padding-bottom: 12px; border-bottom: 1px solid #f0eeea; }
+.infocard .field { margin-bottom: 12px; }
+.infocard .field label { font-size: 9px; color: #b0b4ae; display: block; margin-bottom: 3px; letter-spacing: 0.06em; }
+.infocard .field input { width: 100%; padding: 8px 0; border: none; border-bottom: 1px solid #f0eeea; background: transparent; font-size: 13px; color: #1c1e1c; outline: none; font-family: 'Inter', sans-serif; font-weight: 300; }
+.infocard .field input:focus { border-bottom-color: #8ab8a0; }
+.infocard .actions { display: flex; gap: 8px; margin-top: 20px; }
+.infocard .actions .btn { flex: 1; padding: 10px; border: none; font-size: 10px; cursor: default; font-weight: 400; letter-spacing: 0.06em; text-transform: uppercase; }
+.infocard .actions .btn.primary { background: #1c1e1c; color: #ffffff; }
+.infocard .actions .btn.danger { border: 1px solid #f0eeea; color: #5a605a; background: transparent; }
+
+.style-label { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 9px; color: rgba(0,0,0,0.04); letter-spacing: 0.12em; z-index: 100; }
+</style>
+</head>
+<body>
+<header>
+  <div class="left"><div class="logo">墨</div><h1>李沧区地块数据</h1><span class="badge">编辑</span></div>
+  <div class="actions"><span>导入</span><span>导出</span><span>⚙</span></div>
+</header>
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-pad">
+      <div class="sidebar-tabs"><span class="active">列表</span><span>分组</span></div>
+      <div class="sidebar-search"><input type="text" placeholder="搜索标注" /></div>
+    </div>
+    <div class="sidebar-list">
+      <div class="item active"><div class="item-text"><div class="name">地块 A-01</div><div class="desc">面积 45.2 亩 · 容积率 2.5</div></div><span class="item-badge">点</span></div>
+      <div class="item"><div class="item-text"><div class="name">规划区域 B</div><div class="desc">占地 120 亩 · 容积率 1.8</div></div><span class="item-badge">面</span></div>
+      <div class="item"><div class="item-text"><div class="name">地铁 3 号线</div><div class="desc">全长 12.3 km · 5 站</div></div><span class="item-badge">线</span></div>
+    </div>
+    <div class="sidebar-footer">3 个标注 · 2 个分组</div>
+  </div>
+  <div class="map-area">
+    <div class="center-text">地图区域</div>
+    <div class="toolbar">
+      <div class="tool active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>选择</div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>点</div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="4 17 9 11 14 14 20 4"/></svg>线</div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 22 9 18 21 6 21 2 9"/></svg>面</div>
+    </div>
+    <div class="infocard">
+      <div class="title"><span>地块 A-01</span><span style="color:#b0b4ae;cursor:default;">✕</span></div>
+      <div class="field"><label>名称</label><input type="text" value="地块 A-01" /></div>
+      <div class="field"><label>面积 (㎡)</label><input type="text" value="45.2" /></div>
+      <div class="field"><label>容积率</label><input type="text" value="2.5" /></div>
+      <div class="actions"><button class="btn primary">保存</button><button class="btn danger">删除</button></div>
+    </div>
+  </div>
+</div>
+<div class="style-label">青瓷 · 墨韵 · 墨黑顶栏 · 白底 · 黑白翡翠</div>
+</body>
+</html>

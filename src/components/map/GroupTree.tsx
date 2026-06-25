@@ -112,7 +112,7 @@ export default function GroupTree({
           }`}
           style={Object.assign(
             { paddingLeft: `${12 + depth * 16}px` },
-            isSelected ? { background: '#e8f0e7', color: '#5b7b5a' } : {}
+            isSelected ? { background: 'rgba(120,165,135,0.04)', color: '#78a587' } : {}
           )}
           onClick={() => onSelectGroup(isSelected ? null : group.id)}
           onContextMenu={(e) => handleContextMenu(e, group)}
@@ -146,7 +146,7 @@ export default function GroupTree({
               onBlur={(e) => { handleRename(group.id); e.currentTarget.style.borderColor = '#5b7b5a'; }}
               onKeyDown={(e) => { if (e.key === 'Enter') handleRename(group.id); if (e.key === 'Escape') setRenaming(null); }}
               className="flex-1 min-w-0 px-1 py-0.5 border rounded text-sm outline-none"
-              style={{ borderColor: '#5b7b5a', boxShadow: '0 0 0 1px rgba(91,123,90,0.2)' }}
+              style={{ borderColor: '#78a587', boxShadow: '0 0 0 1px rgba(120,165,135,0.2)' }}
               autoFocus
               onClick={(e) => e.stopPropagation()}
             />
@@ -186,7 +186,7 @@ export default function GroupTree({
             ? 'font-medium'
             : 'text-gray-700 hover:bg-gray-100'
         }`}
-        style={selectedGroupId === null ? { background: '#e8f0e7', color: '#5b7b5a' } : undefined}
+        style={selectedGroupId === null ? { background: 'rgba(120,165,135,0.04)', color: '#78a587' } : undefined}
         onClick={() => onSelectGroup(null)}
       >
         <FolderOpen className="w-4 h-4 text-gray-400" />

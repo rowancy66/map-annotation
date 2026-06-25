@@ -196,12 +196,12 @@ export default function SearchBox({ map }: SearchBoxProps) {
                 onClick={() => handleSelect(result)}
                 className={`w-full px-4 py-3 text-left flex items-start gap-3 transition ${
                   idx === selectedIndex
-                    ? 'border-l-2 border-l-[#5b7b5a]'
+                    ? 'border-l-2 border-l-[#78a587]'
                     : 'hover:bg-gray-50 border-l-2 border-l-transparent'
                 } ${idx > 0 ? 'border-t border-gray-100' : ''}`}
-                style={idx === selectedIndex ? { background: '#e8f0e7' } : undefined}
+                style={idx === selectedIndex ? { background: 'rgba(120,165,135,0.04)' } : undefined}
               >
-                <MapPin className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#5b7b5a' }} />
+                <MapPin className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#78a587' }} />
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium text-gray-900 truncate">
                     {result.name}
