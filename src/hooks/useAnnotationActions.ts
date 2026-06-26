@@ -55,6 +55,7 @@ export function useAnnotationActions(
     point: annotations.filter((a) => a.type === 'point').length,
     line: annotations.filter((a) => a.type === 'line').length,
     polygon: annotations.filter((a) => a.type === 'polygon').length,
+    text: annotations.filter((a) => a.type === 'text').length,
   }), [annotations]);
 
   // 自动清除反馈消息

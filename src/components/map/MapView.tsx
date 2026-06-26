@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.heat';
 import { TIANDITU_LAYERS, TIANDITU_SUBDOMAINS, DEFAULT_CENTER, DEFAULT_ZOOM } from '@/lib/constants';
-import { Annotation, DrawMode, AnnotationType, PointStyle, LineStyle, PolygonStyle, PRESET_COLORS, PRESET_ICONS, Group } from '@/lib/types';
+import { Annotation, DrawMode, AnnotationType, PointStyle, LineStyle, PolygonStyle, TextStyle, PRESET_COLORS, PRESET_ICONS, Group } from '@/lib/types';
 import SearchBox from './SearchBox';
 
 const DefaultIcon = L.icon({
@@ -47,6 +48,7 @@ interface MapViewProps {
   editable?: boolean;
   groups?: Group[];
   onAnnotationMoveToGroup?: (annotationId: string, groupId: string | null) => void;
+  showHeatmap?: boolean;
 }
 
 export default function MapView({
@@ -63,6 +65,7 @@ export default function MapView({
   onAnnotationDelete,
   onAnnotationEdit,
   onAnnotationMoveToGroup,
+  showHeatmap = false,
 }: MapViewProps) {
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -71,16 +74,21 @@ export default function MapView({
   const tempPointsRef = useRef<L.LatLng[]>([]);
   const [mapReady, setMapReady] = useState(false);
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
-  const [mapType, setMapType] = useState<'vec' | 'img'>('vec');
+  const [mapType, setMapType] = useState<'vec' | 'img' | 'terrain'>('vec');
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
     annotation: Annotation;
     marker: L.Marker;
   } | null>(null);
+  const [measureDistance, setMeasureDistance] = useState<number>(0);
+  const [showTextInput, setShowTextInput] = useState<L.LatLng | null>(null);
+  const [textValue, setTextValue] = useState('');
+  const heatLayerRef = useRef<L.Layer | null>(null);
 
   const vecLayersRef = useRef<L.TileLayer[]>([]);
   const imgLayersRef = useRef<L.TileLayer[]>([]);
+  const terrainLayersRef = useRef<L.TileLayer[]>([]);
 
   const annotationsRef = useRef<Annotation[]>(annotations);
   const onAnnotationMoveRef = useRef(onAnnotationMove);
@@ -205,9 +213,11 @@ export default function MapView({
     const cvaLayer = L.tileLayer(TIANDITU_LAYERS.cva, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
     const imgLayer = L.tileLayer(TIANDITU_LAYERS.img, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
     const ciaLayer = L.tileLayer(TIANDITU_LAYERS.cia, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
+    const terLayer = L.tileLayer(TIANDITU_LAYERS.ter, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
 
     vecLayersRef.current = [vecLayer, cvaLayer];
     imgLayersRef.current = [imgLayer, ciaLayer];
+    terrainLayersRef.current = [terLayer];
 
     vecLayer.addTo(map);
     cvaLayer.addTo(map);
@@ -232,12 +242,18 @@ export default function MapView({
     if (!mapRef.current) return;
     const map = mapRef.current;
 
+    // 清除所有图层
+    vecLayersRef.current.forEach((l) => { if (map.hasLayer(l)) map.removeLayer(l); });
+    imgLayersRef.current.forEach((l) => { if (map.hasLayer(l)) map.removeLayer(l); });
+    terrainLayersRef.current.forEach((l) => { if (map.hasLayer(l)) map.removeLayer(l); });
+
+    // 添加选中图层
     if (mapType === 'vec') {
-      imgLayersRef.current.forEach((l) => { if (map.hasLayer(l)) map.removeLayer(l); });
       vecLayersRef.current.forEach((l) => { if (!map.hasLayer(l)) l.addTo(map); });
-    } else {
-      vecLayersRef.current.forEach((l) => { if (map.hasLayer(l)) map.removeLayer(l); });
+    } else if (mapType === 'img') {
       imgLayersRef.current.forEach((l) => { if (!map.hasLayer(l)) l.addTo(map); });
+    } else {
+      terrainLayersRef.current.forEach((l) => { if (!map.hasLayer(l)) l.addTo(map); });
     }
   }, [mapType]);
 
@@ -302,6 +318,29 @@ export default function MapView({
           });
         }
 
+      } else if (annotation.type === 'text') {
+        const geom = annotation.geometry as { type: string; coordinates: [number, number] };
+        const style = annotation.style as TextStyle;
+        const isSelected = selectedAnnotation?.id === annotation.id;
+        const textIcon = L.divIcon({
+          className: 'custom-text-marker',
+          html: `<div style="
+            font-size: ${style.fontSize || 16}px;
+            color: ${style.color || '#1a4735'};
+            font-weight: 600;
+            text-shadow: 0 1px 3px rgba(255,255,255,0.8), 0 0 6px rgba(255,255,255,0.6);
+            transform: ${style.rotation ? `rotate(${style.rotation}deg)` : 'none'};
+            white-space: nowrap;
+            cursor: pointer;
+            ${isSelected ? 'outline: 2px solid #1a4735; outline-offset: 4px; border-radius: 4px; padding: 0 4px;' : ''}
+          ">${annotation.name}</div>`,
+          iconSize: [0, 0],
+          iconAnchor: [0, 0],
+        });
+        leafletLayer = L.marker([geom.coordinates[1], geom.coordinates[0]], {
+          icon: textIcon,
+          draggable: false,
+        });
       } else if (annotation.type === 'line') {
         const geom = annotation.geometry as { type: string; coordinates: [number, number][] };
         const style = annotation.style as LineStyle;
@@ -350,6 +389,42 @@ export default function MapView({
     }
   }, [selectedAnnotation]);
 
+  // 热力图
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+
+    // 移除旧热力图
+    if (heatLayerRef.current) {
+      map.removeLayer(heatLayerRef.current);
+      heatLayerRef.current = null;
+    }
+
+    if (showHeatmap) {
+      const points = annotations
+        .filter((a) => a.type === 'point')
+        .map((a) => {
+          const g = a.geometry as { coordinates: [number, number] };
+          return [g.coordinates[1], g.coordinates[0], 0.8] as [number, number, number];
+        });
+
+      if (points.length > 0) {
+        try {
+          // @ts-expect-error leaflet.heat typings are incomplete
+          const heat = (L as any).heatLayer(points, {
+            radius: 25,
+            blur: 15,
+            maxZoom: 17,
+            gradient: { 0.4: '#1a4735', 0.6: '#2d6b52', 0.8: '#d4954e', 1.0: '#c0392b' },
+          }).addTo(map);
+          heatLayerRef.current = heat;
+        } catch {
+          // leaflet.heat not available
+        }
+      }
+    }
+  }, [showHeatmap, annotations]);
+
   useEffect(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
@@ -388,6 +463,47 @@ export default function MapView({
         return;
       }
 
+      // 测距模式
+      if (drawMode === 'measure') {
+        const points = tempPointsRef.current;
+        // 检测双击（< 400ms）
+        const now = Date.now();
+        if (now - lastClickTimeRef.current < 400 && points.length >= 1) {
+          lastClickTimeRef.current = 0;
+          // 双击结束测量，显示总距离
+          if (points.length >= 2) {
+            let total = 0;
+            for (let i = 1; i < points.length; i++) {
+              total += points[i - 1].distanceTo(points[i]);
+            }
+            setMeasureDistance(total);
+          }
+          cleanupTempDrawing();
+          onDrawModeChange('none');
+          return;
+        }
+        lastClickTimeRef.current = now;
+
+        points.push(e.latlng);
+        // 计算距离
+        if (points.length >= 2) {
+          let total = 0;
+          for (let i = 1; i < points.length; i++) {
+            total += points[i - 1].distanceTo(points[i]);
+          }
+          setMeasureDistance(total);
+        }
+        updateTempDrawing();
+        return;
+      }
+
+      // 文字标注模式
+      if (drawMode === 'text') {
+        setShowTextInput(e.latlng);
+        setTextValue('');
+        return;
+      }
+
       // Detect double-click by interval (< 400ms)
       const now = Date.now();
       if (now - lastClickTimeRef.current < 400) {
@@ -410,6 +526,9 @@ export default function MapView({
 
     const handleMouseMove = (e: L.LeafletMouseEvent) => {
       if ((drawMode === 'line' || drawMode === 'polygon') && tempPointsRef.current.length > 0) {
+        updateTempDrawing(e.latlng);
+      }
+      if (drawMode === 'measure' && tempPointsRef.current.length > 0) {
         updateTempDrawing(e.latlng);
       }
     };
@@ -482,6 +601,31 @@ export default function MapView({
     onAnnotationDeleteRef.current?.(annotation);
   }, []);
 
+  const handleTextAnnotation = useCallback((text: string) => {
+    if (!showTextInput) return;
+    const latlng = showTextInput;
+    // Create a text annotation via onMapDrawComplete or directly
+    // We simulate a point annotation with text style
+    const mockAnnotation: Annotation = {
+      id: crypto.randomUUID(),
+      map_id: '',
+      type: 'text',
+      geometry: { type: 'Point', coordinates: [latlng.lng, latlng.lat] },
+      name: text,
+      description: '',
+      style: { color: '#1a4735', fontSize: 16 },
+      custom_fields: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    // Fire annotation click so the text appears
+    onAnnotationClickRef.current?.(mockAnnotation);
+    // Reset text mode
+    setShowTextInput(null);
+    setTextValue('');
+    onDrawModeChange('none');
+  }, [showTextInput, onDrawModeChange]);
+
   return (
     <div className="relative w-full h-full">
       <div ref={mapContainerRef} className="w-full h-full" />
@@ -507,13 +651,13 @@ export default function MapView({
 
       <div className="absolute top-16 right-4 z-[1000]">
         <div className="backdrop-blur-md rounded-xl shadow-lg overflow-hidden flex"
-          style={{ background: 'rgba(250,248,244,0.9)', border: '1px solid rgba(227,221,208,0.6)' }}>
+          style={{ background: 'rgba(255,255,255,0.9)', border: '1px solid var(--border)' }}>
           <button
             onClick={() => setMapType('vec')}
             className={`px-3.5 py-2 text-xs font-medium transition-all duration-200 first:rounded-l-xl last:rounded-r-xl ${
               mapType === 'vec' ? 'text-white shadow-sm' : 'hover:bg-white/60'
             }`}
-            style={mapType === 'vec' ? { background: '#1a3a3a', color: '#e8ddd0' } : { color: '#5c5242' }}
+            style={mapType === 'vec' ? { background: 'var(--primary)', color: 'white' } : { color: 'var(--muted)' }}
           >
             矢量
           </button>
@@ -522,17 +666,27 @@ export default function MapView({
             className={`px-3.5 py-2 text-xs font-medium transition-all duration-200 first:rounded-l-xl last:rounded-r-xl ${
               mapType === 'img' ? 'text-white shadow-sm' : 'hover:bg-white/60'
             }`}
-            style={mapType === 'img' ? { background: '#1a3a3a', color: '#e8ddd0' } : { color: '#5c5242' }}
+            style={mapType === 'img' ? { background: 'var(--primary)', color: 'white' } : { color: 'var(--muted)' }}
           >
             卫星
+          </button>
+          <button
+            onClick={() => setMapType('terrain')}
+            className={`px-3.5 py-2 text-xs font-medium transition-all duration-200 first:rounded-l-xl last:rounded-r-xl ${
+              mapType === 'terrain' ? 'text-white shadow-sm' : 'hover:bg-white/60'
+            }`}
+            style={mapType === 'terrain' ? { background: 'var(--primary)', color: 'white' } : { color: 'var(--muted)' }}
+          >
+            地形
           </button>
         </div>
       </div>
 
-      {drawMode !== 'none' && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-gray-900/85 backdrop-blur-md text-white px-4 py-2.5 rounded-xl shadow-xl border border-white/10 text-sm flex items-center gap-3 animate-fade-slide-up">
+      {drawMode !== 'none' && drawMode !== 'measure' && drawMode !== 'text' && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] px-4 py-2.5 rounded-xl shadow-xl border text-sm flex items-center gap-3 animate-fade-slide-up"
+          style={{ background: 'rgba(26,31,36,0.85)', color: 'white', borderColor: 'rgba(255,255,255,0.1)' }}>
           <span className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#d4954e' }} />
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#2d6b52' }} />
             {drawMode === 'point' && '点击地图放置标注点'}
             {drawMode === 'line' && '依次点击添加折线顶点，双击结束'}
             {drawMode === 'polygon' && '依次点击添加多边形顶点，双击结束'}
@@ -542,85 +696,161 @@ export default function MapView({
               cleanupTempDrawing();
               onDrawModeChange('none');
             }}
-            className="ml-1 px-2.5 py-1 text-xs bg-white/15 hover:bg-white/25 rounded-lg transition"
+            className="ml-1 px-2.5 py-1 text-xs rounded-lg transition"
+            style={{ background: 'rgba(255,255,255,0.15)' }}
           >
             取消
           </button>
         </div>
       )}
 
-      {/* 右键菜单 */}
-      {contextMenu && (
-        <div
-          className="fixed z-[5000] rounded-xl shadow-xl border py-1 min-w-[160px] backdrop-blur-sm animate-fade-in"
-          style={{ left: contextMenu.x, top: contextMenu.y, background: 'rgba(250,248,244,0.96)', borderColor: '#e3ddd0' }}
-          onClick={(e) => e.stopPropagation()}
-        >
+      {/* 测距模式浮动条 */}
+      {drawMode === 'measure' && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] px-4 py-2.5 rounded-xl shadow-xl border text-sm flex items-center gap-3 animate-fade-slide-up"
+          style={{ background: 'rgba(26,31,36,0.85)', color: 'white', borderColor: 'rgba(255,255,255,0.1)' }}>
+          <span>📏 测距</span>
+          <span className="font-semibold" style={{ color: '#93c5a2' }}>
+            {measureDistance > 0 ? `${(measureDistance / 1000).toFixed(2)} km` : '点击起点'}
+          </span>
+          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>点击添加测量点 · 双击结束</span>
           <button
-            onClick={() => { onAnnotationClickRef.current?.(contextMenu.annotation); setContextMenu(null); }}
-            className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 transition-colors"
-            style={{ color: '#2c2416' }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(59,130,246,0.08)'; e.currentTarget.style.color = '#3b82f6'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#2c2416'; }}
+            onClick={() => {
+              cleanupTempDrawing();
+              setMeasureDistance(0);
+              onDrawModeChange('none');
+            }}
+            className="ml-1 px-2.5 py-1 text-xs rounded-lg transition"
+            style={{ background: 'rgba(255,255,255,0.15)' }}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            编辑属性
+            取消
           </button>
-          <button
-            onClick={handleMovePoint}
-            className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 transition-colors"
-            style={{ color: '#2c2416' }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(196,85,43,0.08)'; e.currentTarget.style.color = '#c4552b'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#2c2416'; }}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            移动点位
-          </button>
-          {groups && groups.length > 0 && (
-            <div className="border-t border-gray-100">
-              <div className="px-4 py-1.5 text-xs text-gray-400">移动到分组</div>
-              <button
-                onClick={() => {
-                  contextMenu.annotation;
-                  handleMoveToGroup(contextMenu.annotation.id, null);
-                  setContextMenu(null);
-                }}
-                className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-gray-600"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
-                取消分组
-              </button>
-              {groups.slice(0, 5).map((g) => (
-                <button
-                  key={g.id}
-                  onClick={() => {
-                    handleMoveToGroup(contextMenu.annotation.id, g.id);
-                    setContextMenu(null);
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 truncate text-gray-600"
-                  style={{ paddingLeft: '48px' }}
-                >
-                  {g.name}
-                </button>
-              ))}
-            </div>
-          )}
-          <div className="border-t border-gray-100">
-            <button
-              onClick={() => { handleDeleteFromMenu(contextMenu.annotation); setContextMenu(null); }}
-              className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 transition-colors text-red-600"
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-              删除标注
-            </button>
-          </div>
         </div>
       )}
-    </div>
-  );
-}
+
+	      {/* 右键菜单 */}
+	      {contextMenu && (
+	        <div
+	          className="fixed z-[5000] rounded-xl shadow-xl border py-1 min-w-[160px] backdrop-blur-sm animate-fade-in"
+	          style={{ left: contextMenu.x, top: contextMenu.y, background: 'rgba(250,248,244,0.96)', borderColor: '#e3ddd0' }}
+	          onClick={(e) => e.stopPropagation()}
+	        >
+	          <button
+	            onClick={() => { onAnnotationClickRef.current?.(contextMenu.annotation); setContextMenu(null); }}
+	            className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 transition-colors"
+	            style={{ color: '#2c2416' }}
+	            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(59,130,246,0.08)'; e.currentTarget.style.color = '#3b82f6'; }}
+	            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#2c2416'; }}
+	          >
+	            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+	            编辑属性
+	          </button>
+	          <button
+	            onClick={handleMovePoint}
+	            className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 transition-colors"
+	            style={{ color: '#2c2416' }}
+	            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(196,85,43,0.08)'; e.currentTarget.style.color = '#c4552b'; }}
+	            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#2c2416'; }}
+	          >
+	            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+	            移动点位
+	          </button>
+	          {groups && groups.length > 0 && (
+	            <div className="border-t border-gray-100">
+	              <div className="px-4 py-1.5 text-xs text-gray-400">移动到分组</div>
+	              <button
+	                onClick={() => {
+	                  contextMenu.annotation;
+	                  handleMoveToGroup(contextMenu.annotation.id, null);
+	                  setContextMenu(null);
+	                }}
+	                className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-gray-600"
+	              >
+	                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+	                取消分组
+	              </button>
+	              {groups.slice(0, 5).map((g) => (
+	                <button
+	                  key={g.id}
+	                  onClick={() => {
+	                    handleMoveToGroup(contextMenu.annotation.id, g.id);
+	                    setContextMenu(null);
+	                  }}
+	                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 truncate text-gray-600"
+	                  style={{ paddingLeft: '48px' }}
+	                >
+	                  {g.name}
+	                </button>
+	              ))}
+	            </div>
+	          )}
+	          <div className="border-t border-gray-100">
+	            <button
+	              onClick={() => { handleDeleteFromMenu(contextMenu.annotation); setContextMenu(null); }}
+	              className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 transition-colors text-red-600"
+	              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; }}
+	              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+	            >
+	              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+	              删除标注
+	            </button>
+	          </div>
+	        </div>
+	      )}
+
+	      {/* 文字标注输入对话框 */}
+	      {showTextInput && (
+	        <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-black/20 backdrop-blur-sm"
+	          onClick={() => setShowTextInput(null)}>
+	          <div className="rounded-xl shadow-2xl p-5 w-80 mx-4"
+	            style={{ background: 'var(--surface)' }}
+	            onClick={(e) => e.stopPropagation()}>
+	            <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--ink)' }}>添加文字标注</h3>
+	            <input
+	              type="text"
+	              value={textValue}
+	              onChange={(e) => setTextValue(e.target.value)}
+	              placeholder="输入标注文字..."
+	              autoFocus
+	              className="w-full px-3 py-2 rounded-lg text-sm outline-none transition mb-3"
+	              style={{ border: '1px solid var(--border)', color: 'var(--ink)' }}
+	              onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(26,71,53,0.12)'; }}
+	              onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
+	              onKeyDown={(e) => {
+	                if (e.key === 'Enter' && textValue.trim()) {
+	                  handleTextAnnotation(textValue.trim());
+	                  setShowTextInput(null);
+	                  setTextValue('');
+	                }
+	                if (e.key === 'Escape') {
+	                  setShowTextInput(null);
+	                  setTextValue('');
+	                }
+	              }}
+	            />
+	            <div className="flex gap-2 justify-end">
+	              <button onClick={() => { setShowTextInput(null); setTextValue(''); }}
+	                className="px-4 py-2 rounded-lg text-sm transition"
+	                style={{ background: 'var(--bg)', color: 'var(--muted)' }}>
+	                取消
+	              </button>
+	              <button onClick={() => {
+	                if (textValue.trim()) {
+	                  handleTextAnnotation(textValue.trim());
+	                  setShowTextInput(null);
+	                  setTextValue('');
+	                }
+	              }}
+	                className="px-4 py-2 text-white rounded-lg text-sm font-medium transition"
+	                style={{ background: textValue.trim() ? 'var(--primary)' : 'var(--border)' }}>
+	                添加
+	              </button>
+	            </div>
+	          </div>
+	        </div>
+	      )}
+	    </div>
+	  );
+	}
 
 function getIconSvg(iconName: string, size: number): string {
   const icons: Record<string, string> = {

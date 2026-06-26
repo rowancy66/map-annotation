@@ -4,7 +4,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Annotation, PointStyle, LineStyle, PolygonStyle, PRESET_COLORS, PRESET_ICONS, FieldTemplate } from '@/lib/types';
+import { Annotation, PointStyle, LineStyle, PolygonStyle, TextStyle, PRESET_COLORS, PRESET_ICONS, FieldTemplate } from '@/lib/types';
 import { X, Save, Trash2, Loader2, Upload, Link2, Plus } from 'lucide-react';
 import { uploadAnnotationImage, deleteAnnotationImage } from '@/lib/supabase';
 
@@ -117,9 +117,10 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
     : {};
 
   const typeMeta = {
-    point: { label: '点', accent: '#2563eb', bg: 'rgba(37,99,235,0.08)' },
-    line: { label: '线', accent: '#0ea5e9', bg: 'rgba(14,165,233,0.08)' },
+    point: { label: '点', accent: '#1a4735', bg: 'rgba(26,71,53,0.08)' },
+    line: { label: '线', accent: '#2c6fbb', bg: 'rgba(44,111,187,0.08)' },
     polygon: { label: '面', accent: '#8b5cf6', bg: 'rgba(139,92,246,0.08)' },
+    text: { label: '文字', accent: '#d4954e', bg: 'rgba(212,148,78,0.08)' },
   };
   const tm = typeMeta[annotation.type as keyof typeof typeMeta] || typeMeta.point;
 
@@ -331,10 +332,10 @@ function blurStyle(e: React.FocusEvent<HTMLElement>) {
 }
 
 function StyleEditor({ type, style, onChange }: {
-  type: string; style: PointStyle | LineStyle | PolygonStyle;
+  type: string; style: PointStyle | LineStyle | PolygonStyle | TextStyle;
   onChange: (s: any) => void;
 }) {
-  const c = { accent: '#2563eb', border: '#e2e8f0', bg: '#f8fafc', muted: '#64748b' };
+  const c = { accent: '#1a4735', border: '#e2e5e8', bg: '#f5f6f7', muted: '#6b7280' };
 
   if (type === 'point') {
     const s = style as PointStyle;
@@ -413,6 +414,37 @@ function StyleEditor({ type, style, onChange }: {
                 }}>{item.label}</button>
             ))}
           </div>
+        </Sect>
+      </div>
+    );
+  }
+
+  if (type === 'text') {
+    const s = style as TextStyle;
+    return (
+      <div className="space-y-2.5">
+        <Sect label="颜色" color={c.muted}>
+          <div className="flex flex-wrap gap-1.5">
+            {PRESET_COLORS.map((col) => (
+              <button key={col.value} onClick={() => onChange({ ...s, color: col.value })}
+                className="w-5 h-5 rounded-full transition-all duration-150" title={col.name}
+                style={{
+                  background: col.value,
+                  transform: s.color === col.value ? 'scale(1.2)' : 'scale(1)',
+                  boxShadow: s.color === col.value ? `0 0 0 2px white, 0 0 0 4px ${c.accent}` : `0 0 0 1px ${c.border}`,
+                }} />
+            ))}
+          </div>
+        </Sect>
+        <Sect label={'字号: ' + (s.fontSize || 14) + 'px'} color={c.muted}>
+          <input type="range" min={10} max={48} value={s.fontSize || 14}
+            onChange={(e) => onChange({ ...s, fontSize: Number(e.target.value) })}
+            className="w-full" style={{ accentColor: c.accent }} />
+        </Sect>
+        <Sect label="旋转" color={c.muted}>
+          <input type="range" min={0} max={360} value={s.rotation || 0}
+            onChange={(e) => onChange({ ...s, rotation: Number(e.target.value) })}
+            className="w-full" style={{ accentColor: c.accent }} />
         </Sect>
       </div>
     );

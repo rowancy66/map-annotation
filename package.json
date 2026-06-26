@@ -14,6 +14,7 @@
   "dependencies": {
     "@libsql/client": "^0.17.4",
     "leaflet": "^1.9.4",
+    "leaflet.heat": "^0.2.0",
     "lucide-react": "^1.14.0",
     "next": "16.2.4",
     "papaparse": "^5.5.3",

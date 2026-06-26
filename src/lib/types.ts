@@ -1,7 +1,7 @@
 // TypeScript 类型定义
 
 // ===== 标注类型 =====
-export type AnnotationType = 'point' | 'line' | 'polygon';
+export type AnnotationType = 'point' | 'line' | 'polygon' | 'text';
 
 // ===== 几何数据 =====
 export interface PointGeometry {
@@ -41,7 +41,14 @@ export interface PolygonStyle {
   width: number;       // 边框宽度
 }
 
-export type AnnotationStyle = PointStyle | LineStyle | PolygonStyle;
+export interface TextStyle {
+  color: string;       // 文字颜色
+  fontSize: number;    // 字号 (px)
+  fontFamily?: string; // 字体
+  rotation?: number;   // 旋转角度
+}
+
+export type AnnotationStyle = PointStyle | LineStyle | PolygonStyle | TextStyle;
 
 // ===== 自定义字段 =====
 export type FieldType = 'text' | 'number' | 'date' | 'select';
@@ -115,10 +122,11 @@ export interface AnnotationCounts {
   point: number;
   line: number;
   polygon: number;
+  text: number;
 }
 
 // ===== 绘制模式 =====
-export type DrawMode = 'none' | 'point' | 'line' | 'polygon';
+export type DrawMode = 'none' | 'point' | 'line' | 'polygon' | 'measure' | 'text';
 
 // ===== 预设样式 =====
 export const PRESET_COLORS = [

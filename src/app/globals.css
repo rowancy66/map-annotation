@@ -1,15 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #f2eee8;
+  --bg: #f5f6f7;
   --surface: #ffffff;
-  --ink: #3a403c;
-  --muted: #8a928c;
-  --faint: #aab2ac;
-  --border: #e0e4dc;
-  --primary: #78a587;
-  --primary-light: rgba(120,165,135,0.08);
-  --danger: #c08080;
+  --ink: #1a1f24;
+  --muted: #6b7280;
+  --faint: #9ca3af;
+  --border: #e2e5e8;
+  --primary: #1a4735;
+  --primary-light: rgba(26,71,53,0.08);
+  --primary-hover: #2d6b52;
+  --danger: #c0392b;
 }
 
 @theme inline {
@@ -19,6 +20,7 @@
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
   --color-danger: var(--danger);
   --font-sans: 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
@@ -79,7 +81,7 @@ body {
   100% { background-position: 200% 0; }
 }
 .skeleton-shimmer {
-  background: linear-gradient(90deg, #e0e4dc 25%, #d6dcd4 50%, #e0e4dc 75%);
+  background: linear-gradient(90deg, #e2e5e8 25%, #d6d9dc 50%, #e2e5e8 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }
@@ -107,23 +109,23 @@ body {
 }
 .leaflet-popup-content-wrapper {
   border-radius: 12px !important;
-  box-shadow: 0 4px 24px rgba(44, 36, 22, 0.12) !important;
+  box-shadow: 0 4px 24px rgba(26,31,36,0.12) !important;
 }
 .leaflet-popup-content {
   margin: 12px 16px !important;
   font-size: 13px !important;
 }
 .leaflet-control-zoom a {
-  color: #3a403c !important;
+  color: #1a1f24 !important;
   background: #ffffff !important;
-  border-color: #e0e4dc !important;
+  border-color: #e2e5e8 !important;
 }
 
 /* ========== 滚动条 ========== */
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #d0d4ce; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #bcc0ba; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
 
 /* 减少动效 */
 @media (prefers-reduced-motion: reduce) {

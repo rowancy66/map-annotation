@@ -16,6 +16,7 @@ import {
   DrawMode,
   AnnotationType,
   FieldTemplate,
+  Group,
 } from '@/lib/types';
 import {
   Upload,
@@ -26,13 +27,13 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  Search,
   Trash2,
   CheckSquare,
   Square,
   X,
   AlertTriangle,
   Home,
+  Search,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
@@ -42,8 +43,8 @@ import Link from 'next/link';
 const MapView = dynamic(() => import('@/components/map/MapView'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full flex items-center justify-center bg-gray-50">
-      <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+    <div className="w-full h-full flex items-center justify-center" style={{ background: 'var(--bg)' }}>
+      <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--primary)' }} />
     </div>
   ),
 });
@@ -102,6 +103,8 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
   const [showSettings, setShowSettings] = useState(false);
   const [batchDeleteConfirm, setBatchDeleteConfirm] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  const [showNames, setShowNames] = useState(true);
 
   // 分组标注计数
   const annotationCountByGroup = useMemo(() => {
@@ -118,6 +121,20 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
     if (selectedGroupId === null) return filteredAnnotations;
     return filteredAnnotations.filter((a) => a.group_id === selectedGroupId);
   }, [selectedGroupId, filteredAnnotations]);
+
+  // 分组颜色映射
+  const groupColorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    groups.forEach((g) => { if (g.color) map.set(g.id, g.color); });
+    return map;
+  }, [groups]);
+
+  // 分组名称映射
+  const groupNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    groups.forEach((g) => map.set(g.id, g.name));
+    return map;
+  }, [groups]);
 
   const handleMapClick = useCallback(async (latlng: L.LatLng) => {
     if (drawMode !== 'point' || !mapProject) return;
@@ -156,7 +173,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
         geometry: { type: 'LineString', coordinates },
         name: '新线路',
         description: '',
-        style: { color: '#3B82F6', width: 3 },
+        style: { color: '#2c6fbb', width: 3 },
         custom_fields: [],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -169,7 +186,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
         geometry: { type: 'Polygon', coordinates },
         name: '新区域',
         description: '',
-        style: { color: '#8B5CF6', fillColor: '#8B5CF6', fillOpacity: 0.3, width: 2 },
+        style: { color: '#1a4735', fillColor: '#1a4735', fillOpacity: 0.3, width: 2 },
         custom_fields: [],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -229,7 +246,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
       XLSX.writeFile(wb, `土地出让数据_${new Date().toLocaleDateString('zh-CN')}.xlsx`);
     } else {
       const csv = Papa.unparse(rows, { columns: allHeaders });
-      const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -266,27 +283,29 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
     try {
       await apiSend('/api/annotations', 'PUT', { annotationIds: [annotationId], groupId });
     } catch {
-      // 乐观失败回滚将被 loadData 修正
       loadData();
     }
   }, [loadData]);
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+      <div className="h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--primary)' }} />
       </div>
     );
   }
 
   return (
     <div className="h-screen flex flex-col">
-      {/* 顶部栏 */}
-      <header className="h-12 bg-white/70 backdrop-blur-xl border-b border-white/30 shadow-sm flex items-center justify-between px-4 z-50 shrink-0">
-        <div className="flex items-center gap-3">
+      {/* █ 顶栏工具条 */}
+      <header className="h-12 shrink-0 flex items-center justify-between px-3 z-50"
+        style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+        {/* 左侧：导航 + 标题 */}
+        <div className="flex items-center gap-2">
           <Link
             href="/admin"
-            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100/80 rounded-lg transition"
+            className="p-1.5 rounded-lg transition"
+            style={{ color: 'var(--muted)' }}
             title="返回地图列表"
             aria-label="返回地图列表"
           >
@@ -294,26 +313,35 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
           </Link>
           <Link
             href="/"
-            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100/80 rounded-lg transition"
+            className="p-1.5 rounded-lg transition"
+            style={{ color: 'var(--muted)' }}
             title="返回前台"
             aria-label="返回前台"
           >
             <Home className="w-4 h-4" aria-hidden="true" />
           </Link>
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#78a587', boxShadow: '0 2px 8px rgba(120,165,135,0.2)' }}>
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'var(--primary)' }}>
             <MapPin className="w-4 h-4 text-white" aria-hidden="true" />
           </div>
-          <h1 className="text-sm font-semibold" style={{ color: '#3a403c' }}>
+          <h1 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
             {mapProject?.name || '地图标注平台'}
-            <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: 'rgba(120,165,135,0.08)', color: '#78a587' }}>管理</span>
+            <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>管理</span>
           </h1>
         </div>
 
+        {/* 中间：绘制工具栏 */}
+        <DrawingToolbar
+          drawMode={drawMode}
+          onDrawModeChange={setDrawMode}
+          annotationCount={annotationCount}
+        />
+
+        {/* 右侧：导入/导出/设置/用户 */}
         <div className="flex items-center gap-1">
-          {/* 导入 */}
           <button
             onClick={() => setImportOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 rounded-lg transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition"
+            style={{ color: 'var(--muted)' }}
             title="批量导入"
             aria-label="批量导入"
           >
@@ -321,59 +349,46 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             <span className="hidden sm:inline">导入</span>
           </button>
 
-          {/* 导出 */}
           <div className="relative group">
             <button
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 rounded-lg transition"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition"
+              style={{ color: 'var(--muted)' }}
               title="导出"
               aria-label="导出"
             >
               <Download className="w-4 h-4" aria-hidden="true" />
               <span className="hidden sm:inline">导出</span>
             </button>
-            <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-opacity z-50">
-              <button
-                onClick={() => handleExport('xlsx')}
+            <div className="absolute right-0 top-full mt-1 w-32 rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-50"
+              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+              <button onClick={() => handleExport('xlsx')}
                 className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50 rounded-t-lg"
-              >
+                style={{ color: 'var(--ink)' }}>
                 导出 Excel
               </button>
-              <button
-                onClick={() => handleExport('csv')}
+              <button onClick={() => handleExport('csv')}
                 className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50 rounded-b-lg"
-              >
+                style={{ color: 'var(--ink)' }}>
                 导出 CSV
               </button>
             </div>
           </div>
 
-          {/* 设置 */}
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className={`p-1.5 rounded-lg transition ${
-              showSettings ? 'text-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100/80'
-            }`}
-            style={showSettings ? { background: '#78a587' } : undefined}
+            className="p-1.5 rounded-lg transition"
+            style={{ color: showSettings ? 'white' : 'var(--muted)', background: showSettings ? 'var(--primary)' : 'transparent' }}
             title="设置"
             aria-label="设置"
           >
             <Settings className="w-4 h-4" aria-hidden="true" />
           </button>
 
-          {/* 分隔 */}
-          <div className="w-px h-5 bg-gray-200 mx-1" />
+          <div className="w-px h-5 mx-1" style={{ background: 'var(--border)' }} />
 
-          {/* 用户 */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400 hidden sm:inline font-medium">
-              管理员
-            </span>
-            <button
-              onClick={logout}
-              className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg transition"
-              title="退出登录"
-              aria-label="退出登录"
-            >
+            <span className="text-xs hidden sm:inline font-medium" style={{ color: 'var(--faint)' }}>管理员</span>
+            <button onClick={logout} className="p-1.5 rounded-lg transition" style={{ color: 'var(--faint)' }} title="退出登录" aria-label="退出登录">
               <LogOut className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
@@ -382,38 +397,37 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
 
       {/* 反馈消息 */}
       {feedbackMessage && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[9999] bg-gray-800/90 backdrop-blur text-white px-4 py-2 rounded-xl shadow-lg text-sm animate-fade-in">
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2 rounded-xl shadow-lg text-sm animate-fade-in"
+          style={{ background: 'rgba(26,31,36,0.85)', color: 'white' }}>
           {feedbackMessage}
         </div>
       )}
 
-      {/* 批量删除确认对话框 */}
+      {/* 批量删除确认 */}
       {batchDeleteConfirm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center animate-fade-in">
-          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-sm mx-4">
+          <div className="rounded-xl shadow-2xl p-6 max-w-sm mx-4" style={{ background: 'var(--surface)' }}>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-red-600" aria-hidden="true" />
+              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(192,57,43,0.1)' }}>
+                <AlertTriangle className="w-5 h-5" style={{ color: 'var(--danger)' }} aria-hidden="true" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-gray-900">确认批量删除</h3>
-                <p className="text-xs text-gray-500">此操作不可撤销</p>
+                <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>确认批量删除</h3>
+                <p className="text-xs" style={{ color: 'var(--muted)' }}>此操作不可撤销</p>
               </div>
             </div>
-            <p className="text-sm text-gray-700 mb-4">
-              确定要删除选中的 <strong>{selectedIds.size}</strong> 个标注吗？
+            <p className="text-sm mb-4" style={{ color: 'var(--muted)' }}>
+              确定要删除选中的 <strong style={{ color: 'var(--ink)' }}>{selectedIds.size}</strong> 个标注吗？
             </p>
             <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => setBatchDeleteConfirm(false)}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition"
-              >
+              <button onClick={() => setBatchDeleteConfirm(false)}
+                className="px-4 py-2 rounded-lg text-sm transition"
+                style={{ background: 'var(--bg)', color: 'var(--muted)' }}>
                 取消
               </button>
-              <button
-                onClick={confirmBatchDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition"
-              >
+              <button onClick={confirmBatchDelete}
+                className="px-4 py-2 text-white rounded-lg text-sm font-medium transition"
+                style={{ background: 'var(--danger)' }}>
                 确认删除
               </button>
             </div>
@@ -421,101 +435,90 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
         </div>
       )}
 
-      {/* 主体 */}
+      {/* █ 主体区域 */}
       <div className="flex-1 flex relative overflow-hidden">
-        {/* 侧边栏 */}
+        {/* 左侧面板 */}
         <div
-          className={`absolute left-0 top-0 bottom-0 z-40 bg-white/95 backdrop-blur-sm border-r border-gray-100 shadow-lg shadow-gray-200/30 transition-all duration-300 ${
+          className={`absolute left-0 top-0 bottom-0 z-40 transition-all duration-300 ${
             sidebarOpen ? 'w-80' : 'w-0'
           } overflow-hidden`}
+          style={{ borderRight: sidebarOpen ? '1px solid var(--border)' : 'none' }}
         >
-          <div className="w-80 h-full flex flex-col">
-            {/* 侧边栏头部 + Tab */}
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-transparent to-blue-50/30">
-              <div className="flex items-center gap-1 bg-gray-100/80 rounded-lg p-0.5">
-                <button
-                  onClick={() => setSidebarTab('list')}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition ${
-                    sidebarTab === 'list'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  列表
+          <div className="w-80 h-full flex flex-col" style={{ background: '#fafbfc' }}>
+            {/* 面板 Tab */}
+            <div className="flex px-3 pt-2.5 gap-0.5 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
+              {(['list', 'groups'] as const).map((tab) => (
+                <button key={tab}
+                  onClick={() => setSidebarTab(tab)}
+                  className="px-3.5 py-2 text-xs font-medium rounded-t-lg transition-all duration-150"
+                  style={{
+                    color: sidebarTab === tab ? 'var(--primary)' : 'var(--muted)',
+                    background: sidebarTab === tab ? 'white' : 'transparent',
+                    border: sidebarTab === tab ? `1px solid var(--border)` : '1px solid transparent',
+                    borderBottomColor: sidebarTab === tab ? 'white' : 'transparent',
+                    marginBottom: '-1px',
+                  }}>
+                  {tab === 'list' ? '标注' : '分组'}
                 </button>
-                <button
-                  onClick={() => setSidebarTab('groups')}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition ${
-                    sidebarTab === 'groups'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  分组
-                </button>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400 font-mono">{annotations.length} 个</span>
-                <button
-                  onClick={() => {
-                    setBatchMode(!batchMode);
-                    setSelectedIds(new Set());
-                  }}
-                  className={`p-1 rounded transition ${
-                    batchMode ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'
-                  }`}
-                  title="批量操作"
-                  aria-label="批量操作"
-                >
-                  <CheckSquare className="w-4 h-4" aria-hidden="true" />
-                </button>
-              </div>
+              ))}
+              <div className="flex-1" />
+              <span className="text-xs py-2 pr-1 font-mono" style={{ color: 'var(--faint)' }}>{annotations.length} 个</span>
+              <button
+                onClick={() => { setBatchMode(!batchMode); setSelectedIds(new Set()); }}
+                className={`p-1.5 rounded transition ${batchMode ? '' : ''}`}
+                style={{ color: batchMode ? 'var(--primary)' : 'var(--faint)' }}
+                title="批量操作"
+                aria-label="批量操作"
+              >
+                <CheckSquare className="w-4 h-4" aria-hidden="true" />
+              </button>
             </div>
 
             {/* 搜索（列表模式） */}
             {sidebarTab === 'list' && (
-              <div className="px-3 py-2 border-b border-gray-100">
+              <div className="px-3 py-2 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--faint)' }} aria-hidden="true" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="搜索编号、位置..."
-                    className="w-full pl-9 pr-8 py-2 bg-gray-50/80 border border-gray-200 rounded-lg text-sm outline-none transition"
-                    onFocus={(e) => { e.currentTarget.style.borderColor = '#78a587'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(120,165,135,0.12)'; e.currentTarget.style.background = '#ffffff'; }}
-                    onBlur={(e) => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.background = ''; }}
+                    className="w-full pl-9 pr-8 py-2 text-sm rounded-lg outline-none transition"
+                    style={{ border: '1px solid var(--border)', background: 'white', color: 'var(--ink)' }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(26,71,53,0.08)'; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
                   />
                   {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      aria-label="清除搜索"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 transition"
-                    >
+                    <button onClick={() => setSearchQuery('')} aria-label="清除搜索"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 transition"
+                      style={{ color: 'var(--faint)' }}>
                       <X className="w-3.5 h-3.5" aria-hidden="true" />
                     </button>
                   )}
                 </div>
                 {searchQuery && (
-                  <p className="text-xs text-gray-400 mt-1">找到 {filteredAnnotations.length} 条结果</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--faint)' }}>找到 {filteredAnnotations.length} 条结果</p>
                 )}
               </div>
             )}
 
             {/* 批量操作栏 */}
             {sidebarTab === 'list' && batchMode && (
-              <div className="px-3 py-2 border-b bg-gradient-to-r from-blue-50/80 to-indigo-50/50 flex items-center justify-between">
+              <div className="px-3 py-2 shrink-0 flex items-center justify-between"
+                style={{ borderBottom: '1px solid var(--border)', background: 'rgba(26,71,53,0.04)' }}>
                 <div className="flex items-center gap-2">
-                  <button onClick={handleSelectAll} className="text-xs text-blue-600 hover:text-blue-800 font-medium" aria-label={selectedIds.size === filteredByGroup.length && filteredByGroup.length > 0 ? '取消全选' : '全选'}>
+                  <button onClick={handleSelectAll} className="text-xs font-medium"
+                    style={{ color: 'var(--primary)' }}
+                    aria-label={selectedIds.size === filteredByGroup.length && filteredByGroup.length > 0 ? '取消全选' : '全选'}>
                     {selectedIds.size === filteredByGroup.length && filteredByGroup.length > 0 ? '取消全选' : '全选'}
                   </button>
-                  <span className="text-xs text-gray-500">已选 {selectedIds.size} 个</span>
+                  <span className="text-xs" style={{ color: 'var(--muted)' }}>已选 {selectedIds.size} 个</span>
                 </div>
                 {selectedIds.size > 0 && (
-                  <button
-                    onClick={onBatchDeleteClick}
-                    className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded text-xs font-medium hover:bg-red-700 transition shadow-sm"
-                  >
+                  <button onClick={onBatchDeleteClick}
+                    className="flex items-center gap-1 px-3 py-1 text-white rounded text-xs font-medium transition shadow-sm"
+                    style={{ background: 'var(--danger)' }}>
                     <Trash2 className="w-3 h-3" aria-hidden="true" />
                     批量删除
                   </button>
@@ -537,93 +540,110 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
               ) : (
                 <>
                   {filteredByGroup.length === 0 ? (
-                    <div className="p-8 text-center text-sm text-gray-400">
+                    <div className="p-8 text-center text-sm" style={{ color: 'var(--faint)' }}>
                       <div className="text-3xl mb-3 opacity-30">📍</div>
                       {searchQuery ? '没有找到匹配的标注' : selectedGroupId ? '该分组暂无标注' : '暂无标注'}<br />
                       {!searchQuery && !selectedGroupId && (
-                        <span className="text-xs text-gray-300">点击右侧工具在地图上添加</span>
+                        <span className="text-xs" style={{ color: 'var(--border)' }}>点击顶部工具栏在地图上添加</span>
                       )}
                     </div>
                   ) : (
-                    <div className="divide-y divide-gray-50">
-                      {filteredByGroup.map((anno) =>
+                    <div>
+                      {filteredByGroup.map((anno) => {
+                        const groupColor = anno.group_id ? groupColorMap.get(anno.group_id) : null;
+                        const groupName = anno.group_id ? groupNameMap.get(anno.group_id) : null;
+                        return (
                         <div
                           key={anno.id}
                           onClick={() => handleAnnotationClick(anno)}
-                          className={`w-full px-4 py-3 text-left transition-all duration-150 cursor-pointer border-l-2 ${
-                            selectedAnnotation?.id === anno.id
-                              ? 'border-l-[#78a587] shadow-sm'
-                              : 'border-l-transparent'
-                          }`}
-                          style={selectedAnnotation?.id === anno.id ? { background: 'rgba(120,165,135,0.04)' } : undefined}
-                          onMouseEnter={(e) => { if (selectedAnnotation?.id !== anno.id) e.currentTarget.style.background = 'rgba(120,165,135,0.02)'; }}
+                          className="cursor-pointer transition-all duration-150"
+                          style={{
+                            borderBottom: '1px solid var(--border)',
+                            background: selectedAnnotation?.id === anno.id ? 'var(--primary-light)' : 'transparent',
+                            borderLeft: selectedAnnotation?.id === anno.id ? '3px solid var(--primary)' : '3px solid transparent',
+                          }}
+                          onMouseEnter={(e) => { if (selectedAnnotation?.id !== anno.id) e.currentTarget.style.background = 'rgba(26,71,53,0.02)'; }}
                           onMouseLeave={(e) => { if (selectedAnnotation?.id !== anno.id) e.currentTarget.style.background = ''; }}
                         >
-                      <div className="flex items-center gap-2.5">
-                        {batchMode && (
-                          <button
-                            className="shrink-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const next = new Set(selectedIds);
-                              if (next.has(anno.id)) next.delete(anno.id);
-                              else next.add(anno.id);
-                              setSelectedIds(next);
-                            }}
-                            aria-label={selectedIds.has(anno.id) ? '取消选择' : '选择'}
-                          >
-                            {selectedIds.has(anno.id) ? (
-                              <CheckSquare className="w-4 h-4" style={{ color: '#78a587' }} aria-hidden="true" />
-                            ) : (
-                              <Square className="w-4 h-4 text-gray-400" aria-hidden="true" />
-                            )}
-                          </button>
-                        )}
-                        <span className={`w-2 h-2 rounded-full shrink-0 ${
-                          anno.type === 'point' ? 'bg-red-500 shadow-sm shadow-red-200' :
-                          anno.type === 'line' ? 'bg-blue-500 shadow-sm shadow-blue-200' : 'bg-purple-500 shadow-sm shadow-purple-200'
-                        }`} />
-                        <div className="min-w-0 flex-1">
-                          <span className="text-sm font-medium text-gray-900 truncate block">
-                            {anno.name || '未命名'}
-                          </span>
-                          {anno.description && (
-                            <p className="text-[11px] text-gray-400 mt-0.5 truncate">{anno.description}</p>
-                          )}
-                        </div>
-                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
-                          anno.type === 'point' ? 'bg-red-50 text-red-600' :
-                          anno.type === 'line' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'
-                        }`}>
-                          {anno.type === 'point' ? '点' : anno.type === 'line' ? '线' : '面'}
-                        </span>
-                      </div>
-                      {anno.type === 'point' && anno.custom_fields.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2 pl-9">
-                          {[...anno.custom_fields]
-                            .sort((a, b) => {
-                              const fa = fieldTemplateMap.get(a.fieldId);
-                              const fb = fieldTemplateMap.get(b.fieldId);
-                              return (fa?.sort_order ?? 0) - (fb?.sort_order ?? 0);
-                            })
-                            .filter(cf => {
-                              const field = fieldTemplateMap.get(cf.fieldId);
-                              return field && field.name !== '成交总价';
-                            })
-                            .filter(cf => cf.value != null)
-                            .slice(0, 3)
-                            .map((cf) => {
-                            const field = fieldTemplateMap.get(cf.fieldId);
-                            if (!field) return null;
-                            return (
-                              <span key={cf.fieldId} className="px-1.5 py-0.5 bg-gray-100/80 text-gray-500 rounded text-[10px]">
-                                {field.name}: {String(cf.value)}
+                          <div className="px-4 py-3">
+                            <div className="flex items-center gap-2.5">
+                              {batchMode && (
+                                <button className="shrink-0"
+                                  onClick={(e) => { e.stopPropagation(); const next = new Set(selectedIds); if (next.has(anno.id)) next.delete(anno.id); else next.add(anno.id); setSelectedIds(next); }}
+                                  aria-label={selectedIds.has(anno.id) ? '取消选择' : '选择'}>
+                                  {selectedIds.has(anno.id) ? (
+                                    <CheckSquare className="w-4 h-4" style={{ color: 'var(--primary)' }} aria-hidden="true" />
+                                  ) : (
+                                    <Square className="w-4 h-4" style={{ color: 'var(--faint)' }} aria-hidden="true" />
+                                  )}
+                                </button>
+                              )}
+                              {/* 类型圆点 */}
+                              <span className={`w-2 h-2 rounded-full shrink-0 ${
+                                anno.type === 'point' ? 'bg-red-500 shadow-sm shadow-red-200' :
+                                anno.type === 'line' ? 'bg-blue-500 shadow-sm shadow-blue-200' :
+                                anno.type === 'text' ? 'bg-amber-500 shadow-sm shadow-amber-200' :
+                                'bg-purple-500 shadow-sm shadow-purple-200'
+                              }`} />
+                              <div className="min-w-0 flex-1">
+                                <span className="text-sm font-medium truncate block" style={{ color: 'var(--ink)' }}>
+                                  {anno.name || '未命名'}
+                                </span>
+                                {anno.description && (
+                                  <p className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--muted)' }}>{anno.description}</p>
+                                )}
+                              </div>
+                              {/* 分类标签 */}
+                              {groupName && (
+                                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded shrink-0"
+                                  style={{
+                                    background: groupColor ? `${groupColor}18` : 'var(--primary-light)',
+                                    color: groupColor || 'var(--primary)',
+                                  }}>
+                                  {groupName}
+                                </span>
+                              )}
+                              {/* 类型徽章 */}
+                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0" style={{
+                                background: anno.type === 'point' ? 'rgba(239,68,68,0.08)' :
+                                            anno.type === 'line' ? 'rgba(59,130,246,0.08)' :
+                                            anno.type === 'text' ? 'rgba(245,158,11,0.08)' : 'rgba(139,92,246,0.08)',
+                                color: anno.type === 'point' ? '#EF4444' :
+                                       anno.type === 'line' ? '#3B82F6' :
+                                       anno.type === 'text' ? '#d4954e' : '#8B5CF6'
+                              }}>
+                                {anno.type === 'point' ? '点' : anno.type === 'line' ? '线' : anno.type === 'text' ? '文字' : '面'}
                               </span>
-                            );
-                          })}
+                            </div>
+                            {anno.type === 'point' && anno.custom_fields.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2" style={{ paddingLeft: batchMode ? '2.25rem' : '0' }}>
+                                {[...anno.custom_fields]
+                                  .sort((a, b) => {
+                                    const fa = fieldTemplateMap.get(a.fieldId);
+                                    const fb = fieldTemplateMap.get(b.fieldId);
+                                    return (fa?.sort_order ?? 0) - (fb?.sort_order ?? 0);
+                                  })
+                                  .filter(cf => {
+                                    const field = fieldTemplateMap.get(cf.fieldId);
+                                    return field && field.name !== '成交总价';
+                                  })
+                                  .filter(cf => cf.value != null)
+                                  .slice(0, 3)
+                                  .map((cf) => {
+                                  const field = fieldTemplateMap.get(cf.fieldId);
+                                  if (!field) return null;
+                                  return (
+                                    <span key={cf.fieldId} className="px-1.5 py-0.5 rounded text-[10px]"
+                                      style={{ background: 'var(--primary-light)', color: 'var(--muted)' }}>
+                                      {field.name}: {String(cf.value)}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      )}
-                    </div>
+                        );}
                       )}
                     </div>
                   )}
@@ -633,7 +653,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
 
             {/* 设置面板 */}
             {showSettings && mapProject && (
-              <div className="border-t border-gray-100">
+              <div className="shrink-0" style={{ borderTop: '1px solid var(--border)' }}>
                 <FieldTemplateManager
                   templates={mapProject.field_templates}
                   onChange={handleFieldTemplatesChange}
@@ -647,10 +667,16 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           aria-label={sidebarOpen ? '收起侧边栏' : '展开侧边栏'}
-          className="absolute top-3 z-40 bg-white/90 backdrop-blur shadow-md rounded-r-xl p-1.5 border border-l-0 border-gray-100 hover:bg-gray-50 transition-all duration-200 hover:scale-105"
-          style={{ left: sidebarOpen ? '320px' : '0' }}
+          className="absolute top-3 z-40 shadow-md rounded-r-xl p-1.5 border border-l-0 transition-all duration-200 hover:scale-105"
+          style={{
+            left: sidebarOpen ? '320px' : '0',
+            background: 'var(--surface)',
+            borderColor: 'var(--border)',
+          }}
         >
-          {sidebarOpen ? <ChevronLeft className="w-4 h-4 text-gray-500" aria-hidden="true" /> : <ChevronRight className="w-4 h-4 text-gray-500" aria-hidden="true" />}
+          {sidebarOpen
+            ? <ChevronLeft className="w-4 h-4" style={{ color: 'var(--muted)' }} aria-hidden="true" />
+            : <ChevronRight className="w-4 h-4" style={{ color: 'var(--muted)' }} aria-hidden="true" />}
         </button>
 
         {/* 地图区域 */}
@@ -668,14 +694,11 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             selectedAnnotation={selectedAnnotation}
             editable={true}
             groups={groups}
+            showHeatmap={showHeatmap}
           />
 
-          <div className="absolute right-4 top-28 z-[1000] flex flex-col gap-3 items-end">
-            <DrawingToolbar
-              drawMode={drawMode}
-              onDrawModeChange={setDrawMode}
-              annotationCount={annotationCount}
-            />
+          {/* InfoCard */}
+          <div className="absolute right-4 top-4 z-[1000]">
             {selectedAnnotation && mapProject && !batchMode && (
               <InfoCard
                 annotation={selectedAnnotation}
@@ -688,13 +711,49 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             )}
           </div>
 
-          {/* Deerflow 署名 */}
+          {/* Deerflow */}
           <a href="https://deerflow.tech" target="_blank" rel="noopener noreferrer"
-             className="absolute bottom-3 right-3 z-[999] text-[9px] text-gray-300/50 hover:text-gray-500/80 transition-colors duration-300 tracking-widest uppercase pointer-events-auto">
+             className="absolute bottom-10 right-3 z-[999] text-[9px] tracking-widest uppercase transition-colors duration-300 pointer-events-auto"
+             style={{ color: 'rgba(107,114,128,0.3)' }}>
             Deerflow
           </a>
         </div>
       </div>
+
+      {/* █ 底栏 */}
+      <footer className="h-9 shrink-0 flex items-center justify-between px-4 z-40"
+        style={{ background: '#fafbfc', borderTop: '1px solid var(--border)' }}>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-1.5 text-xs cursor-pointer" style={{ color: 'var(--muted)' }}>
+            <button
+              onClick={() => setShowHeatmap(!showHeatmap)}
+              className="w-7 h-4 rounded-full relative transition-colors duration-200"
+              style={{ background: showHeatmap ? 'var(--primary)' : 'var(--border)' }}
+              aria-label="热力图开关"
+            >
+              <span className="absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-all duration-200"
+                style={{ left: showHeatmap ? 'calc(100% - 14px)' : '2px' }} />
+            </button>
+            🔥 热力图
+          </label>
+          <label className="flex items-center gap-1.5 text-xs cursor-pointer" style={{ color: 'var(--muted)' }}>
+            <button
+              onClick={() => setShowNames(!showNames)}
+              className="w-7 h-4 rounded-full relative transition-colors duration-200"
+              style={{ background: showNames ? 'var(--primary)' : 'var(--border)' }}
+              aria-label="显示名称开关"
+            >
+              <span className="absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-all duration-200"
+                style={{ left: showNames ? 'calc(100% - 14px)' : '2px' }} />
+            </button>
+            显示名称
+          </label>
+        </div>
+        <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--faint)' }}>
+          <span>{annotations.length} 个标注</span>
+          <span style={{ opacity: 0.5 }}>Deerflow</span>
+        </div>
+      </footer>
 
       <ImportDialog
         open={importOpen}

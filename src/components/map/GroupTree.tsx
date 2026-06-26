@@ -5,7 +5,7 @@ import { Group } from '@/lib/types';
 import { apiSend } from '@/lib/api';
 import {
   FolderOpen, Folder, Plus, ChevronRight, ChevronDown,
-  Edit3, Trash2, MoreHorizontal, Loader2,
+  Edit3, Trash2, MoreHorizontal, Loader2, Palette,
 } from 'lucide-react';
 
 interface GroupTreeProps {
@@ -16,6 +16,8 @@ interface GroupTreeProps {
   onGroupsChange: () => void;
   annotationCountByGroup: Record<string, number>;
 }
+
+const GROUP_COLORS = ['#1a4735', '#2d6b52', '#c0392b', '#2c6fbb', '#d4954e', '#6b7280', '#7c3aed', '#db2777', '#ea580c', '#0891b2'];
 
 export default function GroupTree({
   groups,
@@ -29,8 +31,7 @@ export default function GroupTree({
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; group: Group } | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
-  const [creating, setCreating] = useState(false);
-  const [createParentId, setCreateParentId] = useState<string | null>(null);
+  const [changingColor, setChangingColor] = useState<string | null>(null);
 
   // 构建树形结构
   const rootGroups = groups.filter((g) => !g.parent_id);
@@ -88,6 +89,16 @@ export default function GroupTree({
     setContextMenu(null);
   }, [mapId, onGroupsChange]);
 
+  const handleColorChange = useCallback(async (groupId: string, color: string) => {
+    try {
+      await apiSend('/api/groups', 'PUT', { id: groupId, color });
+      onGroupsChange();
+    } catch (err) {
+      console.error('更新颜色失败:', err);
+    }
+    setChangingColor(null);
+  }, [onGroupsChange]);
+
   // 关闭右键菜单
   const closeContextMenu = () => setContextMenu(null);
   const onContextMenuClick = useCallback((e: React.MouseEvent) => {
@@ -101,18 +112,17 @@ export default function GroupTree({
     const isExpanded = expanded.has(group.id);
     const isSelected = selectedGroupId === group.id;
     const count = annotationCountByGroup[group.id] ?? 0;
+    const showColorPicker = changingColor === group.id;
 
     return (
       <div key={group.id}>
         <div
           className={`group flex items-center gap-1 px-2 py-1.5 rounded-lg cursor-pointer transition-all text-sm ${
-            isSelected
-              ? 'font-medium'
-              : 'text-gray-700 hover:bg-gray-100'
+            isSelected ? 'font-medium' : 'hover:bg-gray-100'
           }`}
           style={Object.assign(
             { paddingLeft: `${12 + depth * 16}px` },
-            isSelected ? { background: 'rgba(120,165,135,0.04)', color: '#78a587' } : {}
+            isSelected ? { background: 'rgba(26,71,53,0.06)', color: 'var(--primary)' } : { color: 'var(--muted)' }
           )}
           onClick={() => onSelectGroup(isSelected ? null : group.id)}
           onContextMenu={(e) => handleContextMenu(e, group)}
@@ -130,12 +140,17 @@ export default function GroupTree({
             )}
           </button>
 
-          {/* 文件夹图标 */}
-          {group.color ? (
-            <div className="w-4 h-4 rounded" style={{ background: group.color }} />
-          ) : (
-            isExpanded ? <FolderOpen className="w-4 h-4 text-amber-500" /> : <Folder className="w-4 h-4 text-amber-500" />
-          )}
+          {/* 颜色标记 (可点击换色) */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setChangingColor(changingColor === group.id ? null : group.id);
+            }}
+            className="w-4 h-4 rounded shrink-0 transition-transform hover:scale-110"
+            style={{ background: group.color || '#d1d5db' }}
+            title="点击更换颜色"
+            aria-label="更换颜色"
+          />
 
           {/* 名称 */}
           {renaming === group.id ? (
@@ -143,10 +158,10 @@ export default function GroupTree({
               type="text"
               value={renameValue}
               onChange={(e) => setRenameValue(e.target.value)}
-              onBlur={(e) => { handleRename(group.id); e.currentTarget.style.borderColor = '#5b7b5a'; }}
+              onBlur={() => handleRename(group.id)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleRename(group.id); if (e.key === 'Escape') setRenaming(null); }}
               className="flex-1 min-w-0 px-1 py-0.5 border rounded text-sm outline-none"
-              style={{ borderColor: '#78a587', boxShadow: '0 0 0 1px rgba(120,165,135,0.2)' }}
+              style={{ borderColor: 'var(--primary)', boxShadow: '0 0 0 1px rgba(26,71,53,0.2)' }}
               autoFocus
               onClick={(e) => e.stopPropagation()}
             />
@@ -155,7 +170,7 @@ export default function GroupTree({
           )}
 
           {/* 标注数量 */}
-          <span className="text-xs text-gray-400 ml-auto shrink-0">{count || ''}</span>
+          <span className="text-xs ml-auto shrink-0" style={{ color: 'var(--faint)' }}>{count || ''}</span>
 
           {/* 更多按钮 */}
           <button
@@ -166,6 +181,39 @@ export default function GroupTree({
             <MoreHorizontal className="w-3.5 h-3.5" />
           </button>
         </div>
+
+        {/* 颜色选择器 */}
+        {showColorPicker && (
+          <div
+            className="flex flex-wrap gap-1 px-2 py-1.5 ml-8 rounded-lg"
+            style={{ background: 'var(--bg)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {GROUP_COLORS.map((c) => (
+              <button
+                key={c}
+                onClick={() => handleColorChange(group.id, c)}
+                className="w-5 h-5 rounded-full transition-all duration-150 hover:scale-125"
+                style={{
+                  background: c,
+                  outline: group.color === c ? '2px solid var(--ink)' : 'none',
+                  outlineOffset: '2px',
+                }}
+                title={c}
+                aria-label={`设置颜色 ${c}`}
+              />
+            ))}
+            <button
+              onClick={() => handleColorChange(group.id, '')}
+              className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-150 hover:scale-125"
+              style={{ background: 'var(--border)', color: 'var(--muted)' }}
+              title="清除颜色"
+              aria-label="清除颜色"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* 子分组 */}
         {hasChildren && isExpanded && (
@@ -182,16 +230,14 @@ export default function GroupTree({
       {/* 全部标注 */}
       <div
         className={`flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer text-sm mb-1 ${
-          selectedGroupId === null
-            ? 'font-medium'
-            : 'text-gray-700 hover:bg-gray-100'
+          selectedGroupId === null ? 'font-medium' : 'hover:bg-gray-100'
         }`}
-        style={selectedGroupId === null ? { background: 'rgba(120,165,135,0.04)', color: '#78a587' } : undefined}
+        style={selectedGroupId === null ? { background: 'rgba(26,71,53,0.06)', color: 'var(--primary)' } : { color: 'var(--muted)' }}
         onClick={() => onSelectGroup(null)}
       >
-        <FolderOpen className="w-4 h-4 text-gray-400" />
+        <FolderOpen className="w-4 h-4" style={{ color: 'var(--faint)' }} />
         <span>全部标注</span>
-        <span className="ml-auto text-xs text-gray-400">
+        <span className="ml-auto text-xs" style={{ color: 'var(--faint)' }}>
           {Object.values(annotationCountByGroup).reduce((a, b) => a + b, 0) || ''}
         </span>
       </div>
@@ -201,22 +247,20 @@ export default function GroupTree({
 
       {/* 无分组状态 */}
       {rootGroups.length === 0 && (
-        <p className="text-xs text-gray-400 text-center py-4">暂无分组，右键「全部标注」可新建</p>
+        <p className="text-xs text-center py-4" style={{ color: 'var(--faint)' }}>暂无分组，右键「全部标注」可新建</p>
       )}
 
       {/* 右键菜单 */}
       {contextMenu && (
         <div
-          className="fixed z-[9999] bg-white rounded-xl shadow-xl border border-gray-200 py-1 min-w-[140px]"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
+          className="fixed z-[9999] bg-white rounded-xl shadow-xl border py-1 min-w-[140px]"
+          style={{ left: contextMenu.x, top: contextMenu.y, borderColor: 'var(--border)' }}
           onClick={onContextMenuClick}
         >
           <button
-            onClick={() => {
-              const parentId = contextMenu.group.id;
-              handleCreateSubGroup(parentId);
-            }}
-            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+            onClick={() => handleCreateSubGroup(contextMenu.group.id)}
+            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+            style={{ color: 'var(--ink)' }}
           >
             <Plus className="w-3.5 h-3.5" />
             新建子分组
@@ -227,14 +271,27 @@ export default function GroupTree({
               setRenameValue(contextMenu.group.name);
               setContextMenu(null);
             }}
-            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+            style={{ color: 'var(--ink)' }}
           >
             <Edit3 className="w-3.5 h-3.5" />
             重命名
           </button>
           <button
+            onClick={() => {
+              setChangingColor(contextMenu.group.id);
+              setContextMenu(null);
+            }}
+            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+            style={{ color: 'var(--ink)' }}
+          >
+            <Palette className="w-3.5 h-3.5" />
+            更换颜色
+          </button>
+          <button
             onClick={() => handleDelete(contextMenu.group.id)}
-            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-red-600"
+            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+            style={{ color: 'var(--danger)' }}
           >
             <Trash2 className="w-3.5 h-3.5" />
             删除
