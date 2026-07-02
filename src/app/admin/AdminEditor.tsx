@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/auth/AuthProvider';
 import DrawingToolbar from '@/components/map/DrawingToolbar';
@@ -109,6 +109,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
   const [batchFieldValue, setBatchFieldValue] = useState('');
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [savingMapSettings, setSavingMapSettings] = useState(false);
+  const listItemRefs = useRef(new Map<string, HTMLDivElement>());
 
   // 分组标注计数
   const annotationCountByGroup = useMemo(() => {
@@ -368,6 +369,13 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
       loadData();
     }
   }, [loadData, setAnnotations]);
+
+  useEffect(() => {
+    if (!selectedAnnotation || sidebarTab !== 'list') return;
+    const element = listItemRefs.current.get(selectedAnnotation.id);
+    if (!element) return;
+    element.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [selectedAnnotation, sidebarTab, filteredByGroup]);
 
   if (loading) {
     return (
@@ -695,6 +703,10 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                         return (
                         <div
                           key={anno.id}
+                          ref={(node) => {
+                            if (node) listItemRefs.current.set(anno.id, node);
+                            else listItemRefs.current.delete(anno.id);
+                          }}
                           onClick={() => handleAnnotationClick(anno)}
                           className="cursor-pointer transition-all duration-150"
                           style={{

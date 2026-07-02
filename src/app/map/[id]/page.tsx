@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo, use } from 'react';
+import { useState, useCallback, useMemo, use, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useMapData } from '@/hooks/useMapData';
@@ -27,6 +27,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showNames, setShowNames] = useState<boolean | null>(null);
+  const listItemRefs = useRef(new Map<string, HTMLDivElement>());
 
   const filteredAnnotations = useMemo(() => {
     if (!searchQuery.trim()) return annotations;
@@ -48,6 +49,13 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
   }, []);
 
   const effectiveShowNames = showNames ?? (mapProject?.settings.showNames !== false);
+
+  useEffect(() => {
+    if (!selectedAnnotation) return;
+    const element = listItemRefs.current.get(selectedAnnotation.id);
+    if (!element) return;
+    element.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [selectedAnnotation, filteredAnnotations]);
 
   if (loading) {
     return (
@@ -151,6 +159,10 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
                   {filteredAnnotations.map((anno) => (
                     <div
                       key={anno.id}
+                      ref={(node) => {
+                        if (node) listItemRefs.current.set(anno.id, node);
+                        else listItemRefs.current.delete(anno.id);
+                      }}
                       onClick={() => handleAnnotationClick(anno)}
                       className="cursor-pointer transition-all duration-150"
                       style={{
