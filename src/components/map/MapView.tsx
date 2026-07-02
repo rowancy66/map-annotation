@@ -33,6 +33,15 @@ function sanitizeSize(size: number): number {
   return Math.max(1, Math.min(5, Math.round(size)));
 }
 
+type LeafletHeatLayerFactory = {
+  heatLayer: (points: [number, number, number][], options: {
+    radius: number;
+    blur: number;
+    maxZoom: number;
+    gradient: Record<number, string>;
+  }) => L.Layer;
+};
+
 interface MapViewProps {
   annotations: Annotation[];
   onMapClick?: (latlng: L.LatLng) => void;
@@ -40,7 +49,6 @@ interface MapViewProps {
   onAnnotationClick?: (annotation: Annotation) => void;
   onAnnotationMove?: (annotation: Annotation, newLatLng: L.LatLng) => void;
   onAnnotationDelete?: (annotation: Annotation) => void;
-  onAnnotationEdit?: (annotation: Annotation) => void;
   drawMode: DrawMode;
   onDrawModeChange: (mode: DrawMode) => void;
   selectedAnnotation?: Annotation | null;
@@ -49,6 +57,7 @@ interface MapViewProps {
   groups?: Group[];
   onAnnotationMoveToGroup?: (annotationId: string, groupId: string | null) => void;
   showHeatmap?: boolean;
+  showNames?: boolean;
 }
 
 export default function MapView({
@@ -63,9 +72,9 @@ export default function MapView({
   editable = true,
   groups,
   onAnnotationDelete,
-  onAnnotationEdit,
   onAnnotationMoveToGroup,
   showHeatmap = false,
+  showNames = true,
 }: MapViewProps) {
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -103,6 +112,30 @@ export default function MapView({
   } | null>(null);
 
   const lastClickTimeRef = useRef(0);
+
+  const syncAnnotationLabel = useCallback((layer: L.Layer, annotation: Annotation) => {
+    const labelLayer = layer as L.Layer & {
+      bindTooltip?: (content: string, options?: L.TooltipOptions) => void;
+      unbindTooltip?: () => void;
+      getTooltip?: () => L.Tooltip | undefined;
+    };
+
+    if (annotation.type === 'text') return;
+
+    if (!showNames || !annotation.name.trim()) {
+      labelLayer.unbindTooltip?.();
+      return;
+    }
+
+    labelLayer.unbindTooltip?.();
+    labelLayer.bindTooltip?.(annotation.name, {
+      permanent: true,
+      direction: annotation.type === 'point' ? 'top' : 'center',
+      offset: annotation.type === 'point' ? [0, -12] : [0, 0],
+      opacity: 0.92,
+      className: 'annotation-name-tooltip',
+    });
+  }, [showNames]);
 
   const createCustomIcon = useCallback((style: PointStyle, highlighted = false): L.DivIcon => {
     const safeIcon = sanitizeIcon(style.icon);
@@ -288,6 +321,7 @@ export default function MapView({
           const style = annotation.style as PointStyle;
           (existing as L.Marker).setIcon(createCustomIcon(style, isSelected));
         }
+        syncAnnotationLabel(existing, annotation);
         return;
       }
 
@@ -367,9 +401,10 @@ export default function MapView({
         onAnnotationClickRef.current?.(currentAnnotation);
       });
 
+      syncAnnotationLabel(leafletLayer, annotation);
       layer.addLayer(leafletLayer);
     });
-  }, [annotations, createCustomIcon, drawMode, editable, mapReady, selectedAnnotation]);
+  }, [annotations, createCustomIcon, drawMode, editable, mapReady, selectedAnnotation, showNames, syncAnnotationLabel]);
 
   useEffect(() => {
     if (!mapRef.current || !selectedAnnotation) return;
@@ -410,14 +445,17 @@ export default function MapView({
 
       if (points.length > 0) {
         try {
-          // @ts-expect-error leaflet.heat typings are incomplete
-          const heat = (L as any).heatLayer(points, {
+          const heatLayerFactory = L as typeof L & Partial<LeafletHeatLayerFactory>;
+          const heat = heatLayerFactory.heatLayer?.(points, {
             radius: 25,
             blur: 15,
             maxZoom: 17,
             gradient: { 0.4: '#1a4735', 0.6: '#2d6b52', 0.8: '#d4954e', 1.0: '#c0392b' },
-          }).addTo(map);
-          heatLayerRef.current = heat;
+          });
+          if (heat) {
+            heat.addTo(map);
+            heatLayerRef.current = heat;
+          }
         } catch {
           // leaflet.heat not available
         }
@@ -634,6 +672,19 @@ export default function MapView({
         .marker-icon:hover {
           transform: scale(1.15) !important;
         }
+        .annotation-name-tooltip {
+          background: rgba(255,255,255,0.92);
+          border: 1px solid rgba(26, 71, 53, 0.12);
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+          color: #1f2937;
+          font-size: 12px;
+          font-weight: 600;
+          padding: 3px 8px;
+        }
+        .annotation-name-tooltip:before {
+          display: none;
+        }
         @keyframes markerPulse {
           0%, 100% { transform: scale(1); opacity: 0.5; }
           50% { transform: scale(1.15); opacity: 0.8; }
@@ -757,12 +808,11 @@ export default function MapView({
 	          {groups && groups.length > 0 && (
 	            <div className="border-t border-gray-100">
 	              <div className="px-4 py-1.5 text-xs text-gray-400">移动到分组</div>
-	              <button
-	                onClick={() => {
-	                  contextMenu.annotation;
-	                  handleMoveToGroup(contextMenu.annotation.id, null);
-	                  setContextMenu(null);
-	                }}
+		              <button
+		                onClick={() => {
+		                  handleMoveToGroup(contextMenu.annotation.id, null);
+		                  setContextMenu(null);
+		                }}
 	                className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-gray-600"
 	              >
 	                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>

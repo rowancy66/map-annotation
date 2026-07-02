@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { apiGet, apiSend } from '@/lib/api';
@@ -23,7 +23,7 @@ export default function AdminDashboard() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showStats, setShowStats] = useState(false);
 
-  const loadMaps = async () => {
+  const loadMaps = useCallback(async () => {
     setLoading(true);
     try {
       const data = await apiGet<{ maps: MapListItem[] }>('/api/maps');
@@ -33,11 +33,15 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    if (isLoggedIn) loadMaps();
-  }, [isLoggedIn]);
+    if (!isLoggedIn) return;
+
+    queueMicrotask(() => {
+      void loadMaps();
+    });
+  }, [isLoggedIn, loadMaps]);
 
   const handleCreate = async () => {
     if (!newName.trim()) return;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
-import { Annotation, FieldTemplate } from '@/lib/types';
+import { Annotation, AnnotationFieldFilter, AnnotationFilterState, FieldTemplate } from '@/lib/types';
 import L from 'leaflet';
 
 /**
@@ -20,7 +20,12 @@ export function useAnnotationActions(
   setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>,
 ) {
   const [selectedAnnotation, setSelectedAnnotation] = useState<Annotation | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<AnnotationFilterState>({
+    keyword: '',
+    selectedGroupId: null,
+    selectedTypes: [],
+    fieldFilters: [],
+  });
   const [batchMode, setBatchMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
@@ -38,17 +43,61 @@ export function useAnnotationActions(
     return map;
   }, [fieldTemplates]);
 
+  const parseNumber = (value: string | number | null | undefined) => {
+    if (value == null || value === '') return null;
+    const parsed = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const matchesFieldFilter = useCallback((annotation: Annotation, filter: AnnotationFieldFilter) => {
+    const value = annotation.custom_fields.find((item) => item.fieldId === filter.fieldId)?.value;
+    if (value == null || value === '') return false;
+
+    if (filter.operator === 'contains') {
+      return String(value).toLowerCase().includes((filter.value || '').toLowerCase().trim());
+    }
+
+    if (filter.operator === 'equals') {
+      return String(value).toLowerCase() === (filter.value || '').toLowerCase().trim();
+    }
+
+    if (filter.operator === 'range') {
+      const numericValue = parseNumber(value);
+      if (numericValue == null) return false;
+      const min = filter.min ? Number(filter.min) : null;
+      const max = filter.max ? Number(filter.max) : null;
+      if (min != null && numericValue < min) return false;
+      if (max != null && numericValue > max) return false;
+      return true;
+    }
+
+    const current = new Date(String(value)).getTime();
+    if (Number.isNaN(current)) return false;
+    const min = filter.min ? new Date(filter.min).getTime() : null;
+    const max = filter.max ? new Date(filter.max).getTime() : null;
+    if (min != null && current < min) return false;
+    if (max != null && current > max) return false;
+    return true;
+  }, []);
+
   // 搜索过滤
   const filteredAnnotations = useMemo(() => {
-    if (!searchQuery.trim()) return annotations;
-    const q = searchQuery.toLowerCase().trim();
+    const keyword = filters.keyword.toLowerCase().trim();
     return annotations.filter((a) => {
-      if (a.name.toLowerCase().includes(q)) return true;
-      if (a.description.toLowerCase().includes(q)) return true;
-      if (a.custom_fields.some((cf) => String(cf.value ?? '').toLowerCase().includes(q))) return true;
-      return false;
+      if (filters.selectedGroupId !== null && (a.group_id || null) !== filters.selectedGroupId) return false;
+      if (filters.selectedTypes.length > 0 && !filters.selectedTypes.includes(a.type)) return false;
+
+      if (keyword) {
+        const keywordMatched =
+          a.name.toLowerCase().includes(keyword) ||
+          a.description.toLowerCase().includes(keyword) ||
+          a.custom_fields.some((cf) => String(cf.value ?? '').toLowerCase().includes(keyword));
+        if (!keywordMatched) return false;
+      }
+
+      return filters.fieldFilters.every((filter) => matchesFieldFilter(a, filter));
     });
-  }, [annotations, searchQuery]);
+  }, [annotations, filters, matchesFieldFilter]);
 
   // 修复 #11: annotationCount 用 useMemo
   const annotationCount = useMemo(() => ({
@@ -154,8 +203,8 @@ export function useAnnotationActions(
   return {
     selectedAnnotation,
     setSelectedAnnotation,
-    searchQuery,
-    setSearchQuery,
+    filters,
+    setFilters,
     batchMode,
     setBatchMode,
     selectedIds,
@@ -164,6 +213,7 @@ export function useAnnotationActions(
     annotationCount,
     fieldTemplateMap,
     feedbackMessage,
+    showFeedback,
     handleSaveAnnotation,
     handleDeleteAnnotation,
     handleAnnotationMove,

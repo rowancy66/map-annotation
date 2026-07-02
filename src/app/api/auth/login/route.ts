@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isLoggedIn, verifyAdminPassword, createSession } from '@/lib/server/auth';
+import { verifyAdminPassword, createSession } from '@/lib/server/auth';
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);

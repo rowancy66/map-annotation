@@ -3,7 +3,8 @@ import { isLoggedIn } from '@/lib/server/auth';
 import { listMaps, createMap } from '@/lib/server/maps';
 
 export async function GET() {
-  const maps = await listMaps();
+  const loggedIn = await isLoggedIn();
+  const maps = await listMaps({ publicOnly: !loggedIn });
   return NextResponse.json({ maps });
 }
 

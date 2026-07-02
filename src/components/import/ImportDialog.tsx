@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { ImportPreview, ImportColumn, Annotation, FieldTemplate, PointStyle } from '@/lib/types';
+import { ImportPreview, ImportColumn, AnnotationImportInput, FieldTemplate, ImportPreviewSummary, PointStyle } from '@/lib/types';
 import { Upload, FileSpreadsheet, MapPin, AlertCircle, Check, X, Loader2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
@@ -9,20 +9,66 @@ import Papa from 'papaparse';
 interface ImportDialogProps {
   open: boolean;
   onClose: () => void;
-  onImport: (annotations: Omit<Annotation, 'id' | 'created_at' | 'updated_at'>[]) => Promise<{ error: string | null }>;
+  onImport: (annotations: AnnotationImportInput[]) => Promise<{ error: string | null }>;
   fieldTemplates: FieldTemplate[];
   mapId: string;
+  existingNames: string[];
 }
 
-export default function ImportDialog({ open, onClose, onImport, fieldTemplates, mapId }: ImportDialogProps) {
+export default function ImportDialog({ open, onClose, onImport, fieldTemplates, mapId, existingNames }: ImportDialogProps) {
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [fileName, setFileName] = useState('');
   const [error, setError] = useState('');
   const [step, setStep] = useState<'upload' | 'mapping' | 'confirm'>('upload');
   const [isDragging, setIsDragging] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [summary, setSummary] = useState<ImportPreviewSummary | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
+
+  const computeSummary = useCallback((currentPreview: ImportPreview | null) => {
+    if (!currentPreview || !currentPreview.latColumn || !currentPreview.lngColumn) {
+      return null;
+    }
+
+    let createCount = 0;
+    let updateCount = 0;
+    let invalidCoordinateCount = 0;
+    let generatedNameCount = 0;
+
+    currentPreview.rows.forEach((row, index) => {
+      const lat = parseFloat(row[currentPreview.latColumn!]);
+      const lng = parseFloat(row[currentPreview.lngColumn!]);
+
+      if (isNaN(lat) || isNaN(lng)) {
+        invalidCoordinateCount += 1;
+        return;
+      }
+
+      const nameCol = currentPreview.columns.find((c) => c.mappedField === 'name');
+      const importedName = nameCol ? row[nameCol.header] : '';
+      const finalName = importedName || `导入点 ${index + 1}`;
+
+      if (!importedName) {
+        generatedNameCount += 1;
+        createCount += 1;
+        return;
+      }
+
+      if (existingNames.includes(finalName)) {
+        updateCount += 1;
+      } else {
+        createCount += 1;
+      }
+    });
+
+    return {
+      createCount,
+      updateCount,
+      invalidCoordinateCount,
+      generatedNameCount,
+    } satisfies ImportPreviewSummary;
+  }, [existingNames]);
 
   const buildPreview = useCallback((headers: string[], rows: Record<string, string>[]) => {
     const latKeywords = ['纬度', 'lat', 'latitude', 'y'];
@@ -61,15 +107,17 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
       };
     });
 
-    setPreview({
+    const nextPreview = {
       columns,
       rows,
       totalRows: rows.length,
       latColumn: autoLat,
       lngColumn: autoLng,
-    });
+    };
+    setPreview(nextPreview);
+    setSummary(computeSummary(nextPreview));
     setStep('mapping');
-  }, [fieldTemplates]);
+  }, [computeSummary, fieldTemplates]);
 
   const handleFile = useCallback((file: File) => {
     setError('');
@@ -126,7 +174,9 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
     if (field === '_lat') latCol = newColumns[colIndex].header;
     if (field === '_lng') lngCol = newColumns[colIndex].header;
 
-    setPreview({ ...preview, columns: newColumns, latColumn: latCol, lngColumn: lngCol });
+    const nextPreview = { ...preview, columns: newColumns, latColumn: latCol, lngColumn: lngCol };
+    setPreview(nextPreview);
+    setSummary(computeSummary(nextPreview));
   };
 
   const handleImport = async () => {
@@ -135,13 +185,15 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
       return;
     }
 
-    const annotations: Omit<Annotation, 'id' | 'created_at' | 'updated_at'>[] = [];
+    const annotations: AnnotationImportInput[] = [];
 
     preview.rows.forEach((row) => {
       const lat = parseFloat(row[preview.latColumn!]);
       const lng = parseFloat(row[preview.lngColumn!]);
 
-      if (isNaN(lat) || isNaN(lng)) return;
+      if (isNaN(lat) || isNaN(lng)) {
+        return;
+      }
 
       const nameCol = preview.columns.find((c) => c.mappedField === 'name');
       const descCol = preview.columns.find((c) => c.mappedField === 'description');
@@ -153,7 +205,9 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
         .map((c) => ({
           fieldId: c.mappedField!.replace('custom_', ''),
           value: row[c.header] || null,
-        }));
+      }));
+
+      const finalName = name || `导入点 ${annotations.length + 1}`;
 
       annotations.push({
         map_id: mapId,
@@ -162,7 +216,7 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
           type: 'Point',
           coordinates: [lng, lat],
         },
-        name: name || `导入点 ${annotations.length + 1}`,
+        name: finalName,
         description,
         style: {
           color: '#EF4444',
@@ -172,6 +226,8 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
         custom_fields: customFields,
       });
     });
+
+    setSummary(computeSummary(preview));
 
     setImporting(true);
     setError('');
@@ -191,6 +247,7 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
     setPreview(null);
     setFileName('');
     setError('');
+    setSummary(null);
     setStep('upload');
     setIsDragging(false);
     dragCounterRef.current = 0;
@@ -285,7 +342,7 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
           )}
 
           {step === 'mapping' && preview && (
-            <div className="space-y-4">
+              <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <FileSpreadsheet aria-hidden="true" className="w-4 h-4" />
                 <span>{fileName}</span>
@@ -331,6 +388,19 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
                   </div>
                 ))}
               </div>
+
+              {summary && (
+                <div className="rounded-lg border p-4 text-sm" style={{ borderColor: '#dbe7df', background: '#f7fbf8' }}>
+                  <div className="font-medium text-gray-800 mb-2">导入预估</div>
+                  <div className="grid grid-cols-2 gap-2 text-gray-600">
+                    <div>预计新增：{summary.createCount}</div>
+                    <div>预计更新：{summary.updateCount}</div>
+                    <div>坐标无效：{summary.invalidCoordinateCount}</div>
+                    <div>自动补编号：{summary.generatedNameCount}</div>
+                  </div>
+                  <p className="mt-2 text-xs text-gray-500">同编号数据再次导入时会默认更新当前地图中的旧点标注。</p>
+                </div>
+              )}
             </div>
           )}
         </div>

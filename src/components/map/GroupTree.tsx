@@ -4,8 +4,8 @@ import { useState, useCallback } from 'react';
 import { Group } from '@/lib/types';
 import { apiSend } from '@/lib/api';
 import {
-  FolderOpen, Folder, Plus, ChevronRight, ChevronDown,
-  Edit3, Trash2, MoreHorizontal, Loader2, Palette,
+  FolderOpen, Plus, ChevronRight, ChevronDown,
+  Edit3, Trash2, MoreHorizontal, Palette,
 } from 'lucide-react';
 
 interface GroupTreeProps {

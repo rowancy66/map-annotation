@@ -8,8 +8,11 @@ const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
 const SESSION_SECRET = (() => {
   const secret = process.env.APP_SESSION_SECRET;
   if (!secret) {
-    console.warn('[auth] APP_SESSION_SECRET 未设置，使用不安全的内置密钥。请在 .env.local 中配置。');
-    return 'dev-session-secret';
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('APP_SESSION_SECRET 未设置，生产环境必须配置该变量');
+    }
+    console.warn('[auth] APP_SESSION_SECRET 未设置，当前使用仅限本地开发的临时密钥。请在 .env.local 中配置。');
+    return `dev-session-secret:${process.cwd()}`;
   }
   return secret;
 })();

@@ -1,6 +1,7 @@
 import { turso } from '@/lib/turso';
 import { Group } from '@/lib/types';
 import { ensureSchema } from './schema';
+import { requireExistingMap } from './maps';
 
 function rowToGroup(row: Record<string, unknown>): Group {
   return {
@@ -26,6 +27,16 @@ export async function listGroups(mapId: string) {
 
 export async function createGroup(mapId: string, name: string, parentId?: string, color?: string) {
   await ensureSchema();
+  await requireExistingMap(mapId);
+  if (parentId) {
+    const parentGroup = await getGroupById(parentId);
+    if (!parentGroup) {
+      throw new Error('父分组不存在');
+    }
+    if (parentGroup.map_id !== mapId) {
+      throw new Error('父分组不属于当前地图');
+    }
+  }
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   await turso.execute({
@@ -37,6 +48,22 @@ export async function createGroup(mapId: string, name: string, parentId?: string
 
 export async function updateGroup(groupId: string, updates: { name?: string; color?: string; parent_id?: string | null; sort_order?: number }) {
   await ensureSchema();
+  const group = await getGroupById(groupId);
+  if (!group) {
+    throw new Error('分组不存在');
+  }
+  if (updates.parent_id) {
+    const parentGroup = await getGroupById(updates.parent_id);
+    if (!parentGroup) {
+      throw new Error('父分组不存在');
+    }
+    if (parentGroup.map_id !== group.map_id) {
+      throw new Error('父分组不属于当前地图');
+    }
+    if (parentGroup.id === groupId) {
+      throw new Error('分组不能设置自己为父分组');
+    }
+  }
   const now = new Date().toISOString();
   const sets: string[] = ['updated_at = ?'];
   const args: (string | number | null)[] = [now];
@@ -50,6 +77,10 @@ export async function updateGroup(groupId: string, updates: { name?: string; col
 
 export async function deleteGroup(groupId: string) {
   await ensureSchema();
+  const group = await getGroupById(groupId);
+  if (!group) {
+    throw new Error('分组不存在');
+  }
   // 将子分组提升到父分组
   await turso.execute({
     sql: 'UPDATE groups SET parent_id = (SELECT parent_id FROM groups WHERE id = ?) WHERE parent_id = ?',
@@ -71,6 +102,14 @@ export async function getGroupById(groupId: string) {
   });
   if (!result.rows[0]) return null;
   return rowToGroup(result.rows[0] as Record<string, unknown>);
+}
+
+export async function requireExistingGroup(groupId: string) {
+  const group = await getGroupById(groupId);
+  if (!group) {
+    throw new Error('分组不存在');
+  }
+  return group;
 }
 
 export async function moveAnnotationToGroup(annotationId: string, groupId: string | null) {

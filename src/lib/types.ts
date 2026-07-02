@@ -67,6 +67,21 @@ export interface CustomFieldValue {
   value: string | number | null;
 }
 
+export interface AnnotationFieldFilter {
+  fieldId: string;
+  operator: 'contains' | 'equals' | 'range' | 'dateRange';
+  value?: string;
+  min?: string;
+  max?: string;
+}
+
+export interface AnnotationFilterState {
+  keyword: string;
+  selectedGroupId: string | null;
+  selectedTypes: AnnotationType[];
+  fieldFilters: AnnotationFieldFilter[];
+}
+
 // ===== 分组 =====
 export interface Group {
   id: string;
@@ -96,6 +111,8 @@ export interface Annotation {
 
 // ===== 地图设置 =====
 export interface MapSettings {
+  isPublic?: boolean;
+  showNames?: boolean;
   defaultNames: {
     point: string;
     line: string;
@@ -169,6 +186,23 @@ export interface ImportPreview {
   totalRows: number;
   latColumn: string | null;
   lngColumn: string | null;
+}
+
+export interface ImportPreviewSummary {
+  createCount: number;
+  updateCount: number;
+  invalidCoordinateCount: number;
+  generatedNameCount: number;
+}
+
+export interface AnnotationImportInput {
+  map_id: string;
+  type: 'point';
+  geometry: PointGeometry;
+  name: string;
+  description: string;
+  style: PointStyle;
+  custom_fields: CustomFieldValue[];
 }
 
 // ===== 导入相关 =====

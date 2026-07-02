@@ -11,13 +11,22 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const mapId = typeof body?.mapId === 'string' ? body.mapId : '';
   const name = typeof body?.name === 'string' ? body.name.trim() : '';
+  const parentId = typeof body?.parentId === 'string' ? body.parentId : undefined;
+  const color = typeof body?.color === 'string' ? body.color : undefined;
 
   if (!mapId || !name) {
     return NextResponse.json({ error: '缺少参数' }, { status: 400 });
   }
 
-  const group = await createGroup(mapId, name, body.parentId, body.color);
-  return NextResponse.json({ group });
+  try {
+    const group = await createGroup(mapId, name, parentId, color);
+    return NextResponse.json({ group });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : '创建分组失败' },
+      { status: 400 }
+    );
+  }
 }
 
 export async function PUT(request: Request) {
@@ -33,14 +42,22 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: '缺少分组 ID' }, { status: 400 });
   }
 
-  await updateGroup(id, {
-    name: typeof body.name === 'string' ? body.name.trim() : undefined,
-    color: typeof body.color === 'string' ? body.color : undefined,
-    parent_id: body.parent_id !== undefined ? body.parent_id : undefined,
-    sort_order: typeof body.sort_order === 'number' ? body.sort_order : undefined,
-  });
+  try {
+    await updateGroup(id, {
+      name: typeof body.name === 'string' ? body.name.trim() : undefined,
+      color: typeof body.color === 'string' ? body.color : undefined,
+      parent_id:
+        body.parent_id === null ? null : typeof body.parent_id === 'string' ? body.parent_id : undefined,
+      sort_order: typeof body.sort_order === 'number' ? body.sort_order : undefined,
+    });
 
-  return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : '更新分组失败' },
+      { status: 400 }
+    );
+  }
 }
 
 export async function DELETE(request: Request) {
@@ -56,6 +73,13 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: '缺少分组 ID' }, { status: 400 });
   }
 
-  await deleteGroup(id);
-  return NextResponse.json({ ok: true });
+  try {
+    await deleteGroup(id);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : '删除分组失败' },
+      { status: 400 }
+    );
+  }
 }

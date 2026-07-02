@@ -12,7 +12,6 @@ export default function LoginForm({ redirectTo = '/admin' }: { redirectTo?: stri
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [needsSetup, setNeedsSetup] = useState<boolean | null>(null);
 
   useEffect(() => {
     apiGet<{ loggedIn: boolean }>('/api/auth/session').then((data) => {
@@ -21,13 +20,6 @@ export default function LoginForm({ redirectTo = '/admin' }: { redirectTo?: stri
       }
     }).catch(() => {});
   }, [redirectTo, router]);
-
-  // 检测是否已设置管理密码
-  useEffect(() => {
-    fetch('/api/auth/setup', { method: 'HEAD' }).then((res) => {
-      setNeedsSetup(res.status === 404 || res.status === 405);
-    }).catch(() => setNeedsSetup(true));
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

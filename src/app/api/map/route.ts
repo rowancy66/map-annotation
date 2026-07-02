@@ -6,6 +6,10 @@ import { FieldTemplate } from '@/lib/types';
 
 export async function GET() {
   const loggedIn = await isLoggedIn();
+  if (!loggedIn) {
+    return NextResponse.json({ error: '需要登录' }, { status: 401 });
+  }
+
   const mapProject = await getOrCreateDefaultMap();
   const annotations = mapProject ? await listAnnotations(mapProject.id) : [];
   const groups = mapProject ? await listGroups(mapProject.id) : [];

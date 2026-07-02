@@ -16,10 +16,24 @@ export default function PublicDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiGet<{ maps: MapListItem[] }>('/api/maps')
-      .then((data) => setMaps(data.maps))
-      .catch(() => setMaps([]))
-      .finally(() => setLoading(false));
+    let active = true;
+
+    queueMicrotask(() => {
+      apiGet<{ maps: MapListItem[] }>('/api/maps')
+        .then((data) => {
+          if (active) setMaps(data.maps);
+        })
+        .catch(() => {
+          if (active) setMaps([]);
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+    });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const formatTime = (iso: string) => {

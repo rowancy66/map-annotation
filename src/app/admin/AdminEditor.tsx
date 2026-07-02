@@ -8,6 +8,7 @@ import InfoCard from '@/components/map/InfoCard';
 import FieldTemplateManager from '@/components/map/FieldTemplateManager';
 import ImportDialog from '@/components/import/ImportDialog';
 import GroupTree from '@/components/map/GroupTree';
+import AnnotationFilterPanel from '@/components/map/AnnotationFilterPanel';
 import { useMapData } from '@/hooks/useMapData';
 import { useAnnotationActions } from '@/hooks/useAnnotationActions';
 import { apiSend } from '@/lib/api';
@@ -16,7 +17,6 @@ import {
   DrawMode,
   AnnotationType,
   FieldTemplate,
-  Group,
 } from '@/lib/types';
 import {
   Upload,
@@ -30,7 +30,6 @@ import {
   Trash2,
   CheckSquare,
   Square,
-  X,
   AlertTriangle,
   Home,
   Search,
@@ -58,21 +57,21 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
     annotations,
     setAnnotations,
     groups,
-    setGroups,
     loading,
     saveAnnotation,
     deleteAnnotation,
     batchDeleteAnnotations,
     importAnnotations,
     updateFieldTemplates,
+    updateMapSettings,
     loadData,
   } = useMapData(isLoggedIn, mapId);
 
   const {
     selectedAnnotation,
     setSelectedAnnotation,
-    searchQuery,
-    setSearchQuery,
+    filters,
+    setFilters,
     batchMode,
     setBatchMode,
     selectedIds,
@@ -81,6 +80,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
     annotationCount,
     fieldTemplateMap,
     feedbackMessage,
+    showFeedback,
     handleSaveAnnotation,
     handleDeleteAnnotation,
     handleAnnotationMove,
@@ -101,10 +101,14 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
   const [sidebarTab, setSidebarTab] = useState<'list' | 'groups'>('list');
   const [importOpen, setImportOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
   const [batchDeleteConfirm, setBatchDeleteConfirm] = useState(false);
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [batchActionLoading, setBatchActionLoading] = useState(false);
+  const [batchGroupTarget, setBatchGroupTarget] = useState<string>('__ungrouped__');
+  const [batchFieldId, setBatchFieldId] = useState('');
+  const [batchFieldValue, setBatchFieldValue] = useState('');
   const [showHeatmap, setShowHeatmap] = useState(false);
-  const [showNames, setShowNames] = useState(true);
+  const [savingMapSettings, setSavingMapSettings] = useState(false);
 
   // 分组标注计数
   const annotationCountByGroup = useMemo(() => {
@@ -116,11 +120,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
     return counts;
   }, [annotations]);
 
-  // 按分组过滤标注
-  const filteredByGroup = useMemo(() => {
-    if (selectedGroupId === null) return filteredAnnotations;
-    return filteredAnnotations.filter((a) => a.group_id === selectedGroupId);
-  }, [selectedGroupId, filteredAnnotations]);
+  const filteredByGroup = filteredAnnotations;
 
   // 分组颜色映射
   const groupColorMap = useMemo(() => {
@@ -266,6 +266,48 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
     setMapProject({ ...mapProject, field_templates: templates });
   }, [mapProject, updateFieldTemplates, setMapProject]);
 
+  const handlePublicAccessChange = useCallback(async (isPublic: boolean) => {
+    if (!mapProject || savingMapSettings) return;
+
+    const nextSettings = {
+      ...mapProject.settings,
+      isPublic,
+    };
+
+    setSavingMapSettings(true);
+    const previousProject = mapProject;
+    setMapProject({ ...mapProject, settings: nextSettings });
+
+    const { error } = await updateMapSettings(nextSettings, mapProject.id);
+    if (error) {
+      setMapProject(previousProject);
+      alert(`更新公开访问设置失败: ${error}`);
+    }
+
+    setSavingMapSettings(false);
+  }, [mapProject, savingMapSettings, setMapProject, updateMapSettings]);
+
+  const handleShowNamesSettingChange = useCallback(async (showNames: boolean) => {
+    if (!mapProject || savingMapSettings) return;
+
+    const nextSettings = {
+      ...mapProject.settings,
+      showNames,
+    };
+
+    setSavingMapSettings(true);
+    const previousProject = mapProject;
+    setMapProject({ ...mapProject, settings: nextSettings });
+
+    const { error } = await updateMapSettings(nextSettings, mapProject.id);
+    if (error) {
+      setMapProject(previousProject);
+      alert(`更新名称显示设置失败: ${error}`);
+    }
+
+    setSavingMapSettings(false);
+  }, [mapProject, savingMapSettings, setMapProject, updateMapSettings]);
+
   const onBatchDeleteClick = useCallback(() => {
     if (selectedIds.size === 0) return;
     setBatchDeleteConfirm(true);
@@ -276,6 +318,46 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
     await handleBatchDelete();
   }, [handleBatchDelete]);
 
+  const handleBatchMoveToGroup = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    setBatchActionLoading(true);
+    try {
+      const groupId = batchGroupTarget === '__ungrouped__' ? null : batchGroupTarget;
+      await apiSend('/api/annotations', 'PUT', { annotationIds: Array.from(selectedIds), groupId });
+      setAnnotations((prev) =>
+        prev.map((annotation) =>
+          selectedIds.has(annotation.id) ? { ...annotation, group_id: groupId ?? undefined } : annotation
+        )
+      );
+      showFeedback(`已更新 ${selectedIds.size} 个标注的分组`);
+    } catch (error) {
+      showFeedback(`批量移动失败: ${error instanceof Error ? error.message : '请求失败'}`);
+      await loadData();
+    } finally {
+      setBatchActionLoading(false);
+    }
+  }, [batchGroupTarget, loadData, selectedIds, setAnnotations, showFeedback]);
+
+  const handleBatchUpdateField = useCallback(async () => {
+    if (selectedIds.size === 0 || !batchFieldId) return;
+    setBatchActionLoading(true);
+    try {
+      const response = await apiSend<{ ok: true; data: Annotation[] }>('/api/annotations', 'PUT', {
+        annotationIds: Array.from(selectedIds),
+        fieldId: batchFieldId,
+        fieldValue: batchFieldValue.trim() ? batchFieldValue.trim() : null,
+      });
+      const updates = new Map(response.data.map((annotation) => [annotation.id, annotation]));
+      setAnnotations((prev) => prev.map((annotation) => updates.get(annotation.id) || annotation));
+      showFeedback(`已更新 ${response.data.length} 个标注的字段值`);
+    } catch (error) {
+      showFeedback(`批量字段更新失败: ${error instanceof Error ? error.message : '请求失败'}`);
+      await loadData();
+    } finally {
+      setBatchActionLoading(false);
+    }
+  }, [batchFieldId, batchFieldValue, loadData, selectedIds, setAnnotations, showFeedback]);
+
   const handleMoveAnnotationToGroup = useCallback(async (annotationId: string, groupId: string | null) => {
     setAnnotations((prev) =>
       prev.map((a) => (a.id === annotationId ? { ...a, group_id: groupId ?? undefined } : a))
@@ -285,7 +367,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
     } catch {
       loadData();
     }
-  }, [loadData]);
+  }, [loadData, setAnnotations]);
 
   if (loading) {
     return (
@@ -476,52 +558,110 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
 
             {/* 搜索（列表模式） */}
             {sidebarTab === 'list' && (
-              <div className="px-3 py-2 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--faint)' }} aria-hidden="true" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="搜索编号、位置..."
-                    className="w-full pl-9 pr-8 py-2 text-sm rounded-lg outline-none transition"
-                    style={{ border: '1px solid var(--border)', background: 'white', color: 'var(--ink)' }}
-                    onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(26,71,53,0.08)'; }}
-                    onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
-                  />
-                  {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} aria-label="清除搜索"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 transition"
-                      style={{ color: 'var(--faint)' }}>
-                      <X className="w-3.5 h-3.5" aria-hidden="true" />
-                    </button>
-                  )}
+              <>
+                <div className="px-3 py-2 shrink-0 flex items-center justify-between" style={{ borderBottom: showFilters ? 'none' : '1px solid var(--border)' }}>
+                  <button
+                    onClick={() => setShowFilters((prev) => !prev)}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition"
+                    style={{ color: 'var(--primary)', background: 'rgba(26,71,53,0.06)' }}
+                  >
+                    <Search className="w-3.5 h-3.5" aria-hidden="true" />
+                    {showFilters ? '收起筛选' : '展开筛选'}
+                  </button>
+                  <span className="text-xs" style={{ color: 'var(--faint)' }}>
+                    {filteredAnnotations.length} / {annotations.length}
+                  </span>
                 </div>
-                {searchQuery && (
-                  <p className="text-xs mt-1" style={{ color: 'var(--faint)' }}>找到 {filteredAnnotations.length} 条结果</p>
+                {showFilters && (
+                  <AnnotationFilterPanel
+                    filters={filters}
+                    fieldTemplates={mapProject?.field_templates || []}
+                    groups={groups}
+                    resultCount={filteredAnnotations.length}
+                    totalCount={annotations.length}
+                    onChange={setFilters}
+                  />
                 )}
-              </div>
+              </>
             )}
 
             {/* 批量操作栏 */}
             {sidebarTab === 'list' && batchMode && (
-              <div className="px-3 py-2 shrink-0 flex items-center justify-between"
+              <div className="px-3 py-2 shrink-0 space-y-3"
                 style={{ borderBottom: '1px solid var(--border)', background: 'rgba(26,71,53,0.04)' }}>
-                <div className="flex items-center gap-2">
-                  <button onClick={handleSelectAll} className="text-xs font-medium"
-                    style={{ color: 'var(--primary)' }}
-                    aria-label={selectedIds.size === filteredByGroup.length && filteredByGroup.length > 0 ? '取消全选' : '全选'}>
-                    {selectedIds.size === filteredByGroup.length && filteredByGroup.length > 0 ? '取消全选' : '全选'}
-                  </button>
-                  <span className="text-xs" style={{ color: 'var(--muted)' }}>已选 {selectedIds.size} 个</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <button onClick={handleSelectAll} className="text-xs font-medium"
+                      style={{ color: 'var(--primary)' }}
+                      aria-label={selectedIds.size === filteredByGroup.length && filteredByGroup.length > 0 ? '取消全选' : '全选'}>
+                      {selectedIds.size === filteredByGroup.length && filteredByGroup.length > 0 ? '取消全选' : '全选'}
+                    </button>
+                    <span className="text-xs" style={{ color: 'var(--muted)' }}>已选 {selectedIds.size} 个</span>
+                  </div>
+                  {selectedIds.size > 0 && (
+                    <button onClick={onBatchDeleteClick}
+                      className="flex items-center gap-1 px-3 py-1 text-white rounded text-xs font-medium transition shadow-sm"
+                      style={{ background: 'var(--danger)' }}>
+                      <Trash2 className="w-3 h-3" aria-hidden="true" />
+                      批量删除
+                    </button>
+                  )}
                 </div>
+
                 {selectedIds.size > 0 && (
-                  <button onClick={onBatchDeleteClick}
-                    className="flex items-center gap-1 px-3 py-1 text-white rounded text-xs font-medium transition shadow-sm"
-                    style={{ background: 'var(--danger)' }}>
-                    <Trash2 className="w-3 h-3" aria-hidden="true" />
-                    批量删除
-                  </button>
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-[1fr,auto] gap-2">
+                      <select
+                        value={batchGroupTarget}
+                        onChange={(e) => setBatchGroupTarget(e.target.value)}
+                        className="px-3 py-2 rounded-lg text-xs outline-none"
+                        style={{ border: '1px solid var(--border)', background: 'white', color: 'var(--ink)' }}
+                      >
+                        <option value="__ungrouped__">移动到未分组</option>
+                        {groups.map((group) => (
+                          <option key={group.id} value={group.id}>{group.name}</option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={handleBatchMoveToGroup}
+                        disabled={batchActionLoading}
+                        className="px-3 py-2 rounded-lg text-xs font-medium transition"
+                        style={{ background: 'var(--primary)', color: 'white' }}
+                      >
+                        移动分组
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-[1fr,1fr,auto] gap-2">
+                      <select
+                        value={batchFieldId}
+                        onChange={(e) => setBatchFieldId(e.target.value)}
+                        className="px-3 py-2 rounded-lg text-xs outline-none"
+                        style={{ border: '1px solid var(--border)', background: 'white', color: 'var(--ink)' }}
+                      >
+                        <option value="">选择字段</option>
+                        {(mapProject?.field_templates || []).map((field) => (
+                          <option key={field.id} value={field.id}>{field.name}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="text"
+                        value={batchFieldValue}
+                        onChange={(e) => setBatchFieldValue(e.target.value)}
+                        placeholder="统一字段值"
+                        className="px-3 py-2 rounded-lg text-xs outline-none"
+                        style={{ border: '1px solid var(--border)', background: 'white', color: 'var(--ink)' }}
+                      />
+                      <button
+                        onClick={handleBatchUpdateField}
+                        disabled={batchActionLoading || !batchFieldId}
+                        className="px-3 py-2 rounded-lg text-xs font-medium transition disabled:opacity-50"
+                        style={{ background: '#2c6fbb', color: 'white' }}
+                      >
+                        批量改值
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
@@ -532,8 +672,8 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                 <GroupTree
                   groups={groups}
                   mapId={mapProject?.id || ''}
-                  selectedGroupId={selectedGroupId}
-                  onSelectGroup={setSelectedGroupId}
+                  selectedGroupId={filters.selectedGroupId}
+                  onSelectGroup={(groupId) => setFilters((prev) => ({ ...prev, selectedGroupId: groupId }))}
                   onGroupsChange={loadData}
                   annotationCountByGroup={annotationCountByGroup}
                 />
@@ -542,8 +682,8 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                   {filteredByGroup.length === 0 ? (
                     <div className="p-8 text-center text-sm" style={{ color: 'var(--faint)' }}>
                       <div className="text-3xl mb-3 opacity-30">📍</div>
-                      {searchQuery ? '没有找到匹配的标注' : selectedGroupId ? '该分组暂无标注' : '暂无标注'}<br />
-                      {!searchQuery && !selectedGroupId && (
+                      {annotations.length > 0 ? '没有符合当前筛选条件的标注' : '暂无标注'}<br />
+                      {annotations.length === 0 && (
                         <span className="text-xs" style={{ color: 'var(--border)' }}>点击顶部工具栏在地图上添加</span>
                       )}
                     </div>
@@ -654,6 +794,60 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             {/* 设置面板 */}
             {showSettings && mapProject && (
               <div className="shrink-0" style={{ borderTop: '1px solid var(--border)' }}>
+                <div className="px-4 pt-4">
+                  <div className="rounded-xl border p-4 space-y-4" style={{ background: 'white', borderColor: 'var(--border)' }}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>访问设置</h3>
+                        <p className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>
+                          关闭后，这张地图不会出现在前台列表，也不能被匿名访问。
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handlePublicAccessChange(!(mapProject.settings.isPublic !== false))}
+                        disabled={savingMapSettings}
+                        className="w-10 h-6 rounded-full relative transition-colors duration-200 disabled:opacity-60"
+                        style={{ background: mapProject.settings.isPublic !== false ? 'var(--primary)' : 'var(--border)' }}
+                        aria-label="公开访问开关"
+                      >
+                        <span
+                          className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all duration-200"
+                          style={{ left: mapProject.settings.isPublic !== false ? 'calc(100% - 22px)' : '2px' }}
+                        />
+                      </button>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>默认显示名称</h3>
+                        <p className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>
+                          控制前台与后台地图加载时是否默认显示标注名称。
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleShowNamesSettingChange(!(mapProject.settings.showNames !== false))}
+                        disabled={savingMapSettings}
+                        className="w-10 h-6 rounded-full relative transition-colors duration-200 disabled:opacity-60"
+                        style={{ background: mapProject.settings.showNames !== false ? 'var(--primary)' : 'var(--border)' }}
+                        aria-label="显示名称默认开关"
+                      >
+                        <span
+                          className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all duration-200"
+                          style={{ left: mapProject.settings.showNames !== false ? 'calc(100% - 22px)' : '2px' }}
+                        />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs">
+                      <span style={{ color: 'var(--faint)' }}>
+                        当前状态：{mapProject.settings.isPublic !== false ? '公开可访问' : '仅后台可见'} · 名称默认{mapProject.settings.showNames !== false ? '显示' : '隐藏'}
+                      </span>
+                      {savingMapSettings && (
+                        <span style={{ color: 'var(--muted)' }}>保存中...</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
                 <FieldTemplateManager
                   templates={mapProject.field_templates}
                   onChange={handleFieldTemplatesChange}
@@ -682,7 +876,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
         {/* 地图区域 */}
         <div className="flex-1 relative">
           <MapView
-            annotations={annotations}
+            annotations={filteredAnnotations}
             onMapClick={handleMapClick}
             onMapDrawComplete={handleDrawComplete}
             onAnnotationClick={handleAnnotationClick}
@@ -695,6 +889,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             editable={true}
             groups={groups}
             showHeatmap={showHeatmap}
+            showNames={mapProject?.settings.showNames !== false}
           />
 
           {/* InfoCard */}
@@ -736,18 +931,9 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             </button>
             🔥 热力图
           </label>
-          <label className="flex items-center gap-1.5 text-xs cursor-pointer" style={{ color: 'var(--muted)' }}>
-            <button
-              onClick={() => setShowNames(!showNames)}
-              className="w-7 h-4 rounded-full relative transition-colors duration-200"
-              style={{ background: showNames ? 'var(--primary)' : 'var(--border)' }}
-              aria-label="显示名称开关"
-            >
-              <span className="absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-all duration-200"
-                style={{ left: showNames ? 'calc(100% - 14px)' : '2px' }} />
-            </button>
-            显示名称
-          </label>
+          <span className="text-xs" style={{ color: 'var(--muted)' }}>
+            名称默认{mapProject?.settings.showNames !== false ? '显示' : '隐藏'}
+          </span>
         </div>
         <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--faint)' }}>
           <span>{annotations.length} 个标注</span>
@@ -761,6 +947,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
         onImport={handleImport}
         fieldTemplates={mapProject?.field_templates || []}
         mapId={mapProject?.id || ''}
+        existingNames={annotations.filter((annotation) => annotation.type === 'point' && annotation.name).map((annotation) => annotation.name)}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import { createClient } from '@libsql/client';
-import type { Client, InValue, InStatement, ResultSet, Transaction } from '@libsql/client';
+import type { Client } from '@libsql/client';
 
 let _turso: Client | null = null;
 

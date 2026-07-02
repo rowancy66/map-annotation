@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { isLoggedIn } from '@/lib/server/auth';
-import { getMapById, getOrCreateDefaultMap, listAnnotations, updateMap, deleteMap } from '@/lib/server/maps';
+import { getMapById, getPublicMapById, listAnnotations, updateMap, deleteMap } from '@/lib/server/maps';
 import { listGroups } from '@/lib/server/groups';
 import { MapSettings } from '@/lib/types';
 
@@ -11,7 +11,7 @@ export async function GET(
   const { id } = await params;
   const loggedIn = await isLoggedIn();
 
-  const mapProject = await getMapById(id);
+  const mapProject = loggedIn ? await getMapById(id) : await getPublicMapById(id);
   if (!mapProject) {
     return NextResponse.json({ error: '地图不存在' }, { status: 404 });
   }
@@ -40,9 +40,25 @@ export async function PUT(
   const updates: { name?: string; description?: string; center?: [number, number]; zoom?: number; settings?: MapSettings } = {};
   if (typeof body.name === 'string') updates.name = body.name.trim();
   if (typeof body.description === 'string') updates.description = body.description.trim();
-  if (Array.isArray(body.center)) updates.center = body.center;
-  if (typeof body.zoom === 'number') updates.zoom = body.zoom;
-  if (body.settings && typeof body.settings === 'object') updates.settings = body.settings;
+  if (
+    Array.isArray(body.center) &&
+    body.center.length === 2 &&
+    body.center.every((item: unknown) => typeof item === 'number' && Number.isFinite(item))
+  ) {
+    updates.center = body.center as [number, number];
+  }
+  if (typeof body.zoom === 'number' && Number.isFinite(body.zoom)) updates.zoom = body.zoom;
+  if (body.settings && typeof body.settings === 'object') {
+    updates.settings = {
+      isPublic: body.settings.isPublic !== false,
+      showNames: body.settings.showNames !== false,
+      defaultNames: {
+        point: typeof body.settings.defaultNames?.point === 'string' ? body.settings.defaultNames.point : '',
+        line: typeof body.settings.defaultNames?.line === 'string' ? body.settings.defaultNames.line : '',
+        polygon: typeof body.settings.defaultNames?.polygon === 'string' ? body.settings.defaultNames.polygon : '',
+      },
+    };
+  }
 
   await updateMap(id, updates);
   return NextResponse.json({ ok: true });

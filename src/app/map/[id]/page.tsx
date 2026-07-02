@@ -26,6 +26,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
   const [selectedAnnotation, setSelectedAnnotation] = useState<Annotation | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showNames, setShowNames] = useState<boolean | null>(null);
 
   const filteredAnnotations = useMemo(() => {
     if (!searchQuery.trim()) return annotations;
@@ -46,7 +47,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
     setSelectedAnnotation(annotation);
   }, []);
 
-  const groupColorMap = useMemo(() => new Map<string, string>(), []);
+  const effectiveShowNames = showNames ?? (mapProject?.settings.showNames !== false);
 
   if (loading) {
     return (
@@ -226,12 +227,13 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
         {/* 地图区域 */}
         <div className="flex-1 relative">
           <MapView
-            annotations={annotations}
+            annotations={filteredAnnotations}
             onAnnotationClick={handleAnnotationClick}
             drawMode="none"
             onDrawModeChange={() => {}}
             selectedAnnotation={selectedAnnotation}
             editable={false}
+            showNames={effectiveShowNames}
           />
 
           {/* InfoCard */}
@@ -249,9 +251,23 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
           </div>
 
           {/* 底部提示 */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[999] text-xs px-4 py-2 rounded-xl shadow-lg backdrop-blur-sm"
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[999] flex items-center gap-3 text-xs px-4 py-2 rounded-xl shadow-lg backdrop-blur-sm"
             style={{ background: 'rgba(255,255,255,0.85)', color: 'var(--muted)', border: '1px solid var(--border)' }}>
-            点击标注查看详情 · 右键拖动地图
+            <span>点击标注查看详情 · 右键拖动地图</span>
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <button
+                onClick={() => setShowNames((prev) => !(prev ?? (mapProject?.settings.showNames !== false)))}
+                className="w-7 h-4 rounded-full relative transition-colors duration-200"
+                style={{ background: effectiveShowNames ? 'var(--primary)' : 'var(--border)' }}
+                aria-label="显示名称开关"
+              >
+                <span
+                  className="absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-all duration-200"
+                  style={{ left: effectiveShowNames ? 'calc(100% - 14px)' : '2px' }}
+                />
+              </button>
+              显示名称
+            </label>
           </div>
 
           {/* Deerflow */}
