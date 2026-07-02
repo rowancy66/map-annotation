@@ -4,6 +4,7 @@ import { Annotation, FieldTemplate, MapProject, MapSettings } from '@/lib/types'
 import { ensureSchema } from './schema';
 
 const ADMIN_USER_ID = 'admin';
+const DEFAULT_DB_CENTER: [number, number] = [120.1976, 35.9607];
 
 function rowToMapProject(row: Record<string, unknown>): MapProject {
   const rawSettings = row.settings ? JSON.parse(String(row.settings)) : {};
@@ -12,7 +13,7 @@ function rowToMapProject(row: Record<string, unknown>): MapProject {
     user_id: String(row.user_id),
     name: String(row.name || ''),
     description: String(row.description || ''),
-    center: JSON.parse(String(row.center || '[120.43,36.16]')),
+    center: JSON.parse(String(row.center || JSON.stringify(DEFAULT_DB_CENTER))),
     zoom: Number(row.zoom || 13),
     field_templates: JSON.parse(String(row.field_templates || '[]')),
     settings: {
@@ -82,7 +83,7 @@ export async function getOrCreateDefaultMap() {
       ADMIN_USER_ID,
       '我的地图',
       '默认地图项目',
-      stringifyJson([120.43, 36.16]),
+      stringifyJson(DEFAULT_DB_CENTER),
       13,
       stringifyJson(DEFAULT_LAND_FIELD_TEMPLATES),
       now,
@@ -95,7 +96,7 @@ export async function getOrCreateDefaultMap() {
     user_id: ADMIN_USER_ID,
     name: '我的地图',
     description: '默认地图项目',
-    center: [120.43, 36.16] as [number, number],
+    center: DEFAULT_DB_CENTER,
     zoom: 13,
     field_templates: DEFAULT_LAND_FIELD_TEMPLATES,
     settings: normalizeMapSettings(),
@@ -295,7 +296,7 @@ export async function createMap(name: string, description: string, fieldTemplate
   await turso.execute({
     sql: `INSERT INTO maps (id, user_id, name, description, center, zoom, field_templates, settings, created_at, updated_at)
           VALUES (?, 'admin', ?, ?, ?, 13, ?, ?, ?, ?)`,
-    args: [id, name, description, stringifyJson([120.43, 36.16]), stringifyJson(templates), stringifyJson(mapSettings), now, now],
+    args: [id, name, description, stringifyJson(DEFAULT_DB_CENTER), stringifyJson(templates), stringifyJson(mapSettings), now, now],
   });
   return getMapById(id);
 }

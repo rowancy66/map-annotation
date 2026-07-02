@@ -15,8 +15,8 @@ export const TIANDITU_LAYERS = {
   ter: `https://t{s}.tianditu.gov.cn/ter_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ter&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILECOL={x}&TILEROW={y}&TILEMATRIX={z}&tk=${TIANDITU_KEY}`,
 };
 
-// 默认地图中心和缩放级别（青岛李沧区）
-export const DEFAULT_CENTER: [number, number] = [36.16, 120.43];
+// 默认地图中心和缩放级别（青岛西海岸新区）
+export const DEFAULT_CENTER: [number, number] = [35.9607, 120.1976];
 export const DEFAULT_ZOOM = 13;
 
 // 天地图子域名

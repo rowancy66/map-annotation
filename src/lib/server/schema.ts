@@ -1,6 +1,8 @@
 import { turso } from '@/lib/turso';
 
 let schemaPromise: Promise<void> | null = null;
+const OLD_DEFAULT_CENTER = JSON.stringify([120.43, 36.16]);
+const NEW_DEFAULT_CENTER = JSON.stringify([120.1976, 35.9607]);
 
 export function ensureSchema() {
   if (!schemaPromise) {
@@ -75,6 +77,10 @@ export function ensureSchema() {
       } catch {
         // 列已存在，忽略
       }
+      await turso.execute({
+        sql: 'UPDATE maps SET center = ? WHERE center = ?',
+        args: [NEW_DEFAULT_CENTER, OLD_DEFAULT_CENTER],
+      });
     })();
   }
 
