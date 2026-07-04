@@ -432,7 +432,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                   </span>
                   <span
                     className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
-                    style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}
+                    style={{ background: 'var(--primary-soft)', color: 'var(--primary)' }}
                   >
                     管理
                   </span>
@@ -762,7 +762,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                           className="cursor-pointer transition-all duration-150"
                           style={{
                             borderBottom: '1px solid var(--border)',
-                            background: selectedAnnotation?.id === anno.id ? 'var(--primary-light)' : 'transparent',
+                            background: selectedAnnotation?.id === anno.id ? 'var(--primary-soft)' : 'transparent',
                             borderLeft: selectedAnnotation?.id === anno.id ? '3px solid var(--primary)' : '3px solid transparent',
                           }}
                           onMouseEnter={(e) => { if (selectedAnnotation?.id !== anno.id) e.currentTarget.style.background = 'rgba(26,71,53,0.02)'; }}
@@ -800,7 +800,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                               {groupName && (
                                 <span className="text-[10px] font-medium px-1.5 py-0.5 rounded shrink-0"
                                   style={{
-                                    background: groupColor ? `${groupColor}18` : 'var(--primary-light)',
+                                    background: groupColor ? `${groupColor}18` : 'var(--primary-soft)',
                                     color: groupColor || 'var(--primary)',
                                   }}>
                                   {groupName}
@@ -837,7 +837,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                                   if (!field) return null;
                                   return (
                                     <span key={cf.fieldId} className="px-1.5 py-0.5 rounded text-[10px]"
-                                      style={{ background: 'var(--primary-light)', color: 'var(--muted)' }}>
+                                      style={{ background: 'var(--primary-soft)', color: 'var(--muted)' }}>
                                       {field.name}: {String(cf.value)}
                                     </span>
                                   );
