@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { apiGet, apiSend } from '@/lib/api';
 import { MapProject } from '@/lib/types';
-import { MapPin, Plus, Trash2, Edit3, Loader2, AlertTriangle, Clock, Layers } from 'lucide-react';
+import { AlertTriangle, ArrowUpRight, Clock, Edit3, Layers, Loader2, MapPin, Plus, Trash2 } from 'lucide-react';
 
 interface MapListItem extends MapProject {
   annotation_count: number;
@@ -21,7 +21,6 @@ export default function AdminDashboard() {
   const [newDesc, setNewDesc] = useState('');
   const [creating, setCreating] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [showStats, setShowStats] = useState(false);
 
   const loadMaps = useCallback(async () => {
     setLoading(true);
@@ -79,13 +78,15 @@ export default function AdminDashboard() {
   };
 
   const thumbGradients = [
-    'linear-gradient(135deg, #e8f0ec 0%, #d1dfd8 50%, #b8cec3 100%)',
-    'linear-gradient(135deg, #f0ece8 0%, #ddd5cc 50%, #c8beb2 100%)',
-    'linear-gradient(135deg, #e8ecf0 0%, #d1d8df 50%, #b8c3ce 100%)',
-    'linear-gradient(135deg, #ece8f0 0%, #d8d1df 50%, #c3b8ce 100%)',
+    'linear-gradient(135deg, #f3ede3 0%, #e7dccb 55%, #d9c6ac 100%)',
+    'linear-gradient(135deg, #f4f0e8 0%, #e5e0d5 55%, #d5ccc0 100%)',
+    'linear-gradient(135deg, #eef1f0 0%, #dde4df 55%, #c8d2cb 100%)',
+    'linear-gradient(135deg, #f0ece6 0%, #e4ddd3 55%, #cdbfae 100%)',
   ];
 
-  const totalAnnotations = maps.reduce((sum, m) => sum + m.annotation_count, 0);
+  const totalAnnotations = maps.reduce((sum, map) => sum + map.annotation_count, 0);
+  const activeMaps = maps.filter((map) => map.annotation_count > 0).length;
+  const latestUpdatedAt = maps[0]?.updated_at;
 
   if (loading) {
     return (
@@ -96,162 +97,174 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
-      {/* 顶栏 */}
-      <header className="h-14 flex items-center justify-between px-6" style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'var(--primary)' }}>
-            <MapPin className="w-4 h-4 text-white" />
-          </div>
-          <h1 className="text-base font-semibold" style={{ color: 'var(--ink)' }}>地图管理</h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-sm" style={{ color: 'var(--faint)' }}>管理员</span>
-          <button
-            onClick={logout}
-            className="text-sm transition px-2 py-1 rounded"
-            style={{ color: 'var(--faint)' }}
-          >
-            退出登录
-          </button>
-        </div>
-      </header>
-
-      {/* 主体 */}
-      <main className="max-w-5xl mx-auto px-6 py-8">
-        {/* 标题行 */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-bold" style={{ color: 'var(--ink)' }}>我的地图</h2>
-            <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>共 {maps.length} 张地图，{totalAnnotations} 条标注</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowStats(!showStats)}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl font-medium text-sm transition"
-              style={{ color: 'var(--muted)', border: '1px solid var(--border)', background: 'var(--surface)' }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--muted)'; }}
-            >
-              📊 统计
-            </button>
-            <button
-              onClick={() => setShowCreate(true)}
-              className="flex items-center gap-2 px-4 py-2.5 text-white rounded-xl font-medium transition shadow-sm"
-              style={{ background: 'var(--primary)' }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--primary-hover)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--primary)'; }}
-            >
-              <Plus className="w-4 h-4" />
-              新建地图
-            </button>
-          </div>
-        </div>
-
-        {/* 统计概览 */}
-        {showStats && (
-          <div className="mb-6 p-5 rounded-xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-            <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--ink)' }}>数据概览</h3>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="p-3 rounded-lg" style={{ background: 'var(--primary-light)' }}>
-                <div className="text-2xl font-bold" style={{ color: 'var(--primary)' }}>{maps.length}</div>
-                <div className="text-xs" style={{ color: 'var(--muted)' }}>地图总数</div>
+    <div className="min-h-screen px-4 py-4 md:px-6 md:py-6" style={{ background: 'var(--bg)' }}>
+      <div className="paper-panel archive-shell mx-auto max-w-7xl overflow-hidden rounded-[32px]">
+        <header className="border-b px-6 py-4 md:px-8" style={{ borderColor: 'var(--border)' }}>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl" style={{ background: 'var(--primary)' }}>
+                <MapPin className="h-5 w-5 text-white" />
               </div>
-              <div className="p-3 rounded-lg" style={{ background: 'rgba(44,111,187,0.08)' }}>
-                <div className="text-2xl font-bold" style={{ color: '#2c6fbb' }}>{totalAnnotations}</div>
-                <div className="text-xs" style={{ color: 'var(--muted)' }}>标注总数</div>
-              </div>
-              <div className="p-3 rounded-lg" style={{ background: 'rgba(192,57,43,0.08)' }}>
-                <div className="text-2xl font-bold" style={{ color: '#c0392b' }}>{maps.filter(m => m.annotation_count > 0).length}</div>
-                <div className="text-xs" style={{ color: 'var(--muted)' }}>活跃地图</div>
+              <div>
+                <div className="display-label">Admin Atlas</div>
+                <h1 className="text-2xl leading-none md:text-3xl" style={{ color: 'var(--ink)' }}>地图管理</h1>
               </div>
             </div>
+            <div className="flex items-center gap-3">
+              <span className="soft-pill">管理员</span>
+              <button onClick={logout} className="ghost-button rounded-full px-4 py-2 text-xs font-semibold">
+                退出登录
+              </button>
+            </div>
           </div>
-        )}
+        </header>
 
-        {/* 地图卡片网格 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {maps.map((map, idx) => (
-            <div
-              key={map.id}
-              className="rounded-xl border overflow-hidden group transition-all duration-250"
-              style={{ background: 'var(--surface)', borderColor: 'var(--border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-3px)';
-                e.currentTarget.style.boxShadow = '0 12px 32px rgba(26,71,53,0.12)';
-                e.currentTarget.style.borderColor = 'var(--primary)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
-                e.currentTarget.style.borderColor = 'var(--border)';
-              }}
-            >
-              {/* 缩略图区域 */}
-              <div className="h-36 relative flex items-center justify-center" style={{ background: thumbGradients[idx % thumbGradients.length] }}>
-                <div className="text-center">
-                  <MapPin className="w-10 h-10 mx-auto mb-1" style={{ color: 'var(--primary)', opacity: 0.25 }} />
-                  <p className="text-xs font-mono" style={{ color: 'var(--faint)' }}>{map.annotation_count} 个标注</p>
+        <main className="mx-auto max-w-7xl px-6 py-6 md:px-8 md:py-8">
+          <section className="archive-grid grid gap-5 lg:grid-cols-[1.18fr_0.82fr]">
+            <div className="paper-card relative overflow-hidden rounded-[30px] p-6 md:p-8">
+              <div className="absolute inset-0 opacity-70" style={{ background: 'radial-gradient(circle at top right, rgba(184,155,114,0.18), transparent 28%)' }} />
+              <div className="relative">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <div className="soft-pill">目录控制台</div>
+                    <h2 className="mt-5 text-3xl leading-[0.98] md:text-[3.15rem]" style={{ color: 'var(--ink)' }}>
+                      同一套风格，
+                      <br />
+                      直接管理内容。
+                    </h2>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => setShowCreate(true)} className="primary-button inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium">
+                      <Plus className="h-4 w-4" />
+                      新建地图
+                    </button>
+                  </div>
                 </div>
-                <div className="absolute top-0 right-0 px-2.5 py-1 text-xs font-medium rounded-bl-xl" style={{ background: 'rgba(26,71,53,0.7)', color: 'white' }}>
-                  {map.annotation_count} 条
+                <div className="mt-8 grid gap-3 sm:grid-cols-4">
+                  <div className="rounded-[22px] border px-4 py-4" style={{ borderColor: 'var(--border)', background: 'rgba(255,255,255,0.56)' }}>
+                    <div className="text-[11px] font-medium" style={{ color: 'var(--faint)' }}>地图数量</div>
+                    <div className="mt-2 text-3xl leading-none" style={{ color: 'var(--ink)' }}>{maps.length}</div>
+                  </div>
+                  <div className="rounded-[22px] border px-4 py-4" style={{ borderColor: 'var(--border)', background: 'rgba(255,255,255,0.56)' }}>
+                    <div className="text-[11px] font-medium" style={{ color: 'var(--faint)' }}>标注总数</div>
+                    <div className="mt-2 text-3xl leading-none" style={{ color: 'var(--ink)' }}>{totalAnnotations}</div>
+                  </div>
+                  <div className="rounded-[22px] border px-4 py-4" style={{ borderColor: 'var(--border)', background: 'rgba(255,255,255,0.56)' }}>
+                    <div className="text-[11px] font-medium" style={{ color: 'var(--faint)' }}>活跃地图</div>
+                    <div className="mt-2 text-3xl leading-none" style={{ color: 'var(--ink)' }}>{activeMaps}</div>
+                  </div>
+                  <div className="rounded-[22px] border px-4 py-4" style={{ borderColor: 'var(--border)', background: 'rgba(255,255,255,0.56)' }}>
+                    <div className="text-[11px] font-medium" style={{ color: 'var(--faint)' }}>最后更新</div>
+                    <div className="mt-2 text-base leading-tight" style={{ color: 'var(--ink)' }}>
+                      {latestUpdatedAt ? formatTime(latestUpdatedAt) : '暂无记录'}
+                    </div>
+                  </div>
                 </div>
-                <div className="absolute top-2 right-12 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); router.push('/admin?mapId=' + map.id); }}
-                    className="p-1.5 rounded-lg shadow-sm transition"
-                    style={{ background: 'rgba(255,255,255,0.9)' }}
-                    title="编辑"
-                    aria-label="编辑"
-                  >
-                    <Edit3 className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
+              </div>
+            </div>
+
+            <div className="grid gap-4">
+              <div className="paper-card rounded-[26px] p-5">
+                <div className="text-[11px] font-medium mb-2" style={{ color: 'var(--faint)' }}>管理提示</div>
+                <h3 className="text-2xl leading-tight" style={{ color: 'var(--ink)' }}>卡片即入口</h3>
+                <p className="mt-2 text-sm leading-6" style={{ color: 'var(--muted)' }}>
+                  悬停即可编辑或删除，点击卡片主体进入对应地图的后台编辑页面。
+                </p>
+              </div>
+              <div className="paper-card rounded-[26px] p-5">
+                <div className="text-[11px] font-medium mb-2" style={{ color: 'var(--faint)' }}>当前状态</div>
+                <div className="flex flex-wrap gap-2 text-[11px] font-semibold tracking-[0.14em]" style={{ color: 'var(--faint)' }}>
+                  <span>{maps.length} 个项目</span>
+                  <span>{activeMaps} 个活跃项目</span>
+                  <span>{totalAnnotations} 条标注</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="mt-6">
+            <div className="mb-4 flex items-end justify-between gap-4">
+              <h3 className="text-3xl" style={{ color: 'var(--ink)' }}>全部地图</h3>
+              <div className="hidden rounded-full px-4 py-2 text-xs font-semibold tracking-[0.16em] md:block" style={{ background: 'rgba(255,255,255,0.56)', color: 'var(--faint)', border: '1px solid var(--border)' }}>
+                共 {maps.length} 张
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {maps.map((map, idx) => (
+                <div key={map.id} className="paper-card group overflow-hidden rounded-[28px] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_28px_70px_rgba(37,28,18,0.14)]">
+                  <div className="relative h-40 p-5" style={{ background: thumbGradients[idx % thumbGradients.length] }}>
+                    <div className="absolute inset-[14px] rounded-[20px] border" style={{ borderColor: 'rgba(32,32,32,0.08)' }} />
+                    <div className="relative flex h-full flex-col justify-between">
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ background: 'rgba(255,255,255,0.48)', color: 'var(--faint)' }}>
+                          编号 {String(idx + 1).padStart(2, '0')}
+                        </span>
+                        <div className="flex gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                          <button
+                            onClick={() => router.push('/admin?mapId=' + map.id)}
+                            className="ghost-button rounded-full p-2"
+                            title="编辑"
+                            aria-label="编辑"
+                          >
+                            <Edit3 className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm(map.id)}
+                            className="rounded-full p-2 transition"
+                            style={{ background: 'rgba(255,255,255,0.78)', color: 'var(--danger)', border: '1px solid rgba(185,87,73,0.18)' }}
+                            title="删除"
+                            aria-label="删除"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <MapPin className="mb-3 h-10 w-10" style={{ color: 'rgba(31,52,45,0.28)' }} />
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(23,23,23,0.5)' }}>
+                          {map.annotation_count} 个标注
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button type="button" onClick={() => router.push('/admin?mapId=' + map.id)} className="w-full p-5 text-left">
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="truncate text-xl font-semibold" style={{ color: 'var(--ink)' }}>{map.name}</h3>
+                      <ArrowUpRight className="h-4 w-4 shrink-0" style={{ color: 'var(--faint)' }} />
+                    </div>
+                    {map.description && (
+                      <p className="mt-2 line-clamp-2 text-sm leading-6" style={{ color: 'var(--muted)' }}>{map.description}</p>
+                    )}
+                    <div className="mt-4 flex flex-wrap gap-2 text-xs" style={{ color: 'var(--faint)' }}>
+                      <span className="flex items-center gap-1 rounded-full px-2.5 py-1" style={{ background: 'rgba(23,23,23,0.04)' }}>
+                        <Layers className="h-3 w-3" />
+                        {map.annotation_count} 条
+                      </span>
+                      <span className="flex items-center gap-1 rounded-full px-2.5 py-1" style={{ background: 'rgba(23,23,23,0.04)' }}>
+                        <Clock className="h-3 w-3" />
+                        {formatTime(map.updated_at)}
+                      </span>
+                    </div>
                   </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setDeleteConfirm(map.id); }}
-                    className="p-1.5 rounded-lg shadow-sm transition"
-                    style={{ background: 'rgba(255,255,255,0.9)' }}
-                    title="删除"
-                    aria-label="删除"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" style={{ color: 'var(--danger)' }} />
-                  </button>
                 </div>
-              </div>
+              ))}
 
-              {/* 信息区域 */}
-              <div className="p-4">
-                <h3 className="font-semibold text-sm truncate" style={{ color: 'var(--ink)' }}>{map.name}</h3>
-                {map.description && (
-                  <p className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--muted)' }}>{map.description}</p>
-                )}
-                <div className="flex items-center gap-3 mt-3 text-xs" style={{ color: 'var(--faint)' }}>
-                  <span className="flex items-center gap-1">
-                    <Layers className="w-3 h-3" />
-                    {map.annotation_count} 条
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {formatTime(map.updated_at)}
-                  </span>
+              {maps.length === 0 && (
+                <div className="paper-card col-span-full rounded-[28px] px-6 py-20 text-center">
+                  <MapPin className="mx-auto mb-4 h-12 w-12" style={{ color: 'var(--faint)' }} />
+                  <p className="text-lg" style={{ color: 'var(--muted)' }}>还没有地图，先新建一个项目</p>
                 </div>
-              </div>
+              )}
             </div>
-          ))}
+          </section>
+        </main>
+      </div>
 
-          {/* 空状态 */}
-          {maps.length === 0 && (
-            <div className="col-span-full text-center py-16">
-              <MapPin className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--border)' }} />
-              <p className="text-sm" style={{ color: 'var(--faint)' }}>还没有地图，点击右上角创建</p>
-            </div>
-          )}
-        </div>
-      </main>
-
-      {/* 新建地图弹窗 */}
       {showCreate && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in">
-          <div className="rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4" style={{ background: 'var(--surface)' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm animate-fade-in">
+          <div className="paper-panel w-full max-w-md rounded-[28px] p-6 mx-4">
             <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--ink)' }}>新建地图</h3>
             <div className="space-y-3">
               <div>
@@ -261,10 +274,16 @@ export default function AdminDashboard() {
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="例如：土地成交数据"
-                  className="w-full px-3 py-2.5 rounded-xl text-sm outline-none transition"
-                  style={{ border: '1px solid var(--border)', color: 'var(--ink)' }}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(26,71,53,0.12)'; }}
-                  onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  className="w-full rounded-2xl px-3 py-2.5 text-sm outline-none transition"
+                  style={{ border: '1px solid var(--border)', color: 'var(--ink)', background: 'rgba(255,255,255,0.7)' }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--primary)';
+                    e.currentTarget.style.boxShadow = '0 0 0 2px rgba(26,71,53,0.12)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
                   autoFocus
                 />
               </div>
@@ -275,30 +294,30 @@ export default function AdminDashboard() {
                   onChange={(e) => setNewDesc(e.target.value)}
                   placeholder="地图用途说明..."
                   rows={2}
-                  className="w-full px-3 py-2.5 rounded-xl text-sm outline-none resize-none"
-                  style={{ border: '1px solid var(--border)', color: 'var(--ink)' }}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(26,71,53,0.12)'; }}
-                  onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  className="w-full resize-none rounded-2xl px-3 py-2.5 text-sm outline-none transition"
+                  style={{ border: '1px solid var(--border)', color: 'var(--ink)', background: 'rgba(255,255,255,0.7)' }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--primary)';
+                    e.currentTarget.style.boxShadow = '0 0 0 2px rgba(26,71,53,0.12)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
                 />
               </div>
             </div>
-            <div className="flex gap-2 justify-end mt-5">
-              <button
-                onClick={() => setShowCreate(false)}
-                className="px-4 py-2 rounded-xl text-sm transition"
-                style={{ background: 'var(--bg)', color: 'var(--muted)' }}
-              >
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setShowCreate(false)} className="ghost-button rounded-full px-4 py-2 text-sm">
                 取消
               </button>
               <button
                 onClick={handleCreate}
                 disabled={!newName.trim() || creating}
-                className="px-4 py-2 text-white rounded-xl text-sm font-medium disabled:opacity-40 transition flex items-center gap-2"
+                className="primary-button flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium disabled:opacity-40"
                 style={{ background: newName.trim() && !creating ? 'var(--primary)' : 'var(--border)' }}
-                onMouseEnter={(e) => { if (newName.trim() && !creating) e.currentTarget.style.background = 'var(--primary-hover)'; }}
-                onMouseLeave={(e) => { if (newName.trim() && !creating) e.currentTarget.style.background = 'var(--primary)'; }}
               >
-                {creating && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {creating && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 创建
               </button>
             </div>
@@ -306,33 +325,26 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* 删除确认弹窗 */}
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in">
-          <div className="rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4" style={{ background: 'var(--surface)' }}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(192,57,43,0.1)' }}>
-                <AlertTriangle className="w-5 h-5" style={{ color: 'var(--danger)' }} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm animate-fade-in">
+          <div className="paper-panel w-full max-w-sm rounded-[28px] p-6 mx-4">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full" style={{ background: 'rgba(192,57,43,0.1)' }}>
+                <AlertTriangle className="h-5 w-5" style={{ color: 'var(--danger)' }} />
               </div>
               <div>
                 <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>确认删除</h3>
-                <p className="text-xs" style={{ color: 'var(--muted)' }}>此操作不可撤销，地图及所有标注将永久删除</p>
+                <p className="text-xs" style={{ color: 'var(--muted)' }}>此操作不可撤销，地图及所有标注将永久删除。</p>
               </div>
             </div>
-            <div className="flex gap-2 justify-end mt-5">
-              <button
-                onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 rounded-xl text-sm transition"
-                style={{ background: 'var(--bg)', color: 'var(--muted)' }}
-              >
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setDeleteConfirm(null)} className="ghost-button rounded-full px-4 py-2 text-sm">
                 取消
               </button>
               <button
                 onClick={() => handleDelete(deleteConfirm)}
-                className="px-4 py-2 text-white rounded-xl text-sm font-medium transition"
+                className="rounded-full px-4 py-2 text-sm font-medium text-white transition"
                 style={{ background: 'var(--danger)' }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = '#a33226'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--danger)'; }}
               >
                 确认删除
               </button>

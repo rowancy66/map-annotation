@@ -8,18 +8,17 @@ import { Annotation, PointStyle, LineStyle, PolygonStyle, TextStyle, PRESET_COLO
 import { X, Save, Trash2, Loader2, Upload, Link2, Plus } from 'lucide-react';
 import { uploadAnnotationImage, deleteAnnotationImage } from '@/lib/supabase';
 
-// Celadon jade palette
 const colors = {
-  surface: '#ffffff',
-  bg: '#f2eee8',
-  border: '#e0e4dc',
-  ink: '#3a403c',
-  muted: '#8a928c',
-  faint: '#aab2ac',
-  placeholder: '#c0c4be',
-  accent: '#78a587',
-  accentSoft: 'rgba(120,165,135,0.08)',
-  danger: '#c08080',
+  surface: 'rgba(255,252,247,0.94)',
+  bg: '#f6f0e7',
+  border: 'rgba(36,32,28,0.1)',
+  ink: '#171717',
+  muted: '#6f685f',
+  faint: '#9b9186',
+  placeholder: '#b2a79b',
+  accent: '#1f342d',
+  accentSoft: 'rgba(31,52,45,0.08)',
+  danger: '#b95749',
 };
 
 interface InfoCardProps {
@@ -126,29 +125,29 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
 
   return (
     <div ref={cardRef} style={{ ...stylePos }}
-      className="w-72 max-w-[calc(100vw-2rem)] rounded-xl shadow-2xl overflow-hidden animate-fade-slide-up">
+      className="w-80 max-w-[calc(100vw-2rem)] rounded-[26px] shadow-2xl overflow-hidden animate-fade-slide-up">
       <div style={{ height: '3px', background: tm.accent }} />
-      <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderTop: 'none' }}>
+      <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderTop: 'none', boxShadow: '0 26px 64px rgba(37,28,18,0.14)', backdropFilter: 'blur(14px)' }}>
 
         {/* 标题栏 */}
         <div onMouseDown={handleDragStart}
-          className={`flex items-center justify-between px-3 py-2.5 select-none ${editing ? '' : 'cursor-move'}`}
+          className={`flex items-center justify-between px-4 py-3 select-none ${editing ? '' : 'cursor-move'}`}
           style={{ borderBottom: `1px solid ${colors.border}` }}>
           <div className="flex items-center gap-2 min-w-0">
-            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded leading-none tracking-wider"
+            <span className="text-[10px] font-semibold px-2 py-1 rounded-full leading-none tracking-wider"
               style={{ background: tm.bg, color: tm.accent }}>{tm.label}</span>
             <span style={{ color: colors.faint, fontSize: '10px' }}>
               {new Date(annotation.updated_at).toLocaleDateString('zh-CN')}
             </span>
           </div>
           <button onClick={onClose} aria-label="关闭"
-            className="p-0.5 rounded-lg transition shrink-0" style={{ color: colors.faint }}>
+            className="rounded-full p-1 transition shrink-0" style={{ color: colors.faint, background: 'rgba(23,23,23,0.04)' }}>
             <X className="w-3.5 h-3.5" aria-hidden="true" />
           </button>
         </div>
 
         {/* 内容 */}
-        <div className="px-3.5 py-2.5 max-h-[50vh] overflow-y-auto space-y-3 text-sm">
+        <div className="px-4 py-3 max-h-[50vh] overflow-y-auto space-y-3 text-sm">
           {annotation.type === 'polygon' ? (
             <PolygonFields
               data={editing ? editData : annotation}
@@ -241,7 +240,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
         </div>
 
         {/* 底部操作栏 */}
-        <div style={{ borderTop: `1px solid ${colors.border}`, background: 'rgba(248,250,252,0.8)', padding: '10px 14px' }}
+        <div style={{ borderTop: `1px solid ${colors.border}`, background: 'rgba(255,248,241,0.84)', padding: '10px 14px' }}
           className="flex items-center gap-2">
           {editing ? (
             <>
@@ -250,14 +249,14 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
                 <span>{saving ? '保存中...' : '保存'}</span>
               </ActionBtn>
               <button onClick={() => { setEditData({ ...annotation }); setEditing(false); }} disabled={saving}
-                className="flex-1 py-2 text-xs font-medium rounded-lg transition border"
+                className="flex-1 rounded-full border py-2 text-xs font-medium transition"
                 style={{ background: colors.surface, color: colors.muted, borderColor: colors.border }}>
                 取消
               </button>
             </>
           ) : readOnly ? (
             <button onClick={onClose}
-              className="flex-1 py-2 text-xs font-medium rounded-lg transition border"
+              className="flex-1 rounded-full border py-2 text-xs font-medium transition"
               style={{ background: colors.bg, color: colors.muted, borderColor: colors.border }}>
               关闭
             </button>
@@ -272,14 +271,14 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
                     确认
                   </ActionBtn>
                   <button onClick={() => setShowDeleteConfirm(false)} disabled={deleting}
-                    className="px-3 py-2 text-xs rounded-lg border transition"
+                    className="rounded-full border px-3 py-2 text-xs transition"
                     style={{ background: colors.surface, color: colors.muted, borderColor: colors.border }}>
                     取消
                   </button>
                 </div>
               ) : (
                 <button onClick={() => setShowDeleteConfirm(true)}
-                  className="p-2 rounded-lg transition" aria-label="删除" style={{ color: colors.faint }}>
+                  className="rounded-full p-2 transition" aria-label="删除" style={{ color: colors.faint, background: 'rgba(23,23,23,0.04)' }}>
                   <Trash2 className="w-4 h-4" aria-hidden="true" />
                 </button>
               )}
@@ -295,7 +294,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="text-[9px] font-semibold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>{label}</div>
+      <div className="mb-1 text-[9px] font-semibold tracking-widest uppercase" style={{ color: colors.faint }}>{label}</div>
       {children}
     </div>
   );
@@ -304,8 +303,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function Input({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <input type="text" value={value} onChange={(e) => onChange(e.target.value)}
-      className="w-full px-2.5 py-1.5 text-sm rounded-lg outline-none transition"
-      style={{ background: '#f8fafc', border: '1px solid #e2e8f0', color: '#1e293b' }}
+      className="w-full rounded-xl px-2.5 py-1.5 text-sm outline-none transition"
+      style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.ink }}
       onFocus={focusStyle} onBlur={blurStyle} placeholder={placeholder} />
   );
 }
@@ -313,7 +312,7 @@ function Input({ value, onChange, placeholder }: { value: string; onChange: (v: 
 function ActionBtn({ children, onClick, disabled, accent }: any) {
   return (
     <button onClick={onClick} disabled={disabled}
-      className="flex-1 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5"
+      className="flex flex-1 items-center justify-center gap-1.5 rounded-full py-2 text-xs font-semibold transition-all"
       style={{ background: accent, color: 'white' }}>
       {children}
     </button>
@@ -322,12 +321,12 @@ function ActionBtn({ children, onClick, disabled, accent }: any) {
 
 function focusStyle(e: React.FocusEvent<HTMLElement>) {
   const el = e.currentTarget as HTMLElement;
-  el.style.borderColor = '#2563eb';
-  el.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.1)';
+  el.style.borderColor = colors.accent;
+  el.style.boxShadow = '0 0 0 3px rgba(31,52,45,0.12)';
 }
 function blurStyle(e: React.FocusEvent<HTMLElement>) {
   const el = e.currentTarget as HTMLElement;
-  el.style.borderColor = '#e2e8f0';
+  el.style.borderColor = colors.border;
   el.style.boxShadow = 'none';
 }
 

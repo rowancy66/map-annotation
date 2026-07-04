@@ -12,8 +12,13 @@ export default function MapPage() {
   }, [router]);
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gray-100">
-      <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+    <div className="h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
+      <div className="paper-panel rounded-[28px] px-6 py-5">
+        <div className="flex items-center gap-3 text-sm" style={{ color: 'var(--muted)' }}>
+          <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--primary)' }} />
+          跳转到地图目录...
+        </div>
+      </div>
     </div>
   );
 }

@@ -23,14 +23,14 @@ export default function DrawingToolbar({ drawMode, onDrawModeChange, annotationC
   ];
 
   return (
-    <div className="flex items-center gap-1">
-      {/* 主绘制工具 */}
-      <div className="flex items-center rounded-lg p-0.5" style={{ background: 'var(--bg)' }}>
+    <div className="flex items-center gap-2">
+      <div className="hidden md:block soft-pill">编辑工具</div>
+      <div className="flex items-center rounded-full p-1" style={{ background: 'rgba(255,255,255,0.64)', border: '1px solid var(--border)' }}>
         {tools.map((tool) => (
           <button
             key={tool.mode}
             onClick={() => onDrawModeChange(tool.mode)}
-            className="relative flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all duration-150"
+            className="relative flex items-center gap-1 rounded-full px-3 py-2 text-xs font-medium transition-all duration-150"
             style={{
               background: drawMode === tool.mode ? 'var(--primary)' : 'transparent',
               color: drawMode === tool.mode ? 'white' : 'var(--muted)',
@@ -49,16 +49,12 @@ export default function DrawingToolbar({ drawMode, onDrawModeChange, annotationC
         ))}
       </div>
 
-      {/* 分隔线 */}
-      <div className="w-px h-5 mx-1" style={{ background: 'var(--border)' }} />
-
-      {/* 扩展工具 */}
-      <div className="flex items-center rounded-lg p-0.5" style={{ background: 'var(--bg)' }}>
+      <div className="flex items-center rounded-full p-1" style={{ background: 'rgba(255,255,255,0.64)', border: '1px solid var(--border)' }}>
         {extraTools.map((tool) => (
           <button
             key={tool.mode}
             onClick={() => onDrawModeChange(drawMode === tool.mode ? 'none' : tool.mode)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all duration-150"
+            className="flex items-center gap-1 rounded-full px-3 py-2 text-xs font-medium transition-all duration-150"
             style={{
               background: drawMode === tool.mode ? 'var(--primary)' : 'transparent',
               color: drawMode === tool.mode ? 'white' : 'var(--muted)',

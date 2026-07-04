@@ -101,6 +101,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
   const [sidebarTab, setSidebarTab] = useState<'list' | 'groups'>('list');
   const [importOpen, setImportOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
   const [batchDeleteConfirm, setBatchDeleteConfirm] = useState(false);
   const [batchActionLoading, setBatchActionLoading] = useState(false);
@@ -377,6 +378,14 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
     element.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [selectedAnnotation, sidebarTab, filteredByGroup]);
 
+  useEffect(() => {
+    if (!showExportMenu) return;
+
+    const handleClose = () => setShowExportMenu(false);
+    window.addEventListener('click', handleClose);
+    return () => window.removeEventListener('click', handleClose);
+  }, [showExportMenu]);
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
@@ -386,16 +395,16 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
   }
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen overflow-hidden p-3 md:p-4" style={{ background: 'var(--bg)' }}>
+      <div className="paper-panel flex h-full flex-col overflow-hidden rounded-[32px]">
       {/* █ 顶栏工具条 */}
-      <header className="h-12 shrink-0 flex items-center justify-between px-3 z-50"
-        style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+      <header className="h-16 shrink-0 flex items-center justify-between px-4 md:px-5 z-50"
+        style={{ background: 'rgba(255,252,247,0.72)', borderBottom: '1px solid var(--border)' }}>
         {/* 左侧：导航 + 标题 */}
         <div className="flex items-center gap-2">
           <Link
             href="/admin"
-            className="p-1.5 rounded-lg transition"
-            style={{ color: 'var(--muted)' }}
+            className="ghost-button rounded-full p-2"
             title="返回地图列表"
             aria-label="返回地图列表"
           >
@@ -403,19 +412,18 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
           </Link>
           <Link
             href="/"
-            className="p-1.5 rounded-lg transition"
-            style={{ color: 'var(--muted)' }}
+            className="ghost-button rounded-full p-2"
             title="返回前台"
             aria-label="返回前台"
           >
             <Home className="w-4 h-4" aria-hidden="true" />
           </Link>
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'var(--primary)' }}>
+          <div className="w-8 h-8 rounded-2xl flex items-center justify-center" style={{ background: 'var(--primary)' }}>
             <MapPin className="w-4 h-4 text-white" aria-hidden="true" />
           </div>
-          <h1 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+          <h1 className="text-sm font-semibold md:text-base" style={{ color: 'var(--ink)' }}>
             {mapProject?.name || '地图标注平台'}
-            <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>管理</span>
+            <span className="ml-2 px-2.5 py-1 rounded-full text-[10px] font-medium" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>管理</span>
           </h1>
         </div>
 
@@ -427,11 +435,10 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
         />
 
         {/* 右侧：导入/导出/设置/用户 */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setImportOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition"
-            style={{ color: 'var(--muted)' }}
+            className="ghost-button flex items-center gap-1.5 rounded-full px-3 py-2 text-sm"
             title="批量导入"
             aria-label="批量导入"
           >
@@ -439,34 +446,42 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             <span className="hidden sm:inline">导入</span>
           </button>
 
-          <div className="relative group">
+          <div className="relative">
             <button
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition"
-              style={{ color: 'var(--muted)' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowExportMenu((prev) => !prev);
+              }}
+              className="ghost-button flex items-center gap-1.5 rounded-full px-3 py-2 text-sm"
               title="导出"
               aria-label="导出"
             >
               <Download className="w-4 h-4" aria-hidden="true" />
               <span className="hidden sm:inline">导出</span>
             </button>
-            <div className="absolute right-0 top-full mt-1 w-32 rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-50"
-              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-              <button onClick={() => handleExport('xlsx')}
-                className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50 rounded-t-lg"
+            {showExportMenu && (
+              <div
+                className="absolute right-0 top-full z-50 mt-2 w-36 overflow-hidden rounded-2xl border shadow-[0_24px_60px_rgba(37,28,18,0.16)]"
+                style={{ background: 'var(--surface-strong)', borderColor: 'var(--border)' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+              <button onClick={() => { handleExport('xlsx'); setShowExportMenu(false); }}
+                className="w-full px-4 py-3 text-sm text-left transition"
                 style={{ color: 'var(--ink)' }}>
                 导出 Excel
               </button>
-              <button onClick={() => handleExport('csv')}
-                className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50 rounded-b-lg"
-                style={{ color: 'var(--ink)' }}>
+              <button onClick={() => { handleExport('csv'); setShowExportMenu(false); }}
+                className="w-full px-4 py-3 text-sm text-left transition"
+                style={{ color: 'var(--ink)', borderTop: '1px solid var(--border)' }}>
                 导出 CSV
               </button>
-            </div>
+              </div>
+            )}
           </div>
 
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className="p-1.5 rounded-lg transition"
+            className="rounded-full p-2 transition"
             style={{ color: showSettings ? 'white' : 'var(--muted)', background: showSettings ? 'var(--primary)' : 'transparent' }}
             title="设置"
             aria-label="设置"
@@ -477,8 +492,8 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
           <div className="w-px h-5 mx-1" style={{ background: 'var(--border)' }} />
 
           <div className="flex items-center gap-2">
-            <span className="text-xs hidden sm:inline font-medium" style={{ color: 'var(--faint)' }}>管理员</span>
-            <button onClick={logout} className="p-1.5 rounded-lg transition" style={{ color: 'var(--faint)' }} title="退出登录" aria-label="退出登录">
+            <span className="soft-pill hidden sm:inline-flex">管理员</span>
+            <button onClick={logout} className="ghost-button rounded-full p-2" title="退出登录" aria-label="退出登录">
               <LogOut className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
@@ -487,8 +502,8 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
 
       {/* 反馈消息 */}
       {feedbackMessage && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2 rounded-xl shadow-lg text-sm animate-fade-in"
-          style={{ background: 'rgba(26,31,36,0.85)', color: 'white' }}>
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9999] rounded-full px-4 py-2 text-sm animate-fade-in"
+          style={{ background: 'rgba(23,23,23,0.82)', color: 'white', boxShadow: 'var(--shadow-floating)' }}>
           {feedbackMessage}
         </div>
       )}
@@ -496,7 +511,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
       {/* 批量删除确认 */}
       {batchDeleteConfirm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center animate-fade-in">
-          <div className="rounded-xl shadow-2xl p-6 max-w-sm mx-4" style={{ background: 'var(--surface)' }}>
+          <div className="paper-panel max-w-sm rounded-[28px] p-6 mx-4 shadow-2xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(192,57,43,0.1)' }}>
                 <AlertTriangle className="w-5 h-5" style={{ color: 'var(--danger)' }} aria-hidden="true" />
@@ -511,12 +526,11 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             </p>
             <div className="flex gap-2 justify-end">
               <button onClick={() => setBatchDeleteConfirm(false)}
-                className="px-4 py-2 rounded-lg text-sm transition"
-                style={{ background: 'var(--bg)', color: 'var(--muted)' }}>
+                className="ghost-button rounded-full px-4 py-2 text-sm">
                 取消
               </button>
               <button onClick={confirmBatchDelete}
-                className="px-4 py-2 text-white rounded-lg text-sm font-medium transition"
+                className="rounded-full px-4 py-2 text-sm font-medium text-white transition"
                 style={{ background: 'var(--danger)' }}>
                 确认删除
               </button>
@@ -526,7 +540,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
       )}
 
       {/* █ 主体区域 */}
-      <div className="flex-1 flex relative overflow-hidden">
+      <div className="flex-1 flex relative overflow-hidden p-3 md:p-4">
         {/* 左侧面板 */}
         <div
           className={`absolute left-0 top-0 bottom-0 z-40 transition-all duration-300 ${
@@ -534,7 +548,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
           } overflow-hidden`}
           style={{ borderRight: sidebarOpen ? '1px solid var(--border)' : 'none' }}
         >
-          <div className="w-80 h-full flex flex-col" style={{ background: '#fafbfc' }}>
+          <div className="paper-card w-80 h-full flex flex-col rounded-[28px]" style={{ background: 'var(--surface-muted)' }}>
             {/* 面板 Tab */}
             <div className="flex px-3 pt-2.5 gap-0.5 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
               {(['list', 'groups'] as const).map((tab) => (
@@ -608,7 +622,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                   </div>
                   {selectedIds.size > 0 && (
                     <button onClick={onBatchDeleteClick}
-                      className="flex items-center gap-1 px-3 py-1 text-white rounded text-xs font-medium transition shadow-sm"
+                      className="flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium text-white transition shadow-sm"
                       style={{ background: 'var(--danger)' }}>
                       <Trash2 className="w-3 h-3" aria-hidden="true" />
                       批量删除
@@ -622,8 +636,8 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                       <select
                         value={batchGroupTarget}
                         onChange={(e) => setBatchGroupTarget(e.target.value)}
-                        className="px-3 py-2 rounded-lg text-xs outline-none"
-                        style={{ border: '1px solid var(--border)', background: 'white', color: 'var(--ink)' }}
+                        className="px-3 py-2 rounded-xl text-xs outline-none"
+                        style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.8)', color: 'var(--ink)' }}
                       >
                         <option value="__ungrouped__">移动到未分组</option>
                         {groups.map((group) => (
@@ -633,8 +647,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                       <button
                         onClick={handleBatchMoveToGroup}
                         disabled={batchActionLoading}
-                        className="px-3 py-2 rounded-lg text-xs font-medium transition"
-                        style={{ background: 'var(--primary)', color: 'white' }}
+                        className="primary-button rounded-xl px-3 py-2 text-xs font-medium"
                       >
                         移动分组
                       </button>
@@ -644,8 +657,8 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                       <select
                         value={batchFieldId}
                         onChange={(e) => setBatchFieldId(e.target.value)}
-                        className="px-3 py-2 rounded-lg text-xs outline-none"
-                        style={{ border: '1px solid var(--border)', background: 'white', color: 'var(--ink)' }}
+                        className="px-3 py-2 rounded-xl text-xs outline-none"
+                        style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.8)', color: 'var(--ink)' }}
                       >
                         <option value="">选择字段</option>
                         {(mapProject?.field_templates || []).map((field) => (
@@ -657,14 +670,14 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                         value={batchFieldValue}
                         onChange={(e) => setBatchFieldValue(e.target.value)}
                         placeholder="统一字段值"
-                        className="px-3 py-2 rounded-lg text-xs outline-none"
-                        style={{ border: '1px solid var(--border)', background: 'white', color: 'var(--ink)' }}
+                        className="px-3 py-2 rounded-xl text-xs outline-none"
+                        style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.8)', color: 'var(--ink)' }}
                       />
                       <button
                         onClick={handleBatchUpdateField}
                         disabled={batchActionLoading || !batchFieldId}
-                        className="px-3 py-2 rounded-lg text-xs font-medium transition disabled:opacity-50"
-                        style={{ background: '#2c6fbb', color: 'white' }}
+                        className="rounded-xl px-3 py-2 text-xs font-medium text-white transition disabled:opacity-50"
+                        style={{ background: '#2c6fbb' }}
                       >
                         批量改值
                       </button>
@@ -689,10 +702,10 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                 <>
                   {filteredByGroup.length === 0 ? (
                     <div className="p-8 text-center text-sm" style={{ color: 'var(--faint)' }}>
-                      <div className="text-3xl mb-3 opacity-30">📍</div>
+                      <MapPin className="mx-auto mb-3 h-8 w-8" style={{ color: 'var(--faint)', opacity: 0.45 }} />
                       {annotations.length > 0 ? '没有符合当前筛选条件的标注' : '暂无标注'}<br />
                       {annotations.length === 0 && (
-                        <span className="text-xs" style={{ color: 'var(--border)' }}>点击顶部工具栏在地图上添加</span>
+                        <span className="text-xs" style={{ color: 'var(--faint)' }}>点击顶部工具栏在地图上添加</span>
                       )}
                     </div>
                   ) : (
@@ -807,7 +820,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             {showSettings && mapProject && (
               <div className="shrink-0" style={{ borderTop: '1px solid var(--border)' }}>
                 <div className="px-4 pt-4">
-                  <div className="rounded-xl border p-4 space-y-4" style={{ background: 'white', borderColor: 'var(--border)' }}>
+                  <div className="rounded-[22px] border p-4 space-y-4" style={{ background: 'rgba(255,255,255,0.78)', borderColor: 'var(--border)' }}>
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>访问设置</h3>
@@ -873,11 +886,12 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           aria-label={sidebarOpen ? '收起侧边栏' : '展开侧边栏'}
-          className="absolute top-3 z-40 shadow-md rounded-r-xl p-1.5 border border-l-0 transition-all duration-200 hover:scale-105"
+          className="absolute top-6 z-40 rounded-r-2xl p-2 border border-l-0 transition-all duration-200 hover:scale-105"
           style={{
             left: sidebarOpen ? '320px' : '0',
-            background: 'var(--surface)',
+            background: 'rgba(255,252,247,0.92)',
             borderColor: 'var(--border)',
+            boxShadow: 'var(--shadow-soft)',
           }}
         >
           {sidebarOpen
@@ -886,7 +900,8 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
         </button>
 
         {/* 地图区域 */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative min-w-0">
+          <div className="absolute inset-0 rounded-[30px] border pointer-events-none z-[2]" style={{ borderColor: 'rgba(35,35,35,0.1)' }} />
           <MapView
             annotations={filteredAnnotations}
             onMapClick={handleMapClick}
@@ -905,7 +920,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
           />
 
           {/* InfoCard */}
-          <div className="absolute right-4 top-4 z-[1000]">
+          <div className="absolute right-5 top-5 z-[1000]">
             {selectedAnnotation && mapProject && !batchMode && (
               <InfoCard
                 annotation={selectedAnnotation}
@@ -918,18 +933,12 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             )}
           </div>
 
-          {/* Deerflow */}
-          <a href="https://deerflow.tech" target="_blank" rel="noopener noreferrer"
-             className="absolute bottom-10 right-3 z-[999] text-[9px] tracking-widest uppercase transition-colors duration-300 pointer-events-auto"
-             style={{ color: 'rgba(107,114,128,0.3)' }}>
-            Deerflow
-          </a>
         </div>
       </div>
 
       {/* █ 底栏 */}
-      <footer className="h-9 shrink-0 flex items-center justify-between px-4 z-40"
-        style={{ background: '#fafbfc', borderTop: '1px solid var(--border)' }}>
+      <footer className="h-10 shrink-0 flex items-center justify-between px-4 z-40"
+        style={{ background: 'rgba(255,252,247,0.72)', borderTop: '1px solid var(--border)' }}>
         <div className="flex items-center gap-4">
           <label className="flex items-center gap-1.5 text-xs cursor-pointer" style={{ color: 'var(--muted)' }}>
             <button
@@ -941,7 +950,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
               <span className="absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-all duration-200"
                 style={{ left: showHeatmap ? 'calc(100% - 14px)' : '2px' }} />
             </button>
-            🔥 热力图
+            热力图
           </label>
           <span className="text-xs" style={{ color: 'var(--muted)' }}>
             名称默认{mapProject?.settings.showNames !== false ? '显示' : '隐藏'}
@@ -949,7 +958,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
         </div>
         <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--faint)' }}>
           <span>{annotations.length} 个标注</span>
-          <span style={{ opacity: 0.5 }}>Deerflow</span>
+          <span>{filteredAnnotations.length} 个可见</span>
         </div>
       </footer>
 
@@ -961,6 +970,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
         mapId={mapProject?.id || ''}
         existingNames={annotations.filter((annotation) => annotation.type === 'point' && annotation.name).map((annotation) => annotation.name)}
       />
+      </div>
     </div>
   );
 }
