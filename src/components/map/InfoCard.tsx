@@ -10,14 +10,14 @@ import { uploadAnnotationImage, deleteAnnotationImage } from '@/lib/supabase';
 
 const colors = {
   surface: 'rgba(255,252,247,0.94)',
-  bg: '#f6f0e7',
-  border: 'rgba(36,32,28,0.1)',
-  ink: '#171717',
-  muted: '#6f685f',
-  faint: '#9b9186',
-  placeholder: '#b2a79b',
-  accent: '#1f342d',
-  accentSoft: 'rgba(31,52,45,0.08)',
+  bg: '#f7f1e8',
+  border: 'rgba(52,44,35,0.1)',
+  ink: '#1a1a18',
+  muted: '#695f54',
+  faint: '#978a7b',
+  placeholder: '#b3a596',
+  accent: '#0b4f45',
+  accentSoft: 'rgba(11,79,69,0.08)',
   danger: '#b95749',
 };
 
@@ -118,7 +118,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
   const typeMeta = {
     point: { label: '点', accent: '#1a4735', bg: 'rgba(26,71,53,0.08)' },
     line: { label: '线', accent: '#2c6fbb', bg: 'rgba(44,111,187,0.08)' },
-    polygon: { label: '面', accent: '#8b5cf6', bg: 'rgba(139,92,246,0.08)' },
+    polygon: { label: '面', accent: '#cfb08a', bg: 'rgba(207,176,138,0.16)' },
     text: { label: '文字', accent: '#d4954e', bg: 'rgba(212,148,78,0.08)' },
   };
   const tm = typeMeta[annotation.type as keyof typeof typeMeta] || typeMeta.point;
