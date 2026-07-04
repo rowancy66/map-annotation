@@ -964,7 +964,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                   color: showNamesEnabled ? '#fff' : 'var(--muted)',
                 }}
               >
-                名称
+                <span className="hidden sm:inline">名称</span>
               </button>
               <button
                 onClick={() => setShowHeatmap(!showHeatmap)}
@@ -974,7 +974,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                   color: showHeatmap ? 'var(--ink)' : 'var(--muted)',
                 }}
               >
-                热力
+                <span className="hidden sm:inline">热力</span>
               </button>
             </MapFloatingPanel>
           </div>

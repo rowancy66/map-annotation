@@ -144,7 +144,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
                 className="ghost-button flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold"
               >
                 <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
-                后台管理
+                <span className="hidden sm:inline">后台管理</span>
               </Link>
               <Link
                 href="/admin"
@@ -325,7 +325,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
                     color: effectiveShowNames ? '#fff' : 'var(--muted)',
                   }}
                 >
-                  名称
+                  <span className="hidden sm:inline">名称</span>
                 </button>
               </MapFloatingPanel>
             </div>

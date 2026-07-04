@@ -389,3 +389,25 @@ body::before {
     animation: none !important;
   }
 }
+
+@media (max-width: 1024px) {
+  .workbench-topbar {
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .floating-toolbar {
+    max-width: calc(100vw - 96px);
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .workbench-shell {
+    padding: 8px;
+  }
+
+  .workbench-frame {
+    border-radius: 24px;
+  }
+}
