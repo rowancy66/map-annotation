@@ -958,23 +958,25 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
               <button
                 onClick={() => setShowNamesOverride((prev) => !(prev ?? (mapProject?.settings.showNames !== false)))}
                 disabled={!mapProject}
+                aria-label="切换名称显示"
                 className="rounded-full px-3.5 py-2 text-xs font-medium transition disabled:opacity-60"
                 style={{
                   background: showNamesEnabled ? 'var(--primary)' : 'transparent',
                   color: showNamesEnabled ? '#fff' : 'var(--muted)',
                 }}
               >
-                <span className="hidden sm:inline">名称</span>
+                <span>名称</span>
               </button>
               <button
                 onClick={() => setShowHeatmap(!showHeatmap)}
+                aria-label="切换热力图显示"
                 className="rounded-full px-3.5 py-2 text-xs font-medium transition"
                 style={{
                   background: showHeatmap ? 'var(--accent)' : 'transparent',
                   color: showHeatmap ? 'var(--ink)' : 'var(--muted)',
                 }}
               >
-                <span className="hidden sm:inline">热力</span>
+                <span>热力</span>
               </button>
             </MapFloatingPanel>
           </div>

@@ -120,7 +120,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="搜索编号、位置或属性"
+                placeholder="搜索名称或描述"
                 className="w-full rounded-full py-3 pl-10 pr-10 text-sm outline-none transition"
                 style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid var(--border)', color: 'var(--ink)' }}
               />
@@ -182,7 +182,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="搜索编号、位置或属性"
+                        placeholder="搜索名称或描述"
                         className="w-full rounded-full py-3 pl-10 pr-10 text-sm outline-none transition"
                         style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid var(--border)', color: 'var(--ink)' }}
                       />
@@ -319,13 +319,14 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
               <MapFloatingPanel className="gap-2">
                 <button
                   onClick={() => setShowNames((prev) => !(prev ?? (mapProject?.settings.showNames !== false)))}
+                  aria-label="切换名称显示"
                   className="rounded-full px-3.5 py-2 text-xs font-medium transition"
                   style={{
                     background: effectiveShowNames ? 'var(--primary)' : 'transparent',
                     color: effectiveShowNames ? '#fff' : 'var(--muted)',
                   }}
                 >
-                  <span className="hidden sm:inline">名称</span>
+                  <span>名称</span>
                 </button>
               </MapFloatingPanel>
             </div>
