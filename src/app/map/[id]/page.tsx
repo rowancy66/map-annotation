@@ -5,8 +5,11 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useMapData } from '@/hooks/useMapData';
 import InfoCard from '@/components/map/InfoCard';
+import WorkbenchHeader from '@/components/map/workbench/WorkbenchHeader';
+import WorkbenchSidebarToggle from '@/components/map/workbench/WorkbenchSidebarToggle';
+import MapFloatingPanel from '@/components/map/workbench/MapFloatingPanel';
 import { Annotation } from '@/lib/types';
-import { Loader2, LogIn, Search, X, ChevronLeft, ChevronRight, ArrowLeft, MapPin, Layers3, ScanSearch } from 'lucide-react';
+import { Loader2, LogIn, Search, X, ArrowLeft, MapPin, ScanSearch } from 'lucide-react';
 
 const MapView = dynamic(() => import('@/components/map/MapView'), {
   ssr: false,
@@ -82,106 +85,121 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
   }
 
   return (
-    <div className="h-screen overflow-hidden p-3 md:p-4" style={{ background: 'var(--bg)' }}>
-      <div className="paper-panel flex h-full flex-col overflow-hidden rounded-[32px]">
-        <header className="shrink-0 border-b px-4 py-4 md:px-6" style={{ borderColor: 'var(--border)' }}>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-3">
+    <div className="workbench-shell">
+      <div className="paper-panel workbench-frame">
+        <WorkbenchHeader
+          left={(
+            <>
               <Link
                 href="/"
-                className="ghost-button flex items-center gap-1 rounded-full px-3.5 py-2 text-xs font-semibold"
+                className="ghost-button rounded-full p-2"
+                title="返回地图目录"
+                aria-label="返回地图目录"
               >
-                <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-                <span className="text-xs">返回</span>
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               </Link>
-              <div className="flex items-center justify-center w-10 h-10 rounded-2xl" style={{ background: 'var(--primary)' }}>
-                <MapPin className="w-4 h-4 text-white" />
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl" style={{ background: 'var(--primary)' }}>
+                  <MapPin className="h-4 w-4 text-white" aria-hidden="true" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--faint)' }}>
+                    Kanvon Atlas
+                  </div>
+                  <h1 className="truncate text-sm font-semibold md:text-base" style={{ color: 'var(--ink)' }}>
+                    {mapProject?.name || '地图标注平台'}
+                  </h1>
+                </div>
               </div>
-              <div>
-                <div className="display-label mb-1">地图阅览</div>
-                <h1 className="text-3xl leading-none md:text-4xl" style={{ color: 'var(--ink)' }}>
-                  {mapProject?.name || '地图标注平台'}
-                </h1>
-              </div>
+            </>
+          )}
+          center={(
+            <div className="relative w-full max-w-xl">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: 'var(--faint)' }} aria-hidden="true" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="搜索编号、位置或属性"
+                className="w-full rounded-full py-3 pl-10 pr-10 text-sm outline-none transition"
+                style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid var(--border)', color: 'var(--ink)' }}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  aria-label="清除搜索"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 transition"
+                  style={{ color: 'var(--faint)' }}
+                >
+                  <X className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              )}
             </div>
-
-            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-              <div className="soft-pill">
-                {annotations.length} 个标注
-              </div>
-              <div className="soft-pill">
-                点位 {annotationTypeCounts.point}
-              </div>
+          )}
+          right={(
+            <>
+              <div className="soft-pill">{annotations.length} 项标注</div>
               <Link
-                href="/admin"
+                href={`/admin?mapId=${id}`}
                 className="ghost-button flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold"
               >
-                <LogIn className="w-3.5 h-3.5" />
+                <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
                 后台管理
               </Link>
-            </div>
-          </div>
-        </header>
+              <Link
+                href="/admin"
+                className="ghost-button rounded-full px-4 py-2 text-xs font-semibold"
+              >
+                地图管理
+              </Link>
+            </>
+          )}
+        />
 
         <div className="relative flex flex-1 overflow-hidden p-3 md:p-4">
           <div
-            className={`absolute left-0 top-0 bottom-0 z-40 overflow-hidden transition-all duration-300 ${
-              sidebarOpen ? 'w-80' : 'w-0'
+            className={`relative z-30 shrink-0 overflow-hidden transition-all duration-300 ${
+              sidebarOpen ? 'w-[344px] opacity-100' : 'w-0 opacity-0'
             }`}
-            style={{ borderRight: sidebarOpen ? '1px solid var(--border)' : 'none' }}
           >
-            <div className="paper-card h-full w-80 rounded-[28px]" style={{ background: 'var(--surface-muted)' }}>
+            <div className="workbench-sidebar flex h-full w-[344px] flex-col rounded-[28px]">
               <div className="flex h-full flex-col">
                 <div className="px-4 py-4 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
                   <div className="display-label mb-2">标注索引</div>
                   <div className="flex items-center justify-between gap-3">
-                    <h2 className="text-2xl leading-none" style={{ color: 'var(--ink)' }}>标注索引</h2>
-                    <span className="rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--faint)', background: 'rgba(23,23,23,0.04)' }}>
-                      {annotations.length} 项
-                    </span>
+                    <div className="min-w-0">
+                      <h2 className="text-lg font-semibold" style={{ color: 'var(--ink)' }}>地图浏览</h2>
+                      <p className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>
+                        点 {annotationTypeCounts.point} · 线 {annotationTypeCounts.line} · 面 {annotationTypeCounts.polygon}
+                      </p>
+                    </div>
+                    <div className="soft-pill shrink-0">{filteredAnnotations.length} 项</div>
                   </div>
-                  <div className="mt-3 grid grid-cols-3 gap-2">
-                    <div className="rounded-[18px] px-3 py-2" style={{ background: 'rgba(255,255,255,0.68)', border: '1px solid rgba(36,32,28,0.06)' }}>
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--faint)' }}>点</div>
-                      <div className="mt-1 text-lg leading-none" style={{ color: 'var(--ink)' }}>{annotationTypeCounts.point}</div>
+                  <div className="mt-4 lg:hidden">
+                    <div className="relative">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: 'var(--faint)' }} aria-hidden="true" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="搜索编号、位置或属性"
+                        className="w-full rounded-full py-3 pl-10 pr-10 text-sm outline-none transition"
+                        style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid var(--border)', color: 'var(--ink)' }}
+                      />
+                      {searchQuery && (
+                        <button
+                          onClick={() => setSearchQuery('')}
+                          aria-label="清除搜索"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 transition"
+                          style={{ color: 'var(--faint)' }}
+                        >
+                          <X className="h-3.5 w-3.5" aria-hidden="true" />
+                        </button>
+                      )}
                     </div>
-                    <div className="rounded-[18px] px-3 py-2" style={{ background: 'rgba(255,255,255,0.68)', border: '1px solid rgba(36,32,28,0.06)' }}>
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--faint)' }}>线</div>
-                      <div className="mt-1 text-lg leading-none" style={{ color: 'var(--ink)' }}>{annotationTypeCounts.line}</div>
-                    </div>
-                    <div className="rounded-[18px] px-3 py-2" style={{ background: 'rgba(255,255,255,0.68)', border: '1px solid rgba(36,32,28,0.06)' }}>
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--faint)' }}>面</div>
-                      <div className="mt-1 text-lg leading-none" style={{ color: 'var(--ink)' }}>{annotationTypeCounts.polygon}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="px-3 py-3 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--faint)' }} aria-hidden="true" />
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="搜索编号、位置..."
-                      className="w-full rounded-2xl pl-9 pr-8 py-3 text-sm outline-none transition"
-                      style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.84)', color: 'var(--ink)' }}
-                      onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(184,155,114,0.12)'; }}
-                      onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
-                    />
-                    {searchQuery && (
-                      <button
-                        onClick={() => setSearchQuery('')}
-                        aria-label="清除搜索"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 transition"
-                        style={{ color: 'var(--faint)' }}
-                      >
-                        <X className="w-3.5 h-3.5" aria-hidden="true" />
-                      </button>
-                    )}
                   </div>
                   {searchQuery && (
-                    <p className="mt-1 text-xs" style={{ color: 'var(--faint)' }}>找到 {filteredAnnotations.length} 条结果</p>
+                    <p className="mt-3 text-xs" style={{ color: 'var(--faint)' }}>找到 {filteredAnnotations.length} 条结果</p>
                   )}
                 </div>
 
@@ -266,21 +284,11 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
             </div>
           </div>
 
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            aria-label={sidebarOpen ? '收起侧边栏' : '展开侧边栏'}
-            className="absolute top-6 z-40 rounded-r-2xl p-2 border border-l-0 transition-all duration-200 hover:scale-105"
-            style={{
-              left: sidebarOpen ? '320px' : '0',
-              background: 'rgba(255,252,247,0.92)',
-              borderColor: 'var(--border)',
-              boxShadow: 'var(--shadow-soft)',
-            }}
-          >
-            {sidebarOpen
-              ? <ChevronLeft className="w-4 h-4" style={{ color: 'var(--muted)' }} aria-hidden="true" />
-              : <ChevronRight className="w-4 h-4" style={{ color: 'var(--muted)' }} aria-hidden="true" />}
-          </button>
+          <WorkbenchSidebarToggle
+            open={sidebarOpen}
+            onToggle={() => setSidebarOpen(!sidebarOpen)}
+            offset={344}
+          />
 
           <div className="flex-1 relative min-w-0">
             <div className="absolute inset-0 rounded-[30px] border pointer-events-none z-[2]" style={{ borderColor: 'rgba(35,35,35,0.1)' }} />
@@ -294,7 +302,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
               showNames={effectiveShowNames}
             />
 
-            <div className="absolute right-5 top-5 z-[1000]">
+            <div className="absolute right-5 top-24 z-[1000]">
               {selectedAnnotation && mapProject && (
                 <InfoCard
                   annotation={selectedAnnotation}
@@ -307,40 +315,19 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
               )}
             </div>
 
-            <div
-              className="absolute left-5 top-5 z-[999] rounded-[20px] px-4 py-3 backdrop-blur-md"
-              style={{ background: 'rgba(255,252,247,0.84)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-soft)' }}
-            >
-              <div className="display-label mb-2">图例</div>
-              <div className="space-y-2 text-xs" style={{ color: 'var(--muted)' }}>
-                <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-[#c0392b]" /> 点位标注</div>
-                <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-[#2c6fbb]" /> 线性标注</div>
-                <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-[#1a4735]" /> 面域标注</div>
-              </div>
-            </div>
-
-            <div
-              className="absolute bottom-5 left-5 right-5 z-[999] flex flex-wrap items-center justify-between gap-3 rounded-[20px] px-4 py-3 text-xs backdrop-blur-md"
-              style={{ background: 'rgba(255,252,247,0.84)', color: 'var(--muted)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-soft)' }}
-            >
-              <div className="flex items-center gap-2">
-                <Layers3 className="h-4 w-4" />
-                <span>点击标注查看详情 · 右键拖动地图</span>
-              </div>
-              <label className="flex items-center gap-1.5 cursor-pointer">
+            <div className="absolute right-5 top-5 z-[999]">
+              <MapFloatingPanel className="gap-2">
                 <button
                   onClick={() => setShowNames((prev) => !(prev ?? (mapProject?.settings.showNames !== false)))}
-                  className="w-7 h-4 rounded-full relative transition-colors duration-200"
-                  style={{ background: effectiveShowNames ? 'var(--primary)' : '#d8d0c5' }}
-                  aria-label="显示名称开关"
+                  className="rounded-full px-3.5 py-2 text-xs font-medium transition"
+                  style={{
+                    background: effectiveShowNames ? 'var(--primary)' : 'transparent',
+                    color: effectiveShowNames ? '#fff' : 'var(--muted)',
+                  }}
                 >
-                  <span
-                    className="absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-all duration-200"
-                    style={{ left: effectiveShowNames ? 'calc(100% - 14px)' : '2px' }}
-                  />
+                  名称
                 </button>
-                显示名称
-              </label>
+              </MapFloatingPanel>
             </div>
           </div>
         </div>
