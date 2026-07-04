@@ -23,25 +23,27 @@ export default function DrawingToolbar({ drawMode, onDrawModeChange, annotationC
   ];
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="hidden md:block soft-pill">编辑工具</div>
-      <div className="flex items-center rounded-full p-1" style={{ background: 'rgba(255,255,255,0.64)', border: '1px solid var(--border)' }}>
+    <div className="floating-toolbar rounded-[22px] px-2 py-2">
+      <div className="flex items-center gap-1.5">
         {tools.map((tool) => (
           <button
             key={tool.mode}
             onClick={() => onDrawModeChange(tool.mode)}
-            className="relative flex items-center gap-1 rounded-full px-3 py-2 text-xs font-medium transition-all duration-150"
+            className="relative flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium transition-all duration-150"
             style={{
               background: drawMode === tool.mode ? 'var(--primary)' : 'transparent',
-              color: drawMode === tool.mode ? 'white' : 'var(--muted)',
+              color: drawMode === tool.mode ? '#fff' : 'var(--muted)',
+              boxShadow: drawMode === tool.mode ? '0 14px 28px rgba(11,79,69,0.18)' : 'none',
             }}
             title={tool.label}
           >
             {tool.icon}
             <span>{tool.label}</span>
             {tool.count !== undefined && tool.count > 0 && (
-              <span className="text-[10px] ml-0.5 font-bold"
-                style={{ color: drawMode === tool.mode ? 'rgba(255,255,255,0.7)' : 'var(--faint)' }}>
+              <span
+                className="ml-0.5 text-[10px] font-bold"
+                style={{ color: drawMode === tool.mode ? 'rgba(255,255,255,0.74)' : 'var(--faint)' }}
+              >
                 {tool.count}
               </span>
             )}
@@ -49,15 +51,17 @@ export default function DrawingToolbar({ drawMode, onDrawModeChange, annotationC
         ))}
       </div>
 
-      <div className="flex items-center rounded-full p-1" style={{ background: 'rgba(255,255,255,0.64)', border: '1px solid var(--border)' }}>
+      <div className="mx-1 h-6 w-px" style={{ background: 'rgba(52,44,35,0.08)' }} />
+
+      <div className="flex items-center gap-1.5">
         {extraTools.map((tool) => (
           <button
             key={tool.mode}
             onClick={() => onDrawModeChange(drawMode === tool.mode ? 'none' : tool.mode)}
-            className="flex items-center gap-1 rounded-full px-3 py-2 text-xs font-medium transition-all duration-150"
+            className="flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium transition-all duration-150"
             style={{
-              background: drawMode === tool.mode ? 'var(--primary)' : 'transparent',
-              color: drawMode === tool.mode ? 'white' : 'var(--muted)',
+              background: drawMode === tool.mode ? 'var(--accent)' : 'transparent',
+              color: drawMode === tool.mode ? '#1a1a18' : 'var(--muted)',
             }}
             title={tool.label}
           >
