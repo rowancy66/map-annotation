@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiGet } from '@/lib/api';
 import { MapProject } from '@/lib/types';
-import { ArrowUpRight, Clock, Layers, Loader2, LogIn, MapPinned, ScrollText } from 'lucide-react';
+import { ArrowUpRight, Layers, Loader2, LogIn, MapPinned, ScrollText } from 'lucide-react';
 
 interface MapListItem extends MapProject {
   annotation_count: number;
@@ -36,11 +36,6 @@ export default function PublicDashboard() {
     };
   }, []);
 
-  const formatTime = (iso: string) => {
-    const d = new Date(iso);
-    return d.toLocaleDateString('zh-CN') + ' ' + d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-  };
-
   const thumbGradients = [
     'linear-gradient(135deg, #f3ede3 0%, #e7dccb 55%, #d9c6ac 100%)',
     'linear-gradient(135deg, #f4f0e8 0%, #e5e0d5 55%, #d5ccc0 100%)',
@@ -51,7 +46,6 @@ export default function PublicDashboard() {
 
   const totalAnnotations = maps.reduce((sum, map) => sum + map.annotation_count, 0);
   const featuredMaps = maps.slice(0, 2);
-  const latestUpdatedAt = maps[0]?.updated_at;
   const hasMaps = maps.length > 0;
 
   if (loading) {
@@ -91,12 +85,6 @@ export default function PublicDashboard() {
                   <div className="text-[11px] font-medium uppercase tracking-[0.12em]" style={{ color: 'var(--faint)' }}>Public Directory</div>
                   <h2 className="mt-1.5 text-[15px] leading-none" style={{ color: 'var(--ink)' }}>公开地图</h2>
                 </div>
-                <div className="min-w-[172px] border px-3 py-3" style={{ borderColor: 'var(--border)', background: 'var(--surface-muted)' }}>
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--faint)' }}>最后更新</div>
-                  <div className="mt-2 text-[15px] leading-tight" style={{ color: 'var(--ink)' }}>
-                    {latestUpdatedAt ? formatTime(latestUpdatedAt) : '暂无记录'}
-                  </div>
-                </div>
               </div>
               <div className="mt-3 grid grid-cols-3 gap-px" style={{ background: 'var(--border)' }}>
                 <div className="px-3 py-3" style={{ background: 'var(--surface-strong)' }}>
@@ -125,7 +113,6 @@ export default function PublicDashboard() {
                     </p>
                     <div className="mt-2.5 flex flex-wrap gap-2 text-[10px] font-semibold tracking-[0.14em]" style={{ color: 'var(--faint)' }}>
                       <span>{map.annotation_count} 个标注</span>
-                      <span>更新于 {new Date(map.updated_at).toLocaleDateString('zh-CN')}</span>
                     </div>
                   </div>
                 ))}
@@ -166,10 +153,6 @@ export default function PublicDashboard() {
                       <span className="inline-flex items-center gap-1.5">
                         <Layers className="h-3 w-3" />
                         {map.annotation_count} 条
-                      </span>
-                      <span className="inline-flex items-center gap-1.5">
-                        <Clock className="h-3 w-3" />
-                        {formatTime(map.updated_at)}
                       </span>
                     </div>
                   </div>
