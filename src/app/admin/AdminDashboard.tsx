@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { apiGet, apiSend } from '@/lib/api';
 import { MapProject } from '@/lib/types';
-import { AlertTriangle, Edit3, Loader2, MapPinned, Plus, Trash2 } from 'lucide-react';
+import { AlertTriangle, Edit3, FileText, Loader2, LogOut, MapPinned, Plus, Search, Share2, Trash2 } from 'lucide-react';
 
 interface MapListItem extends MapProject {
   annotation_count: number;
@@ -21,6 +21,7 @@ export default function AdminDashboard() {
   const [newDesc, setNewDesc] = useState('');
   const [creating, setCreating] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const loadMaps = useCallback(async () => {
     setLoading(true);
@@ -72,21 +73,19 @@ export default function AdminDashboard() {
     }
   };
 
-  const formatTime = (iso: string) => {
-    const d = new Date(iso);
-    return d.toLocaleDateString('zh-CN') + ' ' + d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-  };
-
   const thumbGradients = [
-    'linear-gradient(135deg, #d6dbd8 0%, #c4cbc7 55%, #b0b7b2 100%)',
-    'linear-gradient(135deg, #dfe4e2 0%, #ccd5d1 55%, #b4bfba 100%)',
-    'linear-gradient(135deg, #d7dcd7 0%, #c4ccc6 55%, #aeb8b1 100%)',
-    'linear-gradient(135deg, #e0e3e0 0%, #cfd5d0 55%, #b8c1bb 100%)',
+    'linear-gradient(135deg, #f4efe2 0%, #efe7d6 58%, #e4dac5 100%)',
+    'linear-gradient(135deg, #edf2f0 0%, #e2e9e5 58%, #d5ddd8 100%)',
+    'linear-gradient(135deg, #f0f3f7 0%, #e5ebf2 58%, #d9e0e9 100%)',
+    'linear-gradient(135deg, #f5f0eb 0%, #ebe3da 58%, #ddd3c6 100%)',
   ];
 
   const totalAnnotations = maps.reduce((sum, map) => sum + map.annotation_count, 0);
-  const activeMaps = maps.filter((map) => map.annotation_count > 0).length;
-  const latestUpdatedAt = maps[0]?.updated_at;
+  const filteredMaps = maps.filter((map) => {
+    const keyword = searchTerm.trim().toLowerCase();
+    if (!keyword) return true;
+    return map.name.toLowerCase().includes(keyword) || (map.description || '').toLowerCase().includes(keyword);
+  });
 
   if (loading) {
     return (
@@ -99,125 +98,138 @@ export default function AdminDashboard() {
   return (
     <div className="admin-shell">
       <div className="admin-frame">
-        <header className="admin-strip">
-          <div className="admin-strip-title">
-            <div className="admin-strip-mark">
-              <MapPinned className="h-4 w-4" />
-            </div>
-            <div className="admin-strip-meta">
-              <div className="text-[11px] font-medium uppercase tracking-[0.1em]" style={{ color: 'var(--faint)' }}>Map Directory</div>
-              <h1 className="text-[16px] leading-none" style={{ color: 'var(--ink)' }}>地图管理</h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button onClick={logout} className="ghost-button px-3 py-1.5 text-[11px] font-semibold workbench-hard-edge">
-              退出登录
-            </button>
-          </div>
-        </header>
-
-        <main className="pt-4">
-          <section>
-            <div className="admin-command-bar">
-              <div>
-                <div className="text-[11px] font-medium uppercase tracking-[0.12em]" style={{ color: 'var(--faint)' }}>Directory Control</div>
-                <h2 className="mt-1.5 text-[15px] leading-none" style={{ color: 'var(--ink)' }}>地图目录</h2>
-              </div>
-              <button onClick={() => setShowCreate(true)} className="primary-button inline-flex items-center gap-2 px-3 py-1.5 text-[12px] font-medium workbench-hard-edge self-start md:self-auto">
-                <Plus className="h-3.5 w-3.5" />
-                新建地图
+        <main className="admin-gallery">
+          <section className="admin-gallery-topbar">
+            <div className="admin-gallery-tabs" aria-label="地图分类">
+              <button type="button" className="admin-gallery-tab is-active">
+                <span>我的地图</span>
+                <em>{maps.length}</em>
               </button>
             </div>
 
-            <div className="admin-metric-grid">
-              <div className="admin-metric">
-                <div className="text-[11px] font-medium uppercase tracking-[0.08em]" style={{ color: 'var(--faint)' }}>地图数量</div>
-                <div className="mt-2 text-[24px] leading-none" style={{ color: 'var(--ink)' }}>{maps.length}</div>
-              </div>
-              <div className="admin-metric">
-                <div className="text-[11px] font-medium uppercase tracking-[0.08em]" style={{ color: 'var(--faint)' }}>标注总数</div>
-                <div className="mt-2 text-[24px] leading-none" style={{ color: 'var(--ink)' }}>{totalAnnotations}</div>
-              </div>
-              <div className="admin-metric">
-                <div className="text-[11px] font-medium uppercase tracking-[0.08em]" style={{ color: 'var(--faint)' }}>活跃地图</div>
-                <div className="mt-2 text-[24px] leading-none" style={{ color: 'var(--ink)' }}>{activeMaps}</div>
-              </div>
-              <div className="admin-metric">
-                <div className="text-[11px] font-medium uppercase tracking-[0.08em]" style={{ color: 'var(--faint)' }}>最后更新</div>
-                <div className="mt-2 text-[13px] leading-tight" style={{ color: 'var(--ink)' }}>
-                  {latestUpdatedAt ? formatTime(latestUpdatedAt) : '暂无记录'}
-                </div>
-              </div>
+            <div className="admin-gallery-tools">
+              <label className="admin-gallery-search">
+                <Search className="h-4 w-4" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="搜索地图名..."
+                />
+              </label>
+
+              <button type="button" className="admin-gallery-trash">
+                回收站
+                <span>0</span>
+              </button>
             </div>
           </section>
 
-          <section className="mt-5">
-            <div className="mb-3 flex items-end justify-between gap-4">
-              <h3 className="text-[15px] font-semibold" style={{ color: 'var(--ink)' }}>全部地图</h3>
-              <div className="hidden px-3 py-1.5 text-[11px] font-semibold tracking-[0.12em] md:block" style={{ background: 'var(--surface-muted)', color: 'var(--faint)', border: '1px solid var(--border)' }}>
-                共 {maps.length} 张
+          <section className="admin-gallery-utility">
+            <div className="admin-gallery-stats">
+              <div className="admin-gallery-stat">
+                <span>地图总数</span>
+                <strong>{maps.length}</strong>
+              </div>
+              <div className="admin-gallery-stat">
+                <span>标注总数</span>
+                <strong>{totalAnnotations}</strong>
+              </div>
+              <div className="admin-gallery-stat">
+                <span>当前结果</span>
+                <strong>{filteredMaps.length}</strong>
               </div>
             </div>
 
-            {maps.length === 0 ? (
+            <div className="admin-gallery-actions">
+              <button onClick={() => setShowCreate(true)} className="primary-button inline-flex items-center gap-2 px-4 py-2 text-sm font-medium">
+                <Plus className="h-4 w-4" />
+                新建地图
+              </button>
+
+              <button onClick={logout} className="ghost-button admin-gallery-logout">
+                <LogOut className="h-3.5 w-3.5" />
+                退出
+              </button>
+            </div>
+          </section>
+
+          <section className="admin-gallery-section">
+            {filteredMaps.length === 0 ? (
               <div className="paper-panel px-6 py-20 text-center">
                 <MapPinned className="mx-auto mb-4 h-12 w-12" style={{ color: 'var(--faint)' }} />
-                <p className="text-lg" style={{ color: 'var(--muted)' }}>还没有地图，先新建一个项目</p>
+                <p className="text-lg" style={{ color: 'var(--muted)' }}>
+                  {maps.length === 0 ? '还没有地图，先新建一个项目' : '没有匹配到地图'}
+                </p>
               </div>
             ) : (
-              <div className="admin-table overflow-hidden">
-                <div
-                  className="admin-table-row px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
-                  style={{ background: 'var(--surface-muted)', color: 'var(--faint)' }}
-                >
-                  <div>编号</div>
-                  <div>地图名称</div>
-                  <div>标注数</div>
-                  <div>更新时间</div>
-                  <div>说明</div>
-                  <div className="text-right">操作</div>
-                </div>
-                {maps.map((map, idx) => (
-                  <div
+              <div className="admin-gallery-grid">
+                {filteredMaps.map((map, idx) => (
+                  <article
                     key={map.id}
-                    className="admin-table-row px-4 py-2.5"
-                    style={{ background: idx % 2 === 0 ? 'var(--surface-strong)' : 'var(--surface-panel)' }}
+                    className="admin-gallery-card"
                   >
-                    <div className="text-[12px] font-medium" style={{ color: 'var(--faint)' }}>
-                      {String(idx + 1).padStart(2, '0')}
+                    <div className="admin-gallery-card-head">
+                      <div className="admin-gallery-card-index">{String(idx + 1).padStart(2, '0')}</div>
+                      <div className="admin-gallery-card-badge">标注: {map.annotation_count}</div>
                     </div>
-                    <button type="button" onClick={() => router.push('/admin?mapId=' + map.id)} className="min-w-0 text-left">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 shrink-0 border" style={{ background: thumbGradients[idx % thumbGradients.length], borderColor: 'rgba(17,24,22,0.12)' }} />
-                        <div className="min-w-0">
-                          <div className="truncate text-[14px] font-semibold" style={{ color: 'var(--ink)' }}>{map.name}</div>
-                          <div className="truncate text-[11px]" style={{ color: 'var(--muted)' }}>{map.description || '—'}</div>
-                        </div>
-                      </div>
+
+                    <button
+                      type="button"
+                      onClick={() => router.push('/admin?mapId=' + map.id)}
+                      className="admin-gallery-card-preview"
+                      style={{ background: thumbGradients[idx % thumbGradients.length] }}
+                      aria-label={`打开地图 ${map.name}`}
+                    >
+                      <MapPinned className="h-7 w-7" style={{ color: 'rgba(31,52,45,0.28)' }} />
                     </button>
-                    <div className="text-[12px] font-medium" style={{ color: 'var(--ink)' }}>{map.annotation_count} 条</div>
-                    <div className="text-[11px]" style={{ color: 'var(--muted)' }}>{formatTime(map.updated_at)}</div>
-                    <div className="truncate text-[11px]" style={{ color: 'var(--faint)' }}>{map.description || '—'}</div>
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => router.push('/admin?mapId=' + map.id)}
-                        className="ghost-button p-1.5 workbench-hard-edge"
-                        title="编辑"
-                        aria-label="编辑"
-                      >
-                        <Edit3 className="h-3 w-3" />
+
+                    <div className="admin-gallery-card-main">
+                      <button type="button" onClick={() => router.push('/admin?mapId=' + map.id)} className="min-w-0 text-left">
+                        <h3 className="admin-gallery-card-title">{map.name}</h3>
                       </button>
+                      <p className="admin-gallery-card-desc">{map.description || '地图项目'}</p>
+                    </div>
+
+                    <div className="admin-gallery-card-meta">
+                      <span>{map.annotation_count} 条标注</span>
+                    </div>
+
+                    <div className="admin-gallery-card-actions">
                       <button
                         onClick={() => setDeleteConfirm(map.id)}
-                        className="p-1.5 transition workbench-hard-edge"
-                        style={{ background: 'var(--surface-strong)', color: 'var(--danger)', border: '1px solid rgba(185,87,73,0.18)' }}
+                        className="admin-gallery-icon-button"
                         title="删除"
                         aria-label="删除"
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <Trash2 className="h-5 w-5" />
+                      </button>
+                      <button
+                        type="button"
+                        className="admin-gallery-icon-button"
+                        title="文档"
+                        aria-label="文档"
+                      >
+                        <FileText className="h-5 w-5" />
+                      </button>
+                      <button
+                        onClick={() => router.push('/admin?mapId=' + map.id)}
+                        className="admin-gallery-icon-button"
+                        title="编辑"
+                        aria-label="编辑"
+                      >
+                        <Edit3 className="h-5 w-5" />
+                      </button>
+                      <button
+                        type="button"
+                        className="admin-gallery-icon-button"
+                        title="分享"
+                        aria-label="分享"
+                      >
+                        <Share2 className="h-5 w-5" />
                       </button>
                     </div>
-                  </div>
+                  </article>
                 ))}
               </div>
             )}
