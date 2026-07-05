@@ -91,6 +91,17 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
     text: { label: '文字', accent: '#d4954e', bg: 'rgba(212,148,78,0.08)' },
   };
   const tm = typeMeta[annotation.type as keyof typeof typeMeta] || typeMeta.point;
+  const pointCoordinates = annotation.type === 'point'
+    ? (annotation.geometry as { coordinates: [number, number] }).coordinates
+    : null;
+  const pointFieldEntries = fieldTemplates
+    .slice()
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .map((field) => ({
+      ...field,
+      displayValue: getCustomFieldDisplayValue(getCustomFieldValue(field.id)),
+    }))
+    .filter((field) => field.displayValue);
 
   return (
     <div className="w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden animate-fade-slide-up">
@@ -134,28 +145,27 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
             />
           ) : (
             <>
-              <Field label="名称">
-                {editing ? (
-                  <Input value={editData.name} onChange={(v) => setEditData({ ...editData, name: v })} placeholder="输入名称…" />
-                ) : (
-                  <p className="text-sm font-semibold leading-snug" style={{ color: colors.ink }}>
-                    {annotation.name || <span style={{ color: colors.placeholder }}>未命名</span>}
-                  </p>
-                )}
-              </Field>
-              <Field label="描述">
-                {editing ? (
-                  <textarea value={editData.description}
-                    onChange={(e) => setEditData({ ...editData, description: e.target.value })}
-                    rows={2} className="w-full resize-none px-2.5 py-2 text-sm outline-none transition"
-                    style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.ink }}
-                    onFocus={focusStyle} onBlur={blurStyle} placeholder="输入描述…" />
-                ) : (
-                  <p className="text-xs leading-relaxed" style={{ color: colors.muted }}>
-                    {annotation.description || <span style={{ color: colors.placeholder }}>暂无描述</span>}
-                  </p>
-                )}
-              </Field>
+              {editing ? (
+                <>
+                  <Field label="名称">
+                    <Input value={editData.name} onChange={(v) => setEditData({ ...editData, name: v })} placeholder="输入名称…" />
+                  </Field>
+                  <Field label="描述">
+                    <textarea value={editData.description}
+                      onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                      rows={2} className="w-full resize-none px-2.5 py-2 text-sm outline-none transition"
+                      style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.ink }}
+                      onFocus={focusStyle} onBlur={blurStyle} placeholder="输入描述…" />
+                  </Field>
+                </>
+              ) : (
+                <PointOverview
+                  name={annotation.name}
+                  description={annotation.description}
+                  coordinates={pointCoordinates}
+                  fieldEntries={pointFieldEntries}
+                />
+              )}
               {editing && (
                 <div style={{ background: colors.bg, padding: '10px', border: `1px solid ${colors.border}` }}>
                   <div className="text-[9px] font-semibold mb-2 tracking-widest uppercase" style={{ color: colors.muted }}>样式</div>
@@ -163,15 +173,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
                     onChange={(style) => setEditData({ ...editData, style })} />
                 </div>
               )}
-              {!editing && (
-                <Field label="坐标">
-                  <p className="text-[11px] font-mono px-2.5 py-1.5"
-                    style={{ background: colors.bg, color: colors.muted, border: `1px solid ${colors.border}` }}>
-                    {(annotation.geometry as { coordinates: [number, number] }).coordinates.join(', ')}
-                  </p>
-                </Field>
-              )}
-              {fieldTemplates.length > 0 && (
+              {editing && fieldTemplates.length > 0 && (
                 <div>
                   <div className="text-[9px] font-semibold mb-1.5 tracking-widest uppercase" style={{ color: colors.muted }}>自定义属性</div>
                   <div className="space-y-1.5">
@@ -289,6 +291,135 @@ function ActionBtn({ children, onClick, disabled, accent }: any) {
       {children}
     </button>
   );
+}
+
+function PointOverview({
+  name,
+  description,
+  coordinates,
+  fieldEntries,
+}: {
+  name: string;
+  description: string;
+  coordinates: [number, number] | null;
+  fieldEntries: Array<{ id: string; name: string; displayValue: string }>;
+}) {
+  const [heroField, ...remainingFields] = fieldEntries;
+  const compactMetrics = remainingFields.slice(0, 2);
+  const details = remainingFields.slice(2);
+  const descriptionLooksLong = (description || '').length > 28;
+
+  return (
+    <div className="space-y-3">
+      <section className="border" style={{ background: colors.surface, borderColor: colors.border }}>
+        <div className="px-3 py-3" style={{ background: colors.bg }}>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em]" style={{ color: colors.faint }}>
+            Point Record
+          </div>
+          <div className="mt-2 text-[24px] font-semibold leading-[1.08]" style={{ color: colors.ink }}>
+            {name || '未命名'}
+          </div>
+          <div
+            className="mt-2 border-t pt-2 text-[12px] leading-6"
+            style={{
+              borderColor: colors.border,
+              color: description ? colors.muted : colors.placeholder,
+              maxWidth: descriptionLooksLong ? '100%' : '26ch',
+            }}
+          >
+            {description || '暂无描述'}
+          </div>
+        </div>
+
+        {(heroField || compactMetrics.length > 0) && (
+          <div className="grid gap-px border-t" style={{ borderColor: colors.border, background: colors.border, gridTemplateColumns: heroField ? 'minmax(0,1.2fr) minmax(0,0.8fr)' : '1fr' }}>
+            {heroField && (
+              <div className="min-h-[112px] px-3 py-3" style={{ background: colors.surface }}>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: colors.faint }}>
+                  {heroField.name}
+                </div>
+                <div className="mt-4 break-words text-[32px] font-semibold leading-[0.98]" style={{ color: colors.ink }}>
+                  {heroField.displayValue}
+                </div>
+              </div>
+            )}
+
+            {compactMetrics.length > 0 && (
+              <div className="grid gap-px" style={{ background: colors.border }}>
+                {compactMetrics.map((field) => (
+                  <div key={field.id} className="px-3 py-3" style={{ background: colors.bg }}>
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: colors.faint }}>
+                      {field.name}
+                    </div>
+                    <div className="mt-2 break-words text-[18px] font-semibold leading-[1.05]" style={{ color: colors.ink }}>
+                      {field.displayValue}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
+      {coordinates && (
+        <section className="border px-3 py-3" style={{ background: colors.surface, borderColor: colors.border }}>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em]" style={{ color: colors.faint }}>
+            Coordinates
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-px" style={{ background: colors.border }}>
+            <div className="px-3 py-2.5" style={{ background: colors.bg }}>
+              <div className="text-[10px] uppercase tracking-[0.14em]" style={{ color: colors.faint }}>Longitude</div>
+              <div className="mt-1 font-mono text-[13px]" style={{ color: colors.ink }}>{coordinates[0].toFixed(6)}</div>
+            </div>
+            <div className="px-3 py-2.5" style={{ background: colors.bg }}>
+              <div className="text-[10px] uppercase tracking-[0.14em]" style={{ color: colors.faint }}>Latitude</div>
+              <div className="mt-1 font-mono text-[13px]" style={{ color: colors.ink }}>{coordinates[1].toFixed(6)}</div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {details.length > 0 && (
+        <section className="border" style={{ background: colors.surface, borderColor: colors.border }}>
+          <div className="border-b px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em]" style={{ borderColor: colors.border, color: colors.faint }}>
+            Details
+          </div>
+          <div>
+            {details.map((field, index) => (
+              <div
+                key={field.id}
+                className="grid grid-cols-[108px_minmax(0,1fr)] gap-3 px-3 py-3"
+                style={{
+                  borderTop: index === 0 ? 'none' : `1px solid ${colors.border}`,
+                  background: index % 2 === 0 ? colors.surface : colors.bg,
+                }}
+              >
+                <div className="text-[11px] font-semibold tracking-[0.08em]" style={{ color: colors.faint }}>
+                  {field.name}
+                </div>
+                <div
+                  className="break-words text-[13px] font-medium leading-6"
+                  style={{
+                    color: colors.ink,
+                    maxWidth: field.displayValue.length > 20 ? '100%' : '24ch',
+                  }}
+                >
+                  {field.displayValue}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function getCustomFieldDisplayValue(value: string | number | null): string {
+  if (value === null || value === undefined) return '';
+  const text = String(value).trim();
+  return text;
 }
 
 function focusStyle(e: React.FocusEvent<HTMLElement>) {
