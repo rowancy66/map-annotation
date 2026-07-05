@@ -149,42 +149,42 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
 
   return (
     <div
-      className="w-[312px] max-w-[calc(100vw-2rem)] overflow-hidden animate-fade-slide-up"
+      className="w-[284px] max-w-[calc(100vw-2rem)] overflow-hidden animate-fade-slide-up"
       style={{ transform: `translate(${dragOffset.x}px, ${dragOffset.y}px)` }}
     >
-      <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, boxShadow: '0 9px 22px rgba(17,24,22,0.08)' }}>
+      <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, boxShadow: '0 8px 18px rgba(17,24,22,0.08)' }}>
 
         {/* 标题栏 */}
         <div
-          className="flex items-center justify-between px-3.5 py-2 select-none"
+          className="flex items-center justify-between px-3 py-1.5 select-none"
           style={{ borderBottom: `1px solid ${colors.border}`, cursor: readOnly ? 'move' : 'default' }}
           onMouseDown={handleDragStart}>
           <div className="flex items-center gap-2 min-w-0">
-            <span className="px-1.5 py-1 text-[9px] font-semibold leading-none tracking-[0.16em] uppercase"
+            <span className="px-1.5 py-0.5 text-[8px] font-semibold leading-none tracking-[0.16em] uppercase"
               style={{ background: tm.bg, color: tm.accent }}>{tm.label}</span>
             <div className="min-w-0">
-              <div className="truncate text-[11px] font-semibold" style={{ color: colors.ink }}>
+              <div className="truncate text-[10px] font-semibold" style={{ color: colors.ink }}>
                 {annotation.name || '未命名'}
               </div>
-              <span style={{ color: colors.faint, fontSize: '9px', letterSpacing: '0.08em' }}>
+              <span style={{ color: colors.faint, fontSize: '8px', letterSpacing: '0.08em' }}>
                 {new Date(annotation.updated_at).toLocaleDateString('zh-CN')}
               </span>
             </div>
           </div>
           <button onClick={onClose} aria-label="关闭"
-            className="shrink-0 flex h-7 w-7 items-center justify-center p-0 transition"
+            className="shrink-0 flex h-6 w-6 items-center justify-center p-0 transition"
             style={{
               color: colors.faint,
               background: colors.bg,
               border: `1px solid ${colors.border}`,
               boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.72)',
             }}>
-            <X className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
+            <X className="h-2.5 w-2.5" strokeWidth={1.8} aria-hidden="true" />
           </button>
         </div>
 
         {/* 内容 */}
-          <div className="max-h-[calc(100vh-180px)] space-y-2.5 overflow-y-auto px-3.5 py-3 text-sm">
+          <div className="max-h-[calc(100vh-180px)] space-y-2 overflow-y-auto px-3 py-2.5 text-sm">
           {annotation.type === 'polygon' ? (
             <PolygonFields
               data={editing ? editData : annotation}
@@ -268,7 +268,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
         </div>
 
         {/* 底部操作栏 */}
-        <div style={{ borderTop: `1px solid ${colors.border}`, background: colors.bg, padding: '9px 12px' }}
+        <div style={{ borderTop: `1px solid ${colors.border}`, background: colors.bg, padding: '8px 10px' }}
           className="flex items-center gap-2">
           {editing ? (
             <>
@@ -366,15 +366,15 @@ function PointOverview({
   return (
     <div className="space-y-3">
       <section className="border" style={{ background: colors.surface, borderColor: colors.border }}>
-        <div className="px-3 py-2.5" style={{ background: colors.bg }}>
-          <div className="text-[9px] font-semibold uppercase tracking-[0.18em]" style={{ color: colors.faint }}>
+        <div className="px-2.5 py-2.5" style={{ background: colors.bg }}>
+          <div className="text-[8px] font-semibold uppercase tracking-[0.18em]" style={{ color: colors.faint }}>
             Point Record
           </div>
-          <div className="mt-1.5 text-[21px] font-semibold leading-[1.06]" style={{ color: colors.ink }}>
+          <div className="mt-1.5 text-[18px] font-semibold leading-[1.06]" style={{ color: colors.ink }}>
             {name || '未命名'}
           </div>
           <div
-            className="mt-2 border-t pt-2 text-[11px] leading-5.5"
+            className="mt-2 border-t pt-2 text-[10px] leading-5"
             style={{
               borderColor: colors.border,
               color: description ? colors.muted : colors.placeholder,
@@ -388,11 +388,11 @@ function PointOverview({
         {(heroField || compactMetrics.length > 0) && (
           <div className="grid gap-px border-t" style={{ borderColor: colors.border, background: colors.border, gridTemplateColumns: heroField ? 'minmax(0,1.2fr) minmax(0,0.8fr)' : '1fr' }}>
             {heroField && (
-              <div className="min-h-[100px] px-3 py-2.5" style={{ background: colors.surface }}>
-                <div className="text-[9px] font-semibold uppercase tracking-[0.14em]" style={{ color: colors.faint }}>
+              <div className="min-h-[88px] px-2.5 py-2.5" style={{ background: colors.surface }}>
+                <div className="text-[8px] font-semibold uppercase tracking-[0.14em]" style={{ color: colors.faint }}>
                   {heroField.name}
                 </div>
-                <div className="mt-3 break-words text-[27px] font-semibold leading-[0.98]" style={{ color: colors.ink }}>
+                <div className="mt-2.5 break-words text-[22px] font-semibold leading-[0.98]" style={{ color: colors.ink }}>
                   {heroField.displayValue}
                 </div>
               </div>
@@ -401,11 +401,11 @@ function PointOverview({
             {compactMetrics.length > 0 && (
               <div className="grid gap-px" style={{ background: colors.border }}>
                 {compactMetrics.map((field) => (
-                  <div key={field.id} className="px-3 py-2.5" style={{ background: colors.bg }}>
-                    <div className="text-[9px] font-semibold uppercase tracking-[0.14em]" style={{ color: colors.faint }}>
+                  <div key={field.id} className="px-2.5 py-2" style={{ background: colors.bg }}>
+                    <div className="text-[8px] font-semibold uppercase tracking-[0.14em]" style={{ color: colors.faint }}>
                       {field.name}
                     </div>
-                    <div className="mt-1.5 break-words text-[16px] font-semibold leading-[1.05]" style={{ color: colors.ink }}>
+                    <div className="mt-1 break-words text-[14px] font-semibold leading-[1.05]" style={{ color: colors.ink }}>
                       {field.displayValue}
                     </div>
                   </div>
@@ -417,18 +417,18 @@ function PointOverview({
       </section>
 
       {coordinates && (
-        <section className="border px-3 py-2.5" style={{ background: colors.surface, borderColor: colors.border }}>
-          <div className="text-[9px] font-semibold uppercase tracking-[0.18em]" style={{ color: colors.faint }}>
+        <section className="border px-2.5 py-2.5" style={{ background: colors.surface, borderColor: colors.border }}>
+          <div className="text-[8px] font-semibold uppercase tracking-[0.18em]" style={{ color: colors.faint }}>
             Coordinates
           </div>
           <div className="mt-2 grid grid-cols-2 gap-px" style={{ background: colors.border }}>
-            <div className="px-2.5 py-2" style={{ background: colors.bg }}>
-              <div className="text-[9px] uppercase tracking-[0.14em]" style={{ color: colors.faint }}>Longitude</div>
-              <div className="mt-1 font-mono text-[12px]" style={{ color: colors.ink }}>{coordinates[0].toFixed(6)}</div>
+            <div className="px-2 py-1.5" style={{ background: colors.bg }}>
+              <div className="text-[8px] uppercase tracking-[0.14em]" style={{ color: colors.faint }}>Longitude</div>
+              <div className="mt-1 font-mono text-[11px]" style={{ color: colors.ink }}>{coordinates[0].toFixed(6)}</div>
             </div>
-            <div className="px-2.5 py-2" style={{ background: colors.bg }}>
-              <div className="text-[9px] uppercase tracking-[0.14em]" style={{ color: colors.faint }}>Latitude</div>
-              <div className="mt-1 font-mono text-[12px]" style={{ color: colors.ink }}>{coordinates[1].toFixed(6)}</div>
+            <div className="px-2 py-1.5" style={{ background: colors.bg }}>
+              <div className="text-[8px] uppercase tracking-[0.14em]" style={{ color: colors.faint }}>Latitude</div>
+              <div className="mt-1 font-mono text-[11px]" style={{ color: colors.ink }}>{coordinates[1].toFixed(6)}</div>
             </div>
           </div>
         </section>
@@ -436,24 +436,24 @@ function PointOverview({
 
       {details.length > 0 && (
         <section className="border" style={{ background: colors.surface, borderColor: colors.border }}>
-          <div className="border-b px-3 py-2 text-[9px] font-semibold uppercase tracking-[0.18em]" style={{ borderColor: colors.border, color: colors.faint }}>
+          <div className="border-b px-2.5 py-2 text-[8px] font-semibold uppercase tracking-[0.18em]" style={{ borderColor: colors.border, color: colors.faint }}>
             Details
           </div>
           <div>
             {details.map((field, index) => (
               <div
                 key={field.id}
-                className="grid grid-cols-[94px_minmax(0,1fr)] gap-2.5 px-3 py-2.5"
+                className="grid grid-cols-[82px_minmax(0,1fr)] gap-2 px-2.5 py-2"
                 style={{
                   borderTop: index === 0 ? 'none' : `1px solid ${colors.border}`,
                   background: index % 2 === 0 ? colors.surface : colors.bg,
                 }}
               >
-                <div className="text-[10px] font-semibold tracking-[0.08em]" style={{ color: colors.faint }}>
+                <div className="text-[9px] font-semibold tracking-[0.08em]" style={{ color: colors.faint }}>
                   {field.name}
                 </div>
                 <div
-                  className="break-words text-[12px] font-medium leading-5.5"
+                  className="break-words text-[11px] font-medium leading-5"
                   style={{
                     color: colors.ink,
                     maxWidth: field.displayValue.length > 20 ? '100%' : '24ch',
