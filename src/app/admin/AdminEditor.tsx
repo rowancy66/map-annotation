@@ -9,7 +9,6 @@ import FieldTemplateManager from '@/components/map/FieldTemplateManager';
 import ImportDialog from '@/components/import/ImportDialog';
 import GroupTree from '@/components/map/GroupTree';
 import AnnotationFilterPanel from '@/components/map/AnnotationFilterPanel';
-import WorkbenchHeader from '@/components/map/workbench/WorkbenchHeader';
 import WorkbenchSidebarToggle from '@/components/map/workbench/WorkbenchSidebarToggle';
 import MapFloatingPanel from '@/components/map/workbench/MapFloatingPanel';
 import { useMapData } from '@/hooks/useMapData';
@@ -403,154 +402,164 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
   return (
     <div className="workbench-shell">
       <div className="paper-panel workbench-frame">
-      <WorkbenchHeader
-        left={(
-          <>
-            <Link
-              href="/admin"
-              className="ghost-button workbench-hard-edge p-2"
-              title="返回地图列表"
-              aria-label="返回地图列表"
-            >
-              <ChevronLeft className="w-4 h-4" aria-hidden="true" />
-            </Link>
-            <Link
-              href="/"
-              className="ghost-button workbench-hard-edge p-2"
-              title="返回前台"
-              aria-label="返回前台"
-            >
-              <Home className="w-4 h-4" aria-hidden="true" />
-            </Link>
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center border" style={{ background: 'rgba(11,79,69,0.08)', borderColor: 'var(--border-strong)' }}>
-                <MapPin className="w-4 h-4" style={{ color: 'var(--primary)' }} aria-hidden="true" />
-              </div>
-              <div className="min-w-0">
-                <h1 className="truncate text-[13px] font-semibold md:text-[14px]" style={{ color: 'var(--ink)' }}>
-                  {mapProject?.name || '地图标注平台'}
-                </h1>
-                <div className="text-[10px] font-medium uppercase tracking-[0.1em]" style={{ color: 'var(--faint)' }}>
-                  地图编辑
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-        center={(
-            <div className="relative w-full max-w-xl">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: 'var(--faint)' }} aria-hidden="true" />
-            <input
-              type="text"
-              value={filters.keyword}
-              onChange={(e) => setFilters({ ...filters, keyword: e.target.value })}
-              placeholder="搜索标注名称、描述或字段值"
-              className="w-full py-2 pl-10 pr-4 text-sm outline-none transition workbench-hard-edge workbench-field"
-            />
-          </div>
-        )}
-        right={(
-          <>
-            <Link
-              href="/admin"
-              className="ghost-button workbench-hard-edge px-3 py-2 text-sm font-medium"
-            >
-              地图管理
-            </Link>
-
-            <MapFloatingPanel className="hidden lg:flex">
-              <button
-                onClick={() => setDrawMode(drawMode === 'point' ? 'none' : 'point')}
-                className={`h-8 px-3 text-xs font-medium transition workbench-hard-edge ${drawMode === 'point' ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
-                aria-label="新增点标注"
-                title="新增点标注"
-              >
-                点
-              </button>
-              <button
-                onClick={() => setDrawMode(drawMode === 'line' ? 'none' : 'line')}
-                className={`h-8 px-3 text-xs font-medium transition workbench-hard-edge ${drawMode === 'line' ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
-                aria-label="新增线标注"
-                title="新增线标注"
-              >
-                线
-              </button>
-              <button
-                onClick={() => setDrawMode(drawMode === 'polygon' ? 'none' : 'polygon')}
-                className={`h-8 px-3 text-xs font-medium transition workbench-hard-edge ${drawMode === 'polygon' ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
-                aria-label="新增面标注"
-                title="新增面标注"
-              >
-                面
-              </button>
-              <button
-                onClick={() => setDrawMode(drawMode === 'text' ? 'none' : 'text')}
-                className={`h-8 px-3 text-xs font-medium transition workbench-hard-edge ${drawMode === 'text' ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
-                aria-label="新增文字标注"
-                title="新增文字标注"
-              >
-                <PenTool className="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
-            </MapFloatingPanel>
-
-            <button
-              onClick={() => setImportOpen(true)}
-              className="ghost-button workbench-hard-edge flex items-center gap-1.5 px-3 py-2 text-sm"
-              title="批量导入"
-              aria-label="批量导入"
-            >
-              <Upload className="w-4 h-4" aria-hidden="true" />
-              <span className="hidden sm:inline">导入</span>
-            </button>
-
-            <div className="relative">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowExportMenu((prev) => !prev);
-                }}
-                className="ghost-button workbench-hard-edge flex items-center gap-1.5 px-3 py-2 text-sm"
-                title="导出"
-                aria-label="导出"
-              >
-                <Download className="w-4 h-4" aria-hidden="true" />
-                <span className="hidden sm:inline">导出</span>
-              </button>
-              {showExportMenu && (
-                <div
-                  className="absolute right-0 top-full z-50 mt-2 w-36 overflow-hidden border shadow-[0_18px_42px_rgba(24,32,27,0.08)]"
-                  style={{ background: 'var(--surface-strong)', borderColor: 'var(--border)' }}
-                  onClick={(e) => e.stopPropagation()}
+        <div className="workbench-editor-header shrink-0">
+          <div className="workbench-editor-row workbench-editor-row-main">
+            <div className="workbench-editor-brand">
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/admin"
+                  className="ghost-button workbench-hard-edge p-2"
+                  title="返回地图列表"
+                  aria-label="返回地图列表"
                 >
-                  <button onClick={() => { handleExport('xlsx'); setShowExportMenu(false); }}
-                    className="w-full px-4 py-3 text-left text-sm transition"
-                    style={{ color: 'var(--ink)' }}>
-                    导出 Excel
-                  </button>
-                  <button onClick={() => { handleExport('csv'); setShowExportMenu(false); }}
-                    className="w-full px-4 py-3 text-left text-sm transition"
-                    style={{ color: 'var(--ink)', borderTop: '1px solid var(--border)' }}>
-                    导出 CSV
-                  </button>
+                  <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+                </Link>
+                <Link
+                  href="/"
+                  className="ghost-button workbench-hard-edge p-2"
+                  title="返回前台"
+                  aria-label="返回前台"
+                >
+                  <Home className="w-4 h-4" aria-hidden="true" />
+                </Link>
+              </div>
+
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center border" style={{ background: 'rgba(11,79,69,0.08)', borderColor: 'var(--border-strong)' }}>
+                  <MapPin className="w-4 h-4" style={{ color: 'var(--primary)' }} aria-hidden="true" />
                 </div>
-              )}
+                <div className="min-w-0">
+                  <h1 className="truncate text-[13px] font-semibold md:text-[14px]" style={{ color: 'var(--ink)' }}>
+                    {mapProject?.name || '地图标注平台'}
+                  </h1>
+                  <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.1em]" style={{ color: 'var(--faint)' }}>
+                    <span>地图编辑</span>
+                    <span className="hidden sm:inline">/</span>
+                    <Link href="/admin" className="hidden transition hover:opacity-70 sm:inline">
+                      地图管理
+                    </Link>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className={`workbench-hard-edge p-2 transition ${showSettings ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
-              title="设置"
-              aria-label="设置"
-            >
-              <Settings className="w-4 h-4" aria-hidden="true" />
-            </button>
+            <div className="workbench-editor-search">
+              <div className="relative w-full">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: 'var(--faint)' }} aria-hidden="true" />
+                <input
+                  type="text"
+                  value={filters.keyword}
+                  onChange={(e) => setFilters({ ...filters, keyword: e.target.value })}
+                  placeholder="搜索标注名称、描述或字段值"
+                  className="w-full py-2 pl-10 pr-4 text-sm outline-none transition workbench-hard-edge workbench-field"
+                />
+              </div>
+            </div>
 
-            <button onClick={logout} className="ghost-button workbench-hard-edge p-2" title="退出登录" aria-label="退出登录">
-              <LogOut className="w-4 h-4" aria-hidden="true" />
-            </button>
-          </>
-        )}
-      />
+            <div className="workbench-editor-session">
+              <button onClick={logout} className="ghost-button workbench-hard-edge px-3 py-2 text-sm" title="退出登录" aria-label="退出登录">
+                <LogOut className="w-4 h-4" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+
+          <div className="workbench-editor-row workbench-editor-row-tools">
+            <div className="workbench-editor-kicker">
+              <span>编辑工具</span>
+            </div>
+
+            <div className="workbench-editor-actions">
+              <MapFloatingPanel className="workbench-editor-toolgroup">
+                <button
+                  onClick={() => setDrawMode(drawMode === 'point' ? 'none' : 'point')}
+                  className={`h-8 px-3 text-xs font-medium transition workbench-hard-edge ${drawMode === 'point' ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
+                  aria-label="新增点标注"
+                  title="新增点标注"
+                >
+                  点
+                </button>
+                <button
+                  onClick={() => setDrawMode(drawMode === 'line' ? 'none' : 'line')}
+                  className={`h-8 px-3 text-xs font-medium transition workbench-hard-edge ${drawMode === 'line' ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
+                  aria-label="新增线标注"
+                  title="新增线标注"
+                >
+                  线
+                </button>
+                <button
+                  onClick={() => setDrawMode(drawMode === 'polygon' ? 'none' : 'polygon')}
+                  className={`h-8 px-3 text-xs font-medium transition workbench-hard-edge ${drawMode === 'polygon' ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
+                  aria-label="新增面标注"
+                  title="新增面标注"
+                >
+                  面
+                </button>
+                <button
+                  onClick={() => setDrawMode(drawMode === 'text' ? 'none' : 'text')}
+                  className={`h-8 px-3 text-xs font-medium transition workbench-hard-edge ${drawMode === 'text' ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
+                  aria-label="新增文字标注"
+                  title="新增文字标注"
+                >
+                  <PenTool className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              </MapFloatingPanel>
+
+              <div className="workbench-editor-system">
+                <button
+                  onClick={() => setImportOpen(true)}
+                  className="ghost-button workbench-hard-edge flex items-center gap-1.5 px-3 py-2 text-sm"
+                  title="批量导入"
+                  aria-label="批量导入"
+                >
+                  <Upload className="w-4 h-4" aria-hidden="true" />
+                  <span className="hidden sm:inline">导入</span>
+                </button>
+
+                <div className="relative">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowExportMenu((prev) => !prev);
+                    }}
+                    className="ghost-button workbench-hard-edge flex items-center gap-1.5 px-3 py-2 text-sm"
+                    title="导出"
+                    aria-label="导出"
+                  >
+                    <Download className="w-4 h-4" aria-hidden="true" />
+                    <span className="hidden sm:inline">导出</span>
+                  </button>
+                  {showExportMenu && (
+                    <div
+                      className="absolute right-0 top-full z-50 mt-2 w-36 overflow-hidden border shadow-[0_18px_42px_rgba(24,32,27,0.08)]"
+                      style={{ background: 'var(--surface-strong)', borderColor: 'var(--border)' }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button onClick={() => { handleExport('xlsx'); setShowExportMenu(false); }}
+                        className="w-full px-4 py-3 text-left text-sm transition"
+                        style={{ color: 'var(--ink)' }}>
+                        导出 Excel
+                      </button>
+                      <button onClick={() => { handleExport('csv'); setShowExportMenu(false); }}
+                        className="w-full px-4 py-3 text-left text-sm transition"
+                        style={{ color: 'var(--ink)', borderTop: '1px solid var(--border)' }}>
+                        导出 CSV
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => setShowSettings(!showSettings)}
+                  className={`workbench-hard-edge p-2 transition ${showSettings ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
+                  title="设置"
+                  aria-label="设置"
+                >
+                  <Settings className="w-4 h-4" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
 
       {/* 反馈消息 */}
       {feedbackMessage && (

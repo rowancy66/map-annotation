@@ -126,6 +126,74 @@ body::before { display: none; }
   z-index: 1100;
 }
 
+.workbench-editor-header {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--border-strong);
+  background: var(--surface-strong);
+}
+
+.workbench-editor-row {
+  display: grid;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+}
+
+.workbench-editor-row-main {
+  grid-template-columns: minmax(280px, auto) minmax(320px, 1fr) auto;
+}
+
+.workbench-editor-row-tools {
+  grid-template-columns: auto 1fr;
+  border-top: 1px solid var(--border);
+}
+
+.workbench-editor-brand {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 14px;
+}
+
+.workbench-editor-search {
+  min-width: 0;
+}
+
+.workbench-editor-session {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.workbench-editor-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+  white-space: nowrap;
+}
+
+.workbench-editor-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.workbench-editor-toolgroup {
+  flex-shrink: 0;
+}
+
+.workbench-editor-system {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .workbench-sidebar {
   background: var(--surface-panel);
   border: 1px solid var(--border);
@@ -696,6 +764,23 @@ body::before { display: none; }
     align-items: stretch;
   }
 
+  .workbench-editor-row-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workbench-editor-row-tools {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workbench-editor-session {
+    justify-content: flex-start;
+  }
+
+  .workbench-editor-actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
   .floating-toolbar {
     max-width: calc(100vw - 96px);
     overflow-x: auto;
@@ -709,5 +794,14 @@ body::before { display: none; }
 
   .workbench-frame {
     border-radius: 0;
+  }
+
+  .workbench-editor-brand {
+    flex-wrap: wrap;
+  }
+
+  .workbench-editor-system {
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 }
