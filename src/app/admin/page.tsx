@@ -1,16 +1,17 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import LoginForm from '@/components/auth/LoginForm';
+import { useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import AdminDashboard from './AdminDashboard';
 import AdminEditor from './AdminEditor';
 
 function AdminContent() {
   const { isLoggedIn, loading: authLoading } = useAuth();
-  const mapId = typeof window === 'undefined'
-    ? null
-    : new URLSearchParams(window.location.search).get('mapId');
+  const searchParams = useSearchParams();
+  const mapId = searchParams.get('mapId');
 
   if (authLoading) {
     return (
@@ -32,5 +33,15 @@ function AdminContent() {
 }
 
 export default function AdminPage() {
-  return <AdminContent />;
+  return (
+    <Suspense
+      fallback={
+        <div className="h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--primary)' }} />
+        </div>
+      }
+    >
+      <AdminContent />
+    </Suspense>
+  );
 }

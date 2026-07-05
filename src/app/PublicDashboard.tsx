@@ -147,24 +147,22 @@ export default function PublicDashboard() {
                   key={map.id}
                   type="button"
                   onClick={() => router.push(`/map/${map.id}`)}
-                  className="public-map-row group"
+                  className="public-map-card group"
                   style={{ cursor: 'pointer' }}
                 >
-                  <div className="public-map-index">{String(idx + 1).padStart(2, '0')}</div>
-                  <div className="public-map-thumb" style={{ background: thumbGradients[idx % thumbGradients.length] }}>
+                  <div className="public-map-card-top">
+                    <div className="public-map-index">{String(idx + 1).padStart(2, '0')}</div>
+                    <ArrowUpRight className="h-3.5 w-3.5 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" style={{ color: 'rgba(23,23,23,0.55)' }} />
+                  </div>
+                  <div className="public-map-card-thumb" style={{ background: thumbGradients[idx % thumbGradients.length] }}>
                     <MapPinned className="h-5 w-5" style={{ color: 'rgba(31,52,45,0.32)' }} />
                   </div>
                   <div className="public-map-main">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h4 className="line-clamp-1 text-[16px] leading-tight" style={{ color: 'var(--ink)' }}>{map.name}</h4>
-                        <p className="mt-1 line-clamp-1 text-[12px]" style={{ color: 'var(--muted)' }}>
-                          {map.description || '整理后的地图项目'}
-                        </p>
-                      </div>
-                      <ArrowUpRight className="h-3.5 w-3.5 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" style={{ color: 'rgba(23,23,23,0.55)' }} />
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-3 text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--faint)' }}>
+                    <h4 className="line-clamp-1 text-[16px] leading-tight" style={{ color: 'var(--ink)' }}>{map.name}</h4>
+                    <p className="mt-1 line-clamp-2 text-[12px]" style={{ color: 'var(--muted)' }}>
+                      {map.description || '整理后的地图项目'}
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-3 text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--faint)' }}>
                       <span className="inline-flex items-center gap-1.5">
                         <Layers className="h-3 w-3" />
                         {map.annotation_count} 条

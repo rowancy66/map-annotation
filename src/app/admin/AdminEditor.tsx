@@ -35,6 +35,7 @@ import {
   AlertTriangle,
   Home,
   Search,
+  PenTool,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
@@ -456,6 +457,41 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             >
               地图管理
             </Link>
+
+            <MapFloatingPanel className="hidden lg:flex">
+              <button
+                onClick={() => setDrawMode(drawMode === 'point' ? 'none' : 'point')}
+                className={`h-8 px-3 text-xs font-medium transition workbench-hard-edge ${drawMode === 'point' ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
+                aria-label="新增点标注"
+                title="新增点标注"
+              >
+                点
+              </button>
+              <button
+                onClick={() => setDrawMode(drawMode === 'line' ? 'none' : 'line')}
+                className={`h-8 px-3 text-xs font-medium transition workbench-hard-edge ${drawMode === 'line' ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
+                aria-label="新增线标注"
+                title="新增线标注"
+              >
+                线
+              </button>
+              <button
+                onClick={() => setDrawMode(drawMode === 'polygon' ? 'none' : 'polygon')}
+                className={`h-8 px-3 text-xs font-medium transition workbench-hard-edge ${drawMode === 'polygon' ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
+                aria-label="新增面标注"
+                title="新增面标注"
+              >
+                面
+              </button>
+              <button
+                onClick={() => setDrawMode(drawMode === 'text' ? 'none' : 'text')}
+                className={`h-8 px-3 text-xs font-medium transition workbench-hard-edge ${drawMode === 'text' ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
+                aria-label="新增文字标注"
+                title="新增文字标注"
+              >
+                <PenTool className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+            </MapFloatingPanel>
 
             <button
               onClick={() => setImportOpen(true)}
