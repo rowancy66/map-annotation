@@ -184,7 +184,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
         </div>
 
         {/* 内容 */}
-          <div className="max-h-[calc(100vh-180px)] space-y-2 overflow-y-auto px-3 py-2.5 text-sm">
+          <div className="max-h-[calc(100vh-180px)] space-y-1.5 overflow-y-auto px-3 py-2 text-sm">
           {annotation.type === 'polygon' ? (
             <PolygonFields
               data={editing ? editData : annotation}
@@ -364,17 +364,17 @@ function PointOverview({
   const descriptionLooksLong = (description || '').length > 28;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <section className="border" style={{ background: colors.surface, borderColor: colors.border }}>
-        <div className="px-2.5 py-2.5" style={{ background: colors.bg }}>
+        <div className="px-2.5 py-2" style={{ background: colors.bg }}>
           <div className="text-[8px] font-semibold uppercase tracking-[0.18em]" style={{ color: colors.faint }}>
             Point Record
           </div>
-          <div className="mt-1.5 text-[18px] font-semibold leading-[1.06]" style={{ color: colors.ink }}>
+          <div className="mt-1 text-[14px] font-semibold leading-[1.18]" style={{ color: colors.ink }}>
             {name || '未命名'}
           </div>
           <div
-            className="mt-2 border-t pt-2 text-[10px] leading-5"
+            className="mt-1.5 border-t pt-1.5 text-[10px] leading-4.5"
             style={{
               borderColor: colors.border,
               color: description ? colors.muted : colors.placeholder,
@@ -388,11 +388,11 @@ function PointOverview({
         {(heroField || compactMetrics.length > 0) && (
           <div className="grid gap-px border-t" style={{ borderColor: colors.border, background: colors.border, gridTemplateColumns: heroField ? 'minmax(0,1.2fr) minmax(0,0.8fr)' : '1fr' }}>
             {heroField && (
-              <div className="min-h-[88px] px-2.5 py-2.5" style={{ background: colors.surface }}>
+              <div className="min-h-[70px] px-2.5 py-2" style={{ background: colors.surface }}>
                 <div className="text-[8px] font-semibold uppercase tracking-[0.14em]" style={{ color: colors.faint }}>
                   {heroField.name}
                 </div>
-                <div className="mt-2.5 break-words text-[22px] font-semibold leading-[0.98]" style={{ color: colors.ink }}>
+                <div className="mt-1.5 break-words text-[14px] font-semibold leading-[1.18]" style={{ color: colors.ink }}>
                   {heroField.displayValue}
                 </div>
               </div>
@@ -401,11 +401,11 @@ function PointOverview({
             {compactMetrics.length > 0 && (
               <div className="grid gap-px" style={{ background: colors.border }}>
                 {compactMetrics.map((field) => (
-                  <div key={field.id} className="px-2.5 py-2" style={{ background: colors.bg }}>
+                  <div key={field.id} className="px-2.5 py-1.5" style={{ background: colors.bg }}>
                     <div className="text-[8px] font-semibold uppercase tracking-[0.14em]" style={{ color: colors.faint }}>
                       {field.name}
                     </div>
-                    <div className="mt-1 break-words text-[14px] font-semibold leading-[1.05]" style={{ color: colors.ink }}>
+                    <div className="mt-0.5 break-words text-[12px] font-semibold leading-[1.2]" style={{ color: colors.ink }}>
                       {field.displayValue}
                     </div>
                   </div>
@@ -417,18 +417,18 @@ function PointOverview({
       </section>
 
       {coordinates && (
-        <section className="border px-2.5 py-2.5" style={{ background: colors.surface, borderColor: colors.border }}>
+        <section className="border px-2.5 py-2" style={{ background: colors.surface, borderColor: colors.border }}>
           <div className="text-[8px] font-semibold uppercase tracking-[0.18em]" style={{ color: colors.faint }}>
             Coordinates
           </div>
           <div className="mt-2 grid grid-cols-2 gap-px" style={{ background: colors.border }}>
             <div className="px-2 py-1.5" style={{ background: colors.bg }}>
               <div className="text-[8px] uppercase tracking-[0.14em]" style={{ color: colors.faint }}>Longitude</div>
-              <div className="mt-1 font-mono text-[11px]" style={{ color: colors.ink }}>{coordinates[0].toFixed(6)}</div>
+              <div className="mt-0.5 font-mono text-[10px]" style={{ color: colors.ink }}>{coordinates[0].toFixed(6)}</div>
             </div>
             <div className="px-2 py-1.5" style={{ background: colors.bg }}>
               <div className="text-[8px] uppercase tracking-[0.14em]" style={{ color: colors.faint }}>Latitude</div>
-              <div className="mt-1 font-mono text-[11px]" style={{ color: colors.ink }}>{coordinates[1].toFixed(6)}</div>
+              <div className="mt-0.5 font-mono text-[10px]" style={{ color: colors.ink }}>{coordinates[1].toFixed(6)}</div>
             </div>
           </div>
         </section>
@@ -436,14 +436,14 @@ function PointOverview({
 
       {details.length > 0 && (
         <section className="border" style={{ background: colors.surface, borderColor: colors.border }}>
-          <div className="border-b px-2.5 py-2 text-[8px] font-semibold uppercase tracking-[0.18em]" style={{ borderColor: colors.border, color: colors.faint }}>
+          <div className="border-b px-2.5 py-1.5 text-[8px] font-semibold uppercase tracking-[0.18em]" style={{ borderColor: colors.border, color: colors.faint }}>
             Details
           </div>
           <div>
             {details.map((field, index) => (
               <div
                 key={field.id}
-                className="grid grid-cols-[82px_minmax(0,1fr)] gap-2 px-2.5 py-2"
+                className="grid grid-cols-[76px_minmax(0,1fr)] gap-2 px-2.5 py-1.5"
                 style={{
                   borderTop: index === 0 ? 'none' : `1px solid ${colors.border}`,
                   background: index % 2 === 0 ? colors.surface : colors.bg,
@@ -453,7 +453,7 @@ function PointOverview({
                   {field.name}
                 </div>
                 <div
-                  className="break-words text-[11px] font-medium leading-5"
+                  className="break-words text-[10px] font-medium leading-4.5"
                   style={{
                     color: colors.ink,
                     maxWidth: field.displayValue.length > 20 ? '100%' : '24ch',
