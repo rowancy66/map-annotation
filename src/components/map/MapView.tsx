@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.heat';
-import { TIANDITU_LAYERS, TIANDITU_SUBDOMAINS, DEFAULT_CENTER, DEFAULT_ZOOM, LIGHT_BASEMAP, LIGHT_BASEMAP_SUBDOMAINS } from '@/lib/constants';
+import { TIANDITU_LAYERS, TIANDITU_SUBDOMAINS, DEFAULT_CENTER, DEFAULT_ZOOM } from '@/lib/constants';
 import { Annotation, DrawMode, AnnotationType, PointStyle, LineStyle, PolygonStyle, TextStyle, PRESET_COLORS, PRESET_ICONS, Group } from '@/lib/types';
 import SearchBox from './SearchBox';
 
@@ -83,7 +83,7 @@ export default function MapView({
   const tempPointsRef = useRef<L.LatLng[]>([]);
   const [mapReady, setMapReady] = useState(false);
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
-  const [mapType, setMapType] = useState<'light' | 'img' | 'terrain'>('light');
+  const [mapType, setMapType] = useState<'vec' | 'img' | 'terrain'>('vec');
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -95,7 +95,7 @@ export default function MapView({
   const [textValue, setTextValue] = useState('');
   const heatLayerRef = useRef<L.Layer | null>(null);
 
-  const lightLayersRef = useRef<L.TileLayer[]>([]);
+  const vecLayersRef = useRef<L.TileLayer[]>([]);
   const imgLayersRef = useRef<L.TileLayer[]>([]);
   const terrainLayersRef = useRef<L.TileLayer[]>([]);
 
@@ -242,20 +242,18 @@ export default function MapView({
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    const lightLayer = L.tileLayer(LIGHT_BASEMAP, {
-      subdomains: LIGHT_BASEMAP_SUBDOMAINS,
-      maxZoom: 20,
-      crossOrigin: true,
-    });
+    const vecLayer = L.tileLayer(TIANDITU_LAYERS.vec, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
+    const cvaLayer = L.tileLayer(TIANDITU_LAYERS.cva, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
     const imgLayer = L.tileLayer(TIANDITU_LAYERS.img, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
     const ciaLayer = L.tileLayer(TIANDITU_LAYERS.cia, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
     const terLayer = L.tileLayer(TIANDITU_LAYERS.ter, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
 
-    lightLayersRef.current = [lightLayer];
+    vecLayersRef.current = [vecLayer, cvaLayer];
     imgLayersRef.current = [imgLayer, ciaLayer];
     terrainLayersRef.current = [terLayer];
 
-    lightLayer.addTo(map);
+    vecLayer.addTo(map);
+    cvaLayer.addTo(map);
 
     const annotationsLayer = L.layerGroup().addTo(map);
     const drawLayer = L.layerGroup().addTo(map);
@@ -278,15 +276,15 @@ export default function MapView({
     const map = mapRef.current;
 
     // 清除所有图层
-    lightLayersRef.current.forEach((l) => { if (map.hasLayer(l)) map.removeLayer(l); });
+    vecLayersRef.current.forEach((l) => { if (map.hasLayer(l)) map.removeLayer(l); });
     imgLayersRef.current.forEach((l) => { if (map.hasLayer(l)) map.removeLayer(l); });
     terrainLayersRef.current.forEach((l) => { if (map.hasLayer(l)) map.removeLayer(l); });
 
-    if (mapType === 'light') {
-      lightLayersRef.current.forEach((l) => { if (!map.hasLayer(l)) l.addTo(map); });
+    if (mapType === 'vec') {
+      vecLayersRef.current.forEach((l) => { if (!map.hasLayer(l)) l.addTo(map); });
     } else if (mapType === 'img') {
       imgLayersRef.current.forEach((l) => { if (!map.hasLayer(l)) l.addTo(map); });
-    } else {
+    } else if (mapType === 'terrain') {
       terrainLayersRef.current.forEach((l) => { if (!map.hasLayer(l)) l.addTo(map); });
     }
   }, [mapType]);
@@ -706,13 +704,13 @@ export default function MapView({
         <div className="overflow-hidden flex border"
           style={{ background: 'rgba(244,242,236,0.94)', borderColor: 'var(--border)', boxShadow: '0 8px 18px rgba(17,24,22,0.08)' }}>
           <button
-            onClick={() => setMapType('light')}
+            onClick={() => setMapType('vec')}
             className={`px-3.5 py-2 text-xs font-medium transition-all duration-200 ${
-              mapType === 'light' ? 'text-white' : ''
+              mapType === 'vec' ? 'text-white' : ''
             }`}
-            style={mapType === 'light' ? { background: 'var(--primary)', color: 'white' } : { color: 'var(--muted)', borderRight: '1px solid var(--border)' }}
+            style={mapType === 'vec' ? { background: 'var(--primary)', color: 'white' } : { color: 'var(--muted)', borderRight: '1px solid var(--border)' }}
           >
-            白底
+            矢量
           </button>
           <button
             onClick={() => setMapType('img')}

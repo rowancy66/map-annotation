@@ -103,7 +103,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
                   <MapPin className="h-4 w-4" style={{ color: 'var(--primary)' }} aria-hidden="true" />
                 </div>
                 <div className="min-w-0">
-                  <h1 className="truncate text-sm font-semibold md:text-[14px]" style={{ color: 'var(--ink)' }}>
+                  <h1 className="truncate text-[13px] font-semibold md:text-[14px]" style={{ color: 'var(--ink)' }}>
                     {mapProject?.name || '地图标注平台'}
                   </h1>
                   <div className="text-[10px] font-medium uppercase tracking-[0.1em]" style={{ color: 'var(--faint)' }}>
@@ -137,19 +137,15 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
           )}
           right={(
             <>
-              <div className="soft-pill">{annotations.length} 项标注</div>
+              <div className="hidden text-[11px] font-medium uppercase tracking-[0.08em] md:block" style={{ color: 'var(--faint)' }}>
+                {annotations.length} 项标注
+              </div>
               <Link
                 href={`/admin?mapId=${id}`}
-                className="ghost-button workbench-hard-edge flex items-center gap-1.5 px-4 py-2 text-xs font-semibold"
+                className="ghost-button workbench-hard-edge flex items-center gap-1.5 px-3 py-2 text-xs font-semibold"
               >
                 <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
                 <span className="hidden sm:inline">后台管理</span>
-              </Link>
-              <Link
-                href="/admin"
-                className="ghost-button workbench-hard-edge px-4 py-2 text-xs font-semibold"
-              >
-                地图管理
               </Link>
             </>
           )}
@@ -164,14 +160,14 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
             <div className="workbench-sidebar workbench-hard-edge flex h-full w-[304px] flex-col">
               <div className="flex h-full flex-col">
                 <div className="px-4 py-4 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <h2 className="text-[14px] font-semibold" style={{ color: 'var(--ink)' }}>标注索引</h2>
-                      <p className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>
-                        点 {annotationTypeCounts.point} · 线 {annotationTypeCounts.line} · 面 {annotationTypeCounts.polygon}
-                      </p>
-                    </div>
-                    <div className="soft-pill shrink-0">{filteredAnnotations.length} 项</div>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <h2 className="text-[14px] font-semibold" style={{ color: 'var(--ink)' }}>标注索引</h2>
+                        <p className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>
+                          点 {annotationTypeCounts.point} · 线 {annotationTypeCounts.line} · 面 {annotationTypeCounts.polygon}
+                        </p>
+                      </div>
+                    <div className="shrink-0 text-[11px] font-medium uppercase tracking-[0.08em]" style={{ color: 'var(--faint)' }}>{filteredAnnotations.length} 项</div>
                   </div>
                   <div className="mt-4 lg:hidden">
                     <div className="relative">
@@ -202,7 +198,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
 
                 <div className="flex-1 overflow-y-auto">
                   {filteredAnnotations.length === 0 ? (
-                    <div className="p-8 text-center text-sm" style={{ color: 'var(--faint)' }}>
+                    <div className="border-b p-8 text-center text-sm" style={{ color: 'var(--faint)', borderColor: 'var(--border)' }}>
                       <ScanSearch className="mx-auto mb-3 h-8 w-8 opacity-40" />
                       {searchQuery ? '没有找到匹配的标注' : '暂无标注'}
                     </div>

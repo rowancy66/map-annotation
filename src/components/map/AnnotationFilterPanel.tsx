@@ -51,7 +51,7 @@ export default function AnnotationFilterPanel({
   };
 
   return (
-    <div className="space-y-3 px-4 py-3" style={{ borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.18)' }}>
+    <div className="space-y-3 px-4 py-3" style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface-panel)' }}>
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>筛选</h3>
@@ -114,7 +114,7 @@ export default function AnnotationFilterPanel({
                     }}
                     className="px-2.5 py-1 text-[11px] transition workbench-hard-edge"
                     style={{
-                      background: active ? 'rgba(11,79,69,0.08)' : 'rgba(255,255,255,0.48)',
+                      background: active ? 'rgba(11,79,69,0.08)' : 'var(--surface-strong)',
                       color: active ? 'var(--ink)' : 'var(--muted)',
                       border: `1px solid ${active ? 'var(--primary)' : 'var(--border)'}`,
                     }}
@@ -153,7 +153,7 @@ export default function AnnotationFilterPanel({
           if (!template) return null;
 
           return (
-            <div key={`${filter.fieldId}-${index}`} className="workbench-panel workbench-hard-edge space-y-2 p-3">
+            <div key={`${filter.fieldId}-${index}`} className="workbench-panel workbench-hard-edge space-y-2 p-3" style={{ background: 'var(--surface-muted)' }}>
               <div className="grid grid-cols-[1fr,auto] gap-2">
                 <select
                   value={filter.fieldId}

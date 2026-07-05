@@ -29,7 +29,7 @@ export default function DrawingToolbar({ drawMode, onDrawModeChange, annotationC
           <button
             key={tool.mode}
             onClick={() => onDrawModeChange(tool.mode)}
-            className="relative flex h-8 items-center gap-1.5 border-r px-3 text-[11px] font-medium transition-all duration-150 last:border-r-0"
+            className="relative flex h-8 items-center gap-1.5 border-r px-2.5 text-[11px] font-medium transition-all duration-150 last:border-r-0"
             style={{
               borderColor: 'var(--border)',
               background: drawMode === tool.mode ? 'var(--primary)' : 'transparent',
@@ -58,7 +58,7 @@ export default function DrawingToolbar({ drawMode, onDrawModeChange, annotationC
           <button
             key={tool.mode}
             onClick={() => onDrawModeChange(drawMode === tool.mode ? 'none' : tool.mode)}
-            className="flex h-8 items-center gap-1.5 border-r px-3 text-[11px] font-medium transition-all duration-150 last:border-r-0"
+            className="flex h-8 items-center gap-1.5 border-r px-2.5 text-[11px] font-medium transition-all duration-150 last:border-r-0"
             style={{
               borderColor: 'var(--border)',
               background: drawMode === tool.mode ? 'rgba(11,79,69,0.12)' : 'transparent',

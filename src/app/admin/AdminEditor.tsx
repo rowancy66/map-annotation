@@ -555,13 +555,13 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
         </div>
       )}
 
-      <div className="relative flex flex-1 overflow-hidden p-1.5">
+      <div className="relative flex flex-1 overflow-hidden p-1">
         <div
           className={`relative z-30 shrink-0 overflow-hidden transition-all duration-300 ${
-            sidebarOpen ? 'w-[304px] opacity-100' : 'w-0 opacity-0'
+            sidebarOpen ? 'w-[292px] opacity-100' : 'w-0 opacity-0'
           }`}
         >
-          <div className="workbench-sidebar workbench-hard-edge flex h-full w-[304px] flex-col">
+          <div className="workbench-sidebar workbench-hard-edge flex h-full w-[292px] flex-col">
             <div className="shrink-0 px-4 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -908,7 +908,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             showNames={showNamesEnabled}
           />
 
-          <div className="absolute left-3 top-3 z-[999]">
+          <div className="absolute left-2.5 top-2.5 z-[999]">
             <DrawingToolbar
               drawMode={drawMode}
               onDrawModeChange={setDrawMode}
@@ -916,20 +916,20 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             />
           </div>
 
-          <div className="absolute right-3 top-3 z-[999]">
+          <div className="absolute right-2.5 top-2.5 z-[999]">
             <MapFloatingPanel className="gap-0">
               <button
                 onClick={() => setShowNamesOverride((prev) => !(prev ?? (mapProject?.settings.showNames !== false)))}
                 disabled={!mapProject}
                 aria-label="切换名称显示"
-                className={`h-9 px-3.5 text-xs font-medium transition disabled:opacity-60 workbench-hard-edge ${showNamesEnabled ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
+                className={`h-8 px-3 text-xs font-medium transition disabled:opacity-60 workbench-hard-edge ${showNamesEnabled ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
               >
                 <span>名称</span>
               </button>
               <button
                 onClick={() => setShowHeatmap(!showHeatmap)}
                 aria-label="切换热力图显示"
-                className={`h-9 px-3.5 text-xs font-medium transition workbench-hard-edge ${showHeatmap ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
+                className={`h-8 px-3 text-xs font-medium transition workbench-hard-edge ${showHeatmap ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
                 style={{
                   background: showHeatmap ? 'rgba(11,79,69,0.12)' : undefined,
                   color: showHeatmap ? 'var(--ink)' : undefined,
@@ -940,7 +940,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             </MapFloatingPanel>
           </div>
 
-          <div className="absolute right-3 top-[60px] z-[1000]">
+          <div className="absolute right-2.5 top-[52px] z-[1000]">
             {selectedAnnotation && mapProject && !batchMode && (
               <InfoCard
                 annotation={selectedAnnotation}

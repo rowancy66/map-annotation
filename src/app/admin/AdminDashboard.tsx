@@ -106,26 +106,25 @@ export default function AdminDashboard() {
             </div>
             <div className="admin-strip-meta">
               <div className="text-[11px] font-medium uppercase tracking-[0.1em]" style={{ color: 'var(--faint)' }}>Map Directory</div>
-              <h1 className="text-[22px] leading-none" style={{ color: 'var(--ink)' }}>地图管理</h1>
+              <h1 className="text-[16px] leading-none" style={{ color: 'var(--ink)' }}>地图管理</h1>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="soft-pill">管理员</span>
-            <button onClick={logout} className="ghost-button px-4 py-2 text-xs font-semibold workbench-hard-edge">
+            <button onClick={logout} className="ghost-button px-3 py-1.5 text-[11px] font-semibold workbench-hard-edge">
               退出登录
             </button>
           </div>
         </header>
 
-        <main className="pt-5">
+        <main className="pt-4">
           <section>
-            <div className="flex flex-col gap-4 border px-5 py-4 md:flex-row md:items-end md:justify-between" style={{ borderColor: 'var(--border)', background: 'var(--surface-strong)' }}>
+            <div className="admin-command-bar">
               <div>
                 <div className="text-[11px] font-medium uppercase tracking-[0.12em]" style={{ color: 'var(--faint)' }}>Directory Control</div>
-                <h2 className="mt-2 text-[18px] leading-none" style={{ color: 'var(--ink)' }}>地图目录</h2>
+                <h2 className="mt-1.5 text-[15px] leading-none" style={{ color: 'var(--ink)' }}>地图目录</h2>
               </div>
-              <button onClick={() => setShowCreate(true)} className="primary-button inline-flex items-center gap-2 px-4 py-2 text-sm font-medium workbench-hard-edge self-start md:self-auto">
-                <Plus className="h-4 w-4" />
+              <button onClick={() => setShowCreate(true)} className="primary-button inline-flex items-center gap-2 px-3 py-1.5 text-[12px] font-medium workbench-hard-edge self-start md:self-auto">
+                <Plus className="h-3.5 w-3.5" />
                 新建地图
               </button>
             </div>
@@ -133,29 +132,29 @@ export default function AdminDashboard() {
             <div className="admin-metric-grid">
               <div className="admin-metric">
                 <div className="text-[11px] font-medium uppercase tracking-[0.08em]" style={{ color: 'var(--faint)' }}>地图数量</div>
-                <div className="mt-3 text-[28px] leading-none" style={{ color: 'var(--ink)' }}>{maps.length}</div>
+                <div className="mt-2 text-[24px] leading-none" style={{ color: 'var(--ink)' }}>{maps.length}</div>
               </div>
               <div className="admin-metric">
                 <div className="text-[11px] font-medium uppercase tracking-[0.08em]" style={{ color: 'var(--faint)' }}>标注总数</div>
-                <div className="mt-3 text-[28px] leading-none" style={{ color: 'var(--ink)' }}>{totalAnnotations}</div>
+                <div className="mt-2 text-[24px] leading-none" style={{ color: 'var(--ink)' }}>{totalAnnotations}</div>
               </div>
               <div className="admin-metric">
                 <div className="text-[11px] font-medium uppercase tracking-[0.08em]" style={{ color: 'var(--faint)' }}>活跃地图</div>
-                <div className="mt-3 text-[28px] leading-none" style={{ color: 'var(--ink)' }}>{activeMaps}</div>
+                <div className="mt-2 text-[24px] leading-none" style={{ color: 'var(--ink)' }}>{activeMaps}</div>
               </div>
               <div className="admin-metric">
                 <div className="text-[11px] font-medium uppercase tracking-[0.08em]" style={{ color: 'var(--faint)' }}>最后更新</div>
-                <div className="mt-3 text-[14px] leading-tight" style={{ color: 'var(--ink)' }}>
+                <div className="mt-2 text-[13px] leading-tight" style={{ color: 'var(--ink)' }}>
                   {latestUpdatedAt ? formatTime(latestUpdatedAt) : '暂无记录'}
                 </div>
               </div>
             </div>
           </section>
 
-          <section className="mt-6">
-            <div className="mb-4 flex items-end justify-between gap-4">
-              <h3 className="text-[18px] font-semibold" style={{ color: 'var(--ink)' }}>全部地图</h3>
-              <div className="hidden px-4 py-2 text-xs font-semibold tracking-[0.12em] md:block" style={{ background: 'var(--surface-muted)', color: 'var(--faint)', border: '1px solid var(--border)' }}>
+          <section className="mt-5">
+            <div className="mb-3 flex items-end justify-between gap-4">
+              <h3 className="text-[15px] font-semibold" style={{ color: 'var(--ink)' }}>全部地图</h3>
+              <div className="hidden px-3 py-1.5 text-[11px] font-semibold tracking-[0.12em] md:block" style={{ background: 'var(--surface-muted)', color: 'var(--faint)', border: '1px solid var(--border)' }}>
                 共 {maps.length} 张
               </div>
             </div>
@@ -168,7 +167,7 @@ export default function AdminDashboard() {
             ) : (
               <div className="admin-table overflow-hidden">
                 <div
-                  className="admin-table-row px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.12em]"
+                  className="admin-table-row px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
                   style={{ background: 'var(--surface-muted)', color: 'var(--faint)' }}
                 >
                   <div>编号</div>
@@ -181,7 +180,7 @@ export default function AdminDashboard() {
                 {maps.map((map, idx) => (
                   <div
                     key={map.id}
-                    className="admin-table-row px-4 py-3"
+                    className="admin-table-row px-4 py-2.5"
                     style={{ background: idx % 2 === 0 ? 'var(--surface-strong)' : 'var(--surface-panel)' }}
                   >
                     <div className="text-[12px] font-medium" style={{ color: 'var(--faint)' }}>
@@ -189,33 +188,33 @@ export default function AdminDashboard() {
                     </div>
                     <button type="button" onClick={() => router.push('/admin?mapId=' + map.id)} className="min-w-0 text-left">
                       <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 shrink-0 border" style={{ background: thumbGradients[idx % thumbGradients.length], borderColor: 'rgba(17,24,22,0.12)' }} />
+                        <div className="h-8 w-8 shrink-0 border" style={{ background: thumbGradients[idx % thumbGradients.length], borderColor: 'rgba(17,24,22,0.12)' }} />
                         <div className="min-w-0">
-                          <div className="truncate text-[15px] font-semibold" style={{ color: 'var(--ink)' }}>{map.name}</div>
-                          <div className="truncate text-[12px]" style={{ color: 'var(--muted)' }}>{map.description || '—'}</div>
+                          <div className="truncate text-[14px] font-semibold" style={{ color: 'var(--ink)' }}>{map.name}</div>
+                          <div className="truncate text-[11px]" style={{ color: 'var(--muted)' }}>{map.description || '—'}</div>
                         </div>
                       </div>
                     </button>
-                    <div className="text-[13px] font-medium" style={{ color: 'var(--ink)' }}>{map.annotation_count} 条</div>
-                    <div className="text-[12px]" style={{ color: 'var(--muted)' }}>{formatTime(map.updated_at)}</div>
-                    <div className="truncate text-[12px]" style={{ color: 'var(--faint)' }}>{map.description || '—'}</div>
+                    <div className="text-[12px] font-medium" style={{ color: 'var(--ink)' }}>{map.annotation_count} 条</div>
+                    <div className="text-[11px]" style={{ color: 'var(--muted)' }}>{formatTime(map.updated_at)}</div>
+                    <div className="truncate text-[11px]" style={{ color: 'var(--faint)' }}>{map.description || '—'}</div>
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => router.push('/admin?mapId=' + map.id)}
-                        className="ghost-button p-2 workbench-hard-edge"
+                        className="ghost-button p-1.5 workbench-hard-edge"
                         title="编辑"
                         aria-label="编辑"
                       >
-                        <Edit3 className="h-3.5 w-3.5" />
+                        <Edit3 className="h-3 w-3" />
                       </button>
                       <button
                         onClick={() => setDeleteConfirm(map.id)}
-                        className="p-2 transition workbench-hard-edge"
+                        className="p-1.5 transition workbench-hard-edge"
                         style={{ background: 'var(--surface-strong)', color: 'var(--danger)', border: '1px solid rgba(185,87,73,0.18)' }}
                         title="删除"
                         aria-label="删除"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-3 w-3" />
                       </button>
                     </div>
                   </div>

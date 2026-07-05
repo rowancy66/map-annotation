@@ -245,7 +245,7 @@ export default function SearchBox({ map }: SearchBoxProps) {
             onKeyDown={handleKeyDown}
             onFocus={() => results.length > 0 && setShowResults(true)}
             placeholder="搜索地址、路名…"
-            className="flex-1 py-2.5 pr-2 text-sm outline-none"
+            className="flex-1 py-2 pr-2 text-sm outline-none"
             style={{ color: 'var(--ink)' }}
           />
           {query && (
