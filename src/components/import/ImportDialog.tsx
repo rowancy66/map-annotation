@@ -288,10 +288,10 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => e.preventDefault()}
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b">
+      <div className="flex max-h-[80vh] w-full max-w-2xl flex-col bg-white shadow-2xl workbench-hard-edge" style={{ border: '1px solid var(--border)' }}>
+        <div className="flex items-center justify-between border-b px-6 py-4" style={{ borderColor: 'var(--border)' }}>
           <h2 className="text-lg font-semibold text-gray-900">批量导入标注点</h2>
-          <button onClick={handleClose} aria-label="关闭" className="p-1 hover:bg-gray-100 rounded transition">
+          <button onClick={handleClose} aria-label="关闭" className="p-1 transition workbench-hard-edge hover:bg-gray-100">
             <X aria-hidden="true" className="w-5 h-5 text-gray-500" />
           </button>
         </div>
@@ -311,7 +311,7 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
                 const file = e.dataTransfer.files[0];
                 if (file) handleFile(file);
               }}
-              className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition ${
+              className={`cursor-pointer border-2 border-dashed p-12 text-center transition workbench-hard-edge ${
                 isDragging
                   ? 'scale-[1.02]'
                   : 'border-gray-300'
@@ -351,7 +351,7 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
               </div>
 
               {!preview.latColumn || !preview.lngColumn ? (
-                <div className="flex items-start gap-2 p-3 bg-yellow-50 text-yellow-700 rounded-lg text-sm">
+                <div className="flex items-start gap-2 bg-yellow-50 p-3 text-sm text-yellow-700 workbench-hard-edge">
                   <AlertCircle aria-hidden="true" className="w-5 h-5 shrink-0 mt-0.5" />
                   <div>
                     <p className="font-medium">需要映射经纬度列</p>
@@ -359,7 +359,7 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
                   </div>
                 </div>
               ) : (
-                <div className="flex items-start gap-2 p-3 bg-green-50 text-green-700 rounded-lg text-sm">
+                <div className="flex items-start gap-2 bg-green-50 p-3 text-sm text-green-700 workbench-hard-edge">
                   <Check aria-hidden="true" className="w-5 h-5 shrink-0 mt-0.5" />
                   <span>已自动识别经纬度列：{preview.latColumn} / {preview.lngColumn}</span>
                 </div>
@@ -368,7 +368,7 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
               <div className="space-y-3">
                 <h3 className="text-sm font-medium text-gray-700">列映射</h3>
                 {preview.columns.map((col, idx) => (
-                  <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div key={idx} className="flex items-center gap-3 bg-gray-50 p-3 workbench-hard-edge">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{col.header}</p>
                       <p className="text-xs text-gray-500 truncate">
@@ -378,7 +378,7 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
                     <select
                       value={col.mappedField || ''}
                       onChange={(e) => handleColumnMapping(idx, e.target.value)}
-                      className="px-3 py-1.5 border rounded-lg text-sm w-40"
+                      className="w-40 border px-3 py-1.5 text-sm workbench-hard-edge"
                     >
                       <option value="">不映射</option>
                       {mappingOptions.map((opt) => (
@@ -390,7 +390,7 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
               </div>
 
               {summary && (
-                <div className="rounded-lg border p-4 text-sm" style={{ borderColor: '#dbe7df', background: '#f7fbf8' }}>
+                <div className="border p-4 text-sm workbench-hard-edge" style={{ borderColor: '#dbe7df', background: '#f7fbf8' }}>
                   <div className="font-medium text-gray-800 mb-2">导入预估</div>
                   <div className="grid grid-cols-2 gap-2 text-gray-600">
                     <div>预计新增：{summary.createCount}</div>
@@ -406,7 +406,7 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
         </div>
 
         {step === 'mapping' && (
-          <div className="px-6 py-4 border-t flex items-center justify-between">
+          <div className="flex items-center justify-between border-t px-6 py-4" style={{ borderColor: 'var(--border)' }}>
             <button
               onClick={() => { setStep('upload'); setPreview(null); }}
               className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition"
@@ -416,14 +416,14 @@ export default function ImportDialog({ open, onClose, onImport, fieldTemplates, 
             <div className="flex gap-3">
               <button
                 onClick={handleClose}
-                className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                className="bg-gray-100 px-4 py-2 text-sm text-gray-600 transition workbench-hard-edge hover:bg-gray-200"
               >
                 取消
               </button>
               <button
                 onClick={handleImport}
                 disabled={!preview?.latColumn || !preview?.lngColumn || importing}
-                className="px-6 py-2 text-sm text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
+                className="flex items-center gap-2 px-6 py-2 text-sm text-white transition disabled:cursor-not-allowed disabled:opacity-50 workbench-hard-edge"
               style={{ background: '#78a587' }}
               onMouseEnter={(e) => { if (!importing) e.currentTarget.style.background = '#6a9580'; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = '#78a587'; }}

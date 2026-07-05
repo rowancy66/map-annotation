@@ -9,7 +9,7 @@ interface MapFloatingPanelProps {
 
 export default function MapFloatingPanel({ children, className = '' }: MapFloatingPanelProps) {
   return (
-    <div className={`floating-toolbar rounded-[22px] px-2 py-2 ${className}`.trim()}>
+    <div className={`floating-toolbar workbench-hard-edge px-0.5 py-0.5 ${className}`.trim()}>
       {children}
     </div>
   );

@@ -23,17 +23,17 @@ export default function DrawingToolbar({ drawMode, onDrawModeChange, annotationC
   ];
 
   return (
-    <div className="floating-toolbar rounded-[22px] px-2 py-2">
-      <div className="flex items-center gap-1.5">
+    <div className="floating-toolbar workbench-hard-edge px-0.5 py-0.5">
+      <div className="flex items-center">
         {tools.map((tool) => (
           <button
             key={tool.mode}
             onClick={() => onDrawModeChange(tool.mode)}
-            className="relative flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium transition-all duration-150"
+            className="relative flex h-8 items-center gap-1.5 border-r px-3 text-[11px] font-medium transition-all duration-150 last:border-r-0"
             style={{
+              borderColor: 'var(--border)',
               background: drawMode === tool.mode ? 'var(--primary)' : 'transparent',
-              color: drawMode === tool.mode ? '#fff' : 'var(--muted)',
-              boxShadow: drawMode === tool.mode ? '0 14px 28px rgba(11,79,69,0.18)' : 'none',
+              color: drawMode === tool.mode ? '#fff' : 'var(--ink)',
             }}
             title={tool.label}
           >
@@ -51,17 +51,18 @@ export default function DrawingToolbar({ drawMode, onDrawModeChange, annotationC
         ))}
       </div>
 
-      <div className="mx-1 h-6 w-px" style={{ background: 'rgba(52,44,35,0.08)' }} />
+      <div className="mx-0 h-7 w-px" style={{ background: 'var(--border)' }} />
 
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center">
         {extraTools.map((tool) => (
           <button
             key={tool.mode}
             onClick={() => onDrawModeChange(drawMode === tool.mode ? 'none' : tool.mode)}
-            className="flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium transition-all duration-150"
+            className="flex h-8 items-center gap-1.5 border-r px-3 text-[11px] font-medium transition-all duration-150 last:border-r-0"
             style={{
-              background: drawMode === tool.mode ? 'var(--accent)' : 'transparent',
-              color: drawMode === tool.mode ? '#1a1a18' : 'var(--muted)',
+              borderColor: 'var(--border)',
+              background: drawMode === tool.mode ? 'rgba(11,79,69,0.12)' : 'transparent',
+              color: drawMode === tool.mode ? 'var(--ink)' : 'var(--ink)',
             }}
             title={tool.label}
           >

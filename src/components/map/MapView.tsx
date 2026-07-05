@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.heat';
-import { TIANDITU_LAYERS, TIANDITU_SUBDOMAINS, DEFAULT_CENTER, DEFAULT_ZOOM } from '@/lib/constants';
+import { TIANDITU_LAYERS, TIANDITU_SUBDOMAINS, DEFAULT_CENTER, DEFAULT_ZOOM, LIGHT_BASEMAP, LIGHT_BASEMAP_SUBDOMAINS } from '@/lib/constants';
 import { Annotation, DrawMode, AnnotationType, PointStyle, LineStyle, PolygonStyle, TextStyle, PRESET_COLORS, PRESET_ICONS, Group } from '@/lib/types';
 import SearchBox from './SearchBox';
 
@@ -83,7 +83,7 @@ export default function MapView({
   const tempPointsRef = useRef<L.LatLng[]>([]);
   const [mapReady, setMapReady] = useState(false);
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
-  const [mapType, setMapType] = useState<'vec' | 'img' | 'terrain'>('vec');
+  const [mapType, setMapType] = useState<'light' | 'img' | 'terrain'>('light');
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -95,7 +95,7 @@ export default function MapView({
   const [textValue, setTextValue] = useState('');
   const heatLayerRef = useRef<L.Layer | null>(null);
 
-  const vecLayersRef = useRef<L.TileLayer[]>([]);
+  const lightLayersRef = useRef<L.TileLayer[]>([]);
   const imgLayersRef = useRef<L.TileLayer[]>([]);
   const terrainLayersRef = useRef<L.TileLayer[]>([]);
 
@@ -242,18 +242,20 @@ export default function MapView({
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    const vecLayer = L.tileLayer(TIANDITU_LAYERS.vec, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
-    const cvaLayer = L.tileLayer(TIANDITU_LAYERS.cva, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
+    const lightLayer = L.tileLayer(LIGHT_BASEMAP, {
+      subdomains: LIGHT_BASEMAP_SUBDOMAINS,
+      maxZoom: 20,
+      crossOrigin: true,
+    });
     const imgLayer = L.tileLayer(TIANDITU_LAYERS.img, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
     const ciaLayer = L.tileLayer(TIANDITU_LAYERS.cia, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
     const terLayer = L.tileLayer(TIANDITU_LAYERS.ter, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
 
-    vecLayersRef.current = [vecLayer, cvaLayer];
+    lightLayersRef.current = [lightLayer];
     imgLayersRef.current = [imgLayer, ciaLayer];
     terrainLayersRef.current = [terLayer];
 
-    vecLayer.addTo(map);
-    cvaLayer.addTo(map);
+    lightLayer.addTo(map);
 
     const annotationsLayer = L.layerGroup().addTo(map);
     const drawLayer = L.layerGroup().addTo(map);
@@ -276,13 +278,12 @@ export default function MapView({
     const map = mapRef.current;
 
     // 清除所有图层
-    vecLayersRef.current.forEach((l) => { if (map.hasLayer(l)) map.removeLayer(l); });
+    lightLayersRef.current.forEach((l) => { if (map.hasLayer(l)) map.removeLayer(l); });
     imgLayersRef.current.forEach((l) => { if (map.hasLayer(l)) map.removeLayer(l); });
     terrainLayersRef.current.forEach((l) => { if (map.hasLayer(l)) map.removeLayer(l); });
 
-    // 添加选中图层
-    if (mapType === 'vec') {
-      vecLayersRef.current.forEach((l) => { if (!map.hasLayer(l)) l.addTo(map); });
+    if (mapType === 'light') {
+      lightLayersRef.current.forEach((l) => { if (!map.hasLayer(l)) l.addTo(map); });
     } else if (mapType === 'img') {
       imgLayersRef.current.forEach((l) => { if (!map.hasLayer(l)) l.addTo(map); });
     } else {
@@ -697,34 +698,35 @@ export default function MapView({
         }
       `}</style>
 
-      {/* 搜索框（支持路名、建筑名搜索定位） */}
-      <SearchBox map={mapInstance} />
+      <div className="absolute left-3 top-3 z-[1000]">
+        <SearchBox map={mapInstance} />
+      </div>
 
-      <div className="absolute top-16 right-4 z-[1000]">
-        <div className="backdrop-blur-md rounded-xl shadow-lg overflow-hidden flex"
-          style={{ background: 'rgba(255,255,255,0.9)', border: '1px solid var(--border)' }}>
+      <div className="absolute top-3 right-3 z-[1000]">
+        <div className="overflow-hidden flex border"
+          style={{ background: 'rgba(244,242,236,0.94)', borderColor: 'var(--border)', boxShadow: '0 8px 18px rgba(17,24,22,0.08)' }}>
           <button
-            onClick={() => setMapType('vec')}
-            className={`px-3.5 py-2 text-xs font-medium transition-all duration-200 first:rounded-l-xl last:rounded-r-xl ${
-              mapType === 'vec' ? 'text-white shadow-sm' : 'hover:bg-white/60'
+            onClick={() => setMapType('light')}
+            className={`px-3.5 py-2 text-xs font-medium transition-all duration-200 ${
+              mapType === 'light' ? 'text-white' : ''
             }`}
-            style={mapType === 'vec' ? { background: 'var(--primary)', color: 'white' } : { color: 'var(--muted)' }}
+            style={mapType === 'light' ? { background: 'var(--primary)', color: 'white' } : { color: 'var(--muted)', borderRight: '1px solid var(--border)' }}
           >
-            矢量
+            白底
           </button>
           <button
             onClick={() => setMapType('img')}
-            className={`px-3.5 py-2 text-xs font-medium transition-all duration-200 first:rounded-l-xl last:rounded-r-xl ${
-              mapType === 'img' ? 'text-white shadow-sm' : 'hover:bg-white/60'
+            className={`px-3.5 py-2 text-xs font-medium transition-all duration-200 ${
+              mapType === 'img' ? 'text-white' : ''
             }`}
-            style={mapType === 'img' ? { background: 'var(--primary)', color: 'white' } : { color: 'var(--muted)' }}
+            style={mapType === 'img' ? { background: 'var(--primary)', color: 'white' } : { color: 'var(--muted)', borderRight: '1px solid var(--border)' }}
           >
             卫星
           </button>
           <button
             onClick={() => setMapType('terrain')}
-            className={`px-3.5 py-2 text-xs font-medium transition-all duration-200 first:rounded-l-xl last:rounded-r-xl ${
-              mapType === 'terrain' ? 'text-white shadow-sm' : 'hover:bg-white/60'
+            className={`px-3.5 py-2 text-xs font-medium transition-all duration-200 ${
+              mapType === 'terrain' ? 'text-white' : ''
             }`}
             style={mapType === 'terrain' ? { background: 'var(--primary)', color: 'white' } : { color: 'var(--muted)' }}
           >
@@ -734,10 +736,10 @@ export default function MapView({
       </div>
 
       {drawMode !== 'none' && drawMode !== 'measure' && drawMode !== 'text' && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] px-4 py-2.5 rounded-xl shadow-xl border text-sm flex items-center gap-3 animate-fade-slide-up"
-          style={{ background: 'rgba(26,31,36,0.85)', color: 'white', borderColor: 'rgba(255,255,255,0.1)' }}>
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] px-4 py-2.5 border text-sm flex items-center gap-3 animate-fade-slide-up"
+          style={{ background: 'rgba(17,24,22,0.84)', color: 'white', borderColor: 'rgba(255,255,255,0.1)' }}>
           <span className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#2d6b52' }} />
+            <span className="w-1.5 h-1.5 animate-pulse" style={{ background: '#2d6b52' }} />
             {drawMode === 'point' && '点击地图放置标注点'}
             {drawMode === 'line' && '依次点击添加折线顶点，双击结束'}
             {drawMode === 'polygon' && '依次点击添加多边形顶点，双击结束'}
@@ -747,7 +749,7 @@ export default function MapView({
               cleanupTempDrawing();
               onDrawModeChange('none');
             }}
-            className="ml-1 px-2.5 py-1 text-xs rounded-lg transition"
+            className="ml-1 px-2.5 py-1 text-xs transition"
             style={{ background: 'rgba(255,255,255,0.15)' }}
           >
             取消
@@ -757,8 +759,8 @@ export default function MapView({
 
       {/* 测距模式浮动条 */}
       {drawMode === 'measure' && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] px-4 py-2.5 rounded-xl shadow-xl border text-sm flex items-center gap-3 animate-fade-slide-up"
-          style={{ background: 'rgba(26,31,36,0.85)', color: 'white', borderColor: 'rgba(255,255,255,0.1)' }}>
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] px-4 py-2.5 border text-sm flex items-center gap-3 animate-fade-slide-up"
+          style={{ background: 'rgba(17,24,22,0.84)', color: 'white', borderColor: 'rgba(255,255,255,0.1)' }}>
           <span>📏 测距</span>
           <span className="font-semibold" style={{ color: '#93c5a2' }}>
             {measureDistance > 0 ? `${(measureDistance / 1000).toFixed(2)} km` : '点击起点'}
@@ -770,7 +772,7 @@ export default function MapView({
               setMeasureDistance(0);
               onDrawModeChange('none');
             }}
-            className="ml-1 px-2.5 py-1 text-xs rounded-lg transition"
+            className="ml-1 px-2.5 py-1 text-xs transition"
             style={{ background: 'rgba(255,255,255,0.15)' }}
           >
             取消
@@ -781,7 +783,7 @@ export default function MapView({
 	      {/* 右键菜单 */}
 	      {contextMenu && (
 	        <div
-	          className="fixed z-[5000] rounded-xl shadow-xl border py-1 min-w-[160px] backdrop-blur-sm animate-fade-in"
+	          className="fixed z-[5000] shadow-xl border py-1 min-w-[160px] backdrop-blur-sm animate-fade-in"
 	          style={{ left: contextMenu.x, top: contextMenu.y, background: 'rgba(250,248,244,0.96)', borderColor: '#e3ddd0' }}
 	          onClick={(e) => e.stopPropagation()}
 	        >
@@ -851,7 +853,7 @@ export default function MapView({
 	      {showTextInput && (
 	        <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-black/20 backdrop-blur-sm"
 	          onClick={() => setShowTextInput(null)}>
-	          <div className="rounded-xl shadow-2xl p-5 w-80 mx-4"
+	          <div className="shadow-2xl border p-5 w-80 mx-4"
 	            style={{ background: 'var(--surface)' }}
 	            onClick={(e) => e.stopPropagation()}>
 	            <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--ink)' }}>添加文字标注</h3>
@@ -861,7 +863,7 @@ export default function MapView({
 	              onChange={(e) => setTextValue(e.target.value)}
 	              placeholder="输入标注文字..."
 	              autoFocus
-	              className="w-full px-3 py-2 rounded-lg text-sm outline-none transition mb-3"
+	              className="w-full px-3 py-2 text-sm outline-none transition mb-3"
 	              style={{ border: '1px solid var(--border)', color: 'var(--ink)' }}
 	              onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(26,71,53,0.12)'; }}
 	              onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
@@ -879,7 +881,7 @@ export default function MapView({
 	            />
 	            <div className="flex gap-2 justify-end">
 	              <button onClick={() => { setShowTextInput(null); setTextValue(''); }}
-	                className="px-4 py-2 rounded-lg text-sm transition"
+	                className="px-4 py-2 text-sm transition"
 	                style={{ background: 'var(--bg)', color: 'var(--muted)' }}>
 	                取消
 	              </button>
@@ -890,7 +892,7 @@ export default function MapView({
 	                  setTextValue('');
 	                }
 	              }}
-	                className="px-4 py-2 text-white rounded-lg text-sm font-medium transition"
+	                className="px-4 py-2 text-white text-sm font-medium transition"
 	                style={{ background: textValue.trim() ? 'var(--primary)' : 'var(--border)' }}>
 	                添加
 	              </button>

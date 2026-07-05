@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiGet } from '@/lib/api';
 import { MapProject } from '@/lib/types';
-import { ArrowUpRight, Clock, Layers, Loader2, LogIn, MapPin, ScrollText, Sparkles } from 'lucide-react';
+import { ArrowUpRight, Clock, Layers, Loader2, LogIn, MapPinned, ScrollText } from 'lucide-react';
 
 interface MapListItem extends MapProject {
   annotation_count: number;
@@ -62,70 +62,60 @@ export default function PublicDashboard() {
   }
 
   return (
-    <div className="min-h-screen px-4 py-4 md:px-6 md:py-6" style={{ background: 'var(--bg)' }}>
-      <div className="paper-panel archive-shell mx-auto max-w-7xl overflow-hidden rounded-[32px]">
-        <header className="border-b px-6 py-4 md:px-8" style={{ borderColor: 'var(--border)' }}>
+    <div className="admin-shell">
+      <div className="admin-frame">
+        <header className="admin-strip">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl" style={{ background: 'var(--primary)' }}>
-                <MapPin className="h-5 w-5 text-white" />
+              <div className="admin-strip-mark">
+                <MapPinned className="h-4 w-4" />
               </div>
               <div>
-                <div className="display-label">Public Atlas</div>
-                <h1 className="text-2xl leading-none md:text-3xl" style={{ color: 'var(--ink)' }}>地图目录</h1>
+                <div className="display-label">Public Access</div>
+                <h1 className="text-[22px] leading-none" style={{ color: 'var(--ink)' }}>地图目录</h1>
               </div>
             </div>
-            <a href="/admin" className="ghost-button inline-flex items-center gap-2 self-start rounded-full px-4 py-2 text-xs font-semibold md:self-auto">
+            <a href="/admin" className="ghost-button inline-flex items-center gap-2 self-start px-4 py-2 text-xs font-semibold workbench-hard-edge md:self-auto">
               <LogIn className="h-3.5 w-3.5" />
               后台管理
             </a>
           </div>
         </header>
 
-        <main className="mx-auto max-w-7xl px-6 py-6 md:px-8 md:py-8">
-          <section className="archive-grid grid gap-5 lg:grid-cols-[1.18fr_0.82fr]">
-            <div className="paper-card relative overflow-hidden rounded-[30px] p-6 md:p-8">
-              <div className="absolute inset-0 opacity-70" style={{ background: 'radial-gradient(circle at top right, rgba(184,155,114,0.18), transparent 28%)' }} />
-              <div className="relative">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <div className="soft-pill">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      馆藏索引
-                    </div>
-                    <h2 className="mt-5 text-3xl leading-[0.98] md:text-[3.15rem]" style={{ color: 'var(--ink)' }}>
-                      信息留在画面里，
-                      <br />
-                      其余都退后。
-                    </h2>
-                  </div>
-                  <div className="min-w-[180px] rounded-[24px] border px-4 py-4" style={{ borderColor: 'var(--border)', background: 'rgba(255,255,255,0.5)' }}>
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--faint)' }}>最后编目</div>
-                    <div className="mt-2 text-lg leading-tight" style={{ color: 'var(--ink)' }}>
-                      {latestUpdatedAt ? formatTime(latestUpdatedAt) : '暂无记录'}
-                    </div>
+        <main className="pt-5">
+          <section className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
+            <div className="paper-card border p-5">
+              <div className="flex flex-wrap items-start justify-between gap-4 border-b pb-4" style={{ borderColor: 'var(--border)' }}>
+                <div>
+                  <div className="text-[11px] font-medium uppercase tracking-[0.12em]" style={{ color: 'var(--faint)' }}>Public Directory</div>
+                  <h2 className="mt-2 text-[18px] leading-none" style={{ color: 'var(--ink)' }}>公开地图</h2>
+                </div>
+                <div className="min-w-[180px] border px-4 py-4" style={{ borderColor: 'var(--border)', background: 'var(--surface-muted)' }}>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--faint)' }}>最后更新</div>
+                  <div className="mt-2 text-lg leading-tight" style={{ color: 'var(--ink)' }}>
+                    {latestUpdatedAt ? formatTime(latestUpdatedAt) : '暂无记录'}
                   </div>
                 </div>
-                <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-[22px] border px-4 py-4" style={{ borderColor: 'var(--border)', background: 'rgba(255,255,255,0.56)' }}>
-                    <div className="text-[11px] font-medium" style={{ color: 'var(--faint)' }}>地图数量</div>
-                    <div className="mt-2 text-3xl leading-none" style={{ color: 'var(--ink)' }}>{maps.length}</div>
-                  </div>
-                  <div className="rounded-[22px] border px-4 py-4" style={{ borderColor: 'var(--border)', background: 'rgba(255,255,255,0.56)' }}>
-                    <div className="text-[11px] font-medium" style={{ color: 'var(--faint)' }}>标注总数</div>
-                    <div className="mt-2 text-3xl leading-none" style={{ color: 'var(--ink)' }}>{totalAnnotations}</div>
-                  </div>
-                  <div className="rounded-[22px] border px-4 py-4" style={{ borderColor: 'var(--border)', background: 'rgba(255,255,255,0.56)' }}>
-                    <div className="text-[11px] font-medium" style={{ color: 'var(--faint)' }}>近期活跃</div>
-                    <div className="mt-2 text-3xl leading-none" style={{ color: 'var(--ink)' }}>{featuredMaps.length}</div>
-                  </div>
+              </div>
+              <div className="mt-4 grid gap-px md:grid-cols-3" style={{ background: 'var(--border)' }}>
+                <div className="px-4 py-4" style={{ background: 'var(--surface-strong)' }}>
+                  <div className="text-[11px] font-medium uppercase tracking-[0.08em]" style={{ color: 'var(--faint)' }}>地图数量</div>
+                  <div className="mt-2 text-[28px] leading-none" style={{ color: 'var(--ink)' }}>{maps.length}</div>
+                </div>
+                <div className="px-4 py-4" style={{ background: 'var(--surface-strong)' }}>
+                  <div className="text-[11px] font-medium uppercase tracking-[0.08em]" style={{ color: 'var(--faint)' }}>标注总数</div>
+                  <div className="mt-2 text-[28px] leading-none" style={{ color: 'var(--ink)' }}>{totalAnnotations}</div>
+                </div>
+                <div className="px-4 py-4" style={{ background: 'var(--surface-strong)' }}>
+                  <div className="text-[11px] font-medium uppercase tracking-[0.08em]" style={{ color: 'var(--faint)' }}>近期活跃</div>
+                  <div className="mt-2 text-[28px] leading-none" style={{ color: 'var(--ink)' }}>{featuredMaps.length}</div>
                 </div>
               </div>
             </div>
 
             <div className="grid gap-4">
               {featuredMaps.map((map, idx) => (
-                <div key={map.id} className="paper-card rounded-[26px] p-5">
+                <div key={map.id} className="paper-card p-5">
                   <div className="text-[11px] font-medium mb-2" style={{ color: 'var(--faint)' }}>最近更新 {String(idx + 1).padStart(2, '0')}</div>
                   <h3 className="text-2xl leading-tight" style={{ color: 'var(--ink)' }}>{map.name}</h3>
                   <p className="mt-2 line-clamp-2 text-sm leading-6" style={{ color: 'var(--muted)' }}>
@@ -142,10 +132,8 @@ export default function PublicDashboard() {
 
           <section className="mt-6">
             <div className="mb-4 flex items-end justify-between gap-4">
-              <div>
-                <h3 className="text-3xl" style={{ color: 'var(--ink)' }}>全部地图</h3>
-              </div>
-              <div className="hidden rounded-full px-4 py-2 text-xs font-semibold tracking-[0.16em] md:block" style={{ background: 'rgba(255,255,255,0.56)', color: 'var(--faint)', border: '1px solid var(--border)' }}>
+              <h3 className="text-[18px] font-semibold" style={{ color: 'var(--ink)' }}>全部地图</h3>
+              <div className="hidden px-4 py-2 text-xs font-semibold tracking-[0.12em] md:block" style={{ background: 'var(--surface-muted)', color: 'var(--faint)', border: '1px solid var(--border)' }}>
                 共 {maps.length} 张
               </div>
             </div>
@@ -156,20 +144,20 @@ export default function PublicDashboard() {
                   key={map.id}
                   type="button"
                   onClick={() => router.push(`/map/${map.id}`)}
-                  className="paper-card group overflow-hidden rounded-[28px] text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_28px_70px_rgba(37,28,18,0.14)]"
+                  className="paper-card group overflow-hidden text-left transition-all duration-200 hover:-translate-y-0.5"
                   style={{ cursor: 'pointer' }}
                 >
                   <div className="relative h-44 p-5" style={{ background: thumbGradients[idx % thumbGradients.length] }}>
-                    <div className="absolute inset-[14px] rounded-[20px] border" style={{ borderColor: 'rgba(32,32,32,0.08)' }} />
+                    <div className="absolute inset-[14px] border" style={{ borderColor: 'rgba(32,32,32,0.08)' }} />
                     <div className="relative flex h-full flex-col justify-between">
                       <div className="flex items-start justify-between">
-                        <span className="rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ background: 'rgba(255,255,255,0.48)', color: 'var(--faint)' }}>
+                        <span className="px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ background: 'rgba(255,255,255,0.48)', color: 'var(--faint)', border: '1px solid rgba(32,32,32,0.08)' }}>
                           编号 {String(idx + 1).padStart(2, '0')}
                         </span>
                         <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" style={{ color: 'rgba(23,23,23,0.55)' }} />
                       </div>
                       <div>
-                        <MapPin className="mb-3 h-10 w-10" style={{ color: 'rgba(31,52,45,0.28)' }} />
+                        <MapPinned className="mb-3 h-10 w-10" style={{ color: 'rgba(31,52,45,0.28)' }} />
                         <div className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: 'rgba(23,23,23,0.5)' }}>
                           {map.annotation_count} 个标注
                         </div>
@@ -184,11 +172,11 @@ export default function PublicDashboard() {
                       {map.description || '整理后的地图项目，包含公开标注、位置说明与阅览信息。'}
                     </p>
                     <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--faint)' }}>
-                      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1" style={{ background: 'rgba(23,23,23,0.04)' }}>
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1" style={{ background: 'rgba(23,23,23,0.04)' }}>
                         <Layers className="h-3.5 w-3.5" />
                         {map.annotation_count} 条
                       </span>
-                      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1" style={{ background: 'rgba(23,23,23,0.04)' }}>
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1" style={{ background: 'rgba(23,23,23,0.04)' }}>
                         <Clock className="h-3.5 w-3.5" />
                         {formatTime(map.updated_at)}
                       </span>
@@ -198,7 +186,7 @@ export default function PublicDashboard() {
               ))}
 
               {maps.length === 0 && (
-                <div className="paper-card col-span-full rounded-[28px] px-6 py-20 text-center">
+                <div className="paper-card col-span-full px-6 py-20 text-center">
                   <ScrollText className="mx-auto mb-4 h-12 w-12" style={{ color: 'var(--faint)' }} />
                   <p className="text-lg" style={{ color: 'var(--muted)' }}>暂无地图</p>
                 </div>

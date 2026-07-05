@@ -17,10 +17,10 @@ export default function WorkbenchSidebarToggle({
     <button
       onClick={onToggle}
       aria-label={open ? '收起侧边栏' : '展开侧边栏'}
-      className="absolute top-6 z-40 rounded-r-2xl p-2 transition-all duration-200 hover:scale-105"
+      className="absolute top-4 z-40 h-10 w-9 border-r p-0 transition-all duration-200"
       style={{
         left: open ? `${offset}px` : '0px',
-        background: 'rgba(255,252,247,0.94)',
+        background: 'rgba(250,249,244,0.97)',
         border: '1px solid var(--border)',
         borderLeft: 'none',
         boxShadow: 'var(--shadow-soft)',

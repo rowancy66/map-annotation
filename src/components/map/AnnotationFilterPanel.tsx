@@ -51,15 +51,15 @@ export default function AnnotationFilterPanel({
   };
 
   return (
-    <div className="px-3 py-3 space-y-3" style={{ borderBottom: '1px solid var(--border)', background: 'rgba(26,71,53,0.03)' }}>
+    <div className="space-y-3 px-4 py-3" style={{ borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.18)' }}>
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>筛选面板</h3>
+          <h3 className="text-xs font-semibold" style={{ color: 'var(--ink)' }}>筛选</h3>
           <p className="text-[11px]" style={{ color: 'var(--faint)' }}>命中 {resultCount} / {totalCount}</p>
         </div>
         <button
           onClick={() => onChange({ keyword: '', selectedGroupId: null, selectedTypes: [], fieldFilters: [] })}
-          className="ghost-button inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px]"
+          className="ghost-button workbench-hard-edge inline-flex items-center gap-1 px-2.5 py-1 text-[11px]"
         >
           <RotateCcw className="w-3 h-3" />
           清空
@@ -74,19 +74,17 @@ export default function AnnotationFilterPanel({
             value={filters.keyword}
             onChange={(e) => onChange({ ...filters, keyword: e.target.value })}
             placeholder="名称、描述、自定义字段"
-            className="w-full px-3 py-2 text-sm rounded-xl outline-none"
-            style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.8)', color: 'var(--ink)' }}
+            className="w-full px-3 py-2 text-sm outline-none workbench-hard-edge workbench-field"
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2">
           <div>
             <label className="block text-[11px] mb-1" style={{ color: 'var(--muted)' }}>分组</label>
             <select
               value={filters.selectedGroupId ?? ''}
               onChange={(e) => onChange({ ...filters, selectedGroupId: e.target.value || null })}
-              className="w-full px-3 py-2 text-sm rounded-xl outline-none"
-              style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.8)', color: 'var(--ink)' }}
+              className="w-full px-3 py-2 text-sm outline-none workbench-hard-edge workbench-field"
             >
               <option value="">全部分组</option>
               {groups.map((group) => (
@@ -97,7 +95,7 @@ export default function AnnotationFilterPanel({
 
           <div>
             <label className="block text-[11px] mb-1" style={{ color: 'var(--muted)' }}>标注类型</label>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1">
               {[
                 { value: 'point', label: '点' },
                 { value: 'line', label: '线' },
@@ -114,10 +112,10 @@ export default function AnnotationFilterPanel({
                         : [...filters.selectedTypes, type.value as typeof filters.selectedTypes[number]];
                       onChange({ ...filters, selectedTypes: next });
                     }}
-                    className="px-2.5 py-1 rounded-full text-xs transition"
+                    className="px-2.5 py-1 text-[11px] transition workbench-hard-edge"
                     style={{
-                      background: active ? 'var(--primary)' : 'white',
-                      color: active ? 'white' : 'var(--muted)',
+                      background: active ? 'rgba(11,79,69,0.08)' : 'rgba(255,255,255,0.48)',
+                      color: active ? 'var(--ink)' : 'var(--muted)',
                       border: `1px solid ${active ? 'var(--primary)' : 'var(--border)'}`,
                     }}
                   >
@@ -139,7 +137,7 @@ export default function AnnotationFilterPanel({
               if (!next) return;
               onChange({ ...filters, fieldFilters: [...filters.fieldFilters, next] });
             }}
-            className="ghost-button inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px]"
+            className="ghost-button workbench-hard-edge inline-flex items-center gap-1 px-2.5 py-1 text-[11px]"
           >
             <Plus className="w-3 h-3" />
             添加字段条件
@@ -155,13 +153,12 @@ export default function AnnotationFilterPanel({
           if (!template) return null;
 
           return (
-            <div key={`${filter.fieldId}-${index}`} className="rounded-[18px] p-3 space-y-2" style={{ background: 'rgba(255,255,255,0.72)', border: '1px solid var(--border)' }}>
+            <div key={`${filter.fieldId}-${index}`} className="workbench-panel workbench-hard-edge space-y-2 p-3">
               <div className="grid grid-cols-[1fr,auto] gap-2">
                 <select
                   value={filter.fieldId}
                   onChange={(e) => handleTemplateChange(index, e.target.value)}
-                  className="px-3 py-2 text-sm rounded-xl outline-none"
-                  style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.9)', color: 'var(--ink)' }}
+                  className="px-3 py-2 text-sm outline-none workbench-hard-edge workbench-field"
                 >
                   {fieldTemplates.map((item) => (
                     <option key={item.id} value={item.id}>{item.name}</option>
@@ -169,8 +166,8 @@ export default function AnnotationFilterPanel({
                 </select>
                 <button
                   onClick={() => onChange({ ...filters, fieldFilters: filters.fieldFilters.filter((_, itemIndex) => itemIndex !== index) })}
-                  className="rounded-xl px-2 py-2 transition"
-                  style={{ color: 'var(--danger)', border: '1px solid var(--border)', background: 'rgba(255,255,255,0.9)' }}
+                  className="workbench-hard-edge px-2 py-2 transition"
+                  style={{ color: 'var(--danger)', border: '1px solid var(--border)', background: 'rgba(255,255,255,0.72)' }}
                   aria-label="删除字段条件"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -182,8 +179,7 @@ export default function AnnotationFilterPanel({
                   <select
                     value={filter.operator}
                     onChange={(e) => updateFieldFilter(index, { ...filter, operator: e.target.value as AnnotationFieldFilter['operator'], value: '' })}
-                    className="px-3 py-2 text-sm rounded-xl outline-none"
-                    style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.9)', color: 'var(--ink)' }}
+                    className="px-3 py-2 text-sm outline-none workbench-hard-edge workbench-field"
                   >
                     <option value="contains">包含</option>
                     <option value="equals">等于</option>
@@ -192,8 +188,7 @@ export default function AnnotationFilterPanel({
                     type="text"
                     value={filter.value || ''}
                     onChange={(e) => updateFieldFilter(index, { ...filter, value: e.target.value })}
-                    className="px-3 py-2 text-sm rounded-xl outline-none"
-                    style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.9)', color: 'var(--ink)' }}
+                    className="px-3 py-2 text-sm outline-none workbench-hard-edge workbench-field"
                     placeholder="输入匹配值"
                   />
                 </div>
@@ -205,16 +200,14 @@ export default function AnnotationFilterPanel({
                     type="number"
                     value={filter.min || ''}
                     onChange={(e) => updateFieldFilter(index, { ...filter, min: e.target.value })}
-                    className="px-3 py-2 text-sm rounded-xl outline-none"
-                    style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.9)', color: 'var(--ink)' }}
+                    className="px-3 py-2 text-sm outline-none workbench-hard-edge workbench-field"
                     placeholder="最小值"
                   />
                   <input
                     type="number"
                     value={filter.max || ''}
                     onChange={(e) => updateFieldFilter(index, { ...filter, max: e.target.value })}
-                    className="px-3 py-2 text-sm rounded-xl outline-none"
-                    style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.9)', color: 'var(--ink)' }}
+                    className="px-3 py-2 text-sm outline-none workbench-hard-edge workbench-field"
                     placeholder="最大值"
                   />
                 </div>
@@ -226,15 +219,13 @@ export default function AnnotationFilterPanel({
                     type="date"
                     value={filter.min || ''}
                     onChange={(e) => updateFieldFilter(index, { ...filter, min: e.target.value })}
-                    className="px-3 py-2 text-sm rounded-xl outline-none"
-                    style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.9)', color: 'var(--ink)' }}
+                    className="px-3 py-2 text-sm outline-none workbench-hard-edge workbench-field"
                   />
                   <input
                     type="date"
                     value={filter.max || ''}
                     onChange={(e) => updateFieldFilter(index, { ...filter, max: e.target.value })}
-                    className="px-3 py-2 text-sm rounded-xl outline-none"
-                    style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.9)', color: 'var(--ink)' }}
+                    className="px-3 py-2 text-sm outline-none workbench-hard-edge workbench-field"
                   />
                 </div>
               )}

@@ -32,41 +32,42 @@ export default function FieldTemplateManager({ templates, onChange }: FieldTempl
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+    <div className="workbench-panel workbench-hard-edge overflow-hidden">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition"
+        className="w-full flex items-center justify-between px-4 py-3 transition"
+        style={{ borderTop: '1px solid var(--border)', color: 'var(--ink)', background: 'rgba(255,255,255,0.2)' }}
       >
-        <span className="text-sm font-medium text-gray-700">
+        <span className="text-sm font-medium">
           自定义字段 ({templates.length})
         </span>
-        <ChevronDown className={`w-4 h-4 text-gray-500 transition ${expanded ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-4 h-4 transition ${expanded ? 'rotate-180' : ''}`} style={{ color: 'var(--muted)' }} />
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 space-y-3 border-t">
+        <div className="px-4 pb-4 space-y-3 border-t" style={{ borderColor: 'var(--border)' }}>
           {templates.length === 0 && (
-            <p className="text-sm text-gray-400 py-3 text-center">暂无自定义字段，点击下方添加</p>
+            <p className="py-3 text-center text-sm" style={{ color: 'var(--faint)' }}>暂无自定义字段，点击下方添加</p>
           )}
-              {templates.map((field) => (
-              <div key={field.id} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg">
-                <div className="flex-1 grid grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    key={'name-' + field.id}
-                    defaultValue={field.name}
-                    onBlur={(e) => {
-                      if (e.target.value !== field.name) {
-                        updateField(field.id, { name: e.target.value });
-                      }
-                    }}
-                    placeholder="字段名称"
-                    className="px-2 py-1.5 border rounded text-sm"
-                  />
+          {templates.map((field) => (
+            <div key={field.id} className="workbench-panel workbench-hard-edge flex items-start gap-2 p-3">
+              <div className="flex-1 grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  key={'name-' + field.id}
+                  defaultValue={field.name}
+                  onBlur={(e) => {
+                    if (e.target.value !== field.name) {
+                      updateField(field.id, { name: e.target.value });
+                    }
+                  }}
+                  placeholder="字段名称"
+                  className="px-2 py-1.5 border text-sm outline-none workbench-hard-edge workbench-field"
+                />
                 <select
                   value={field.type}
                   onChange={(e) => updateField(field.id, { type: e.target.value as FieldType })}
-                  className="px-2 py-1.5 border rounded text-sm"
+                  className="px-2 py-1.5 border text-sm outline-none workbench-hard-edge workbench-field"
                 >
                   <option value="text">文本</option>
                   <option value="number">数字</option>
@@ -83,22 +84,22 @@ export default function FieldTemplateManager({ templates, onChange }: FieldTempl
                       })
                     }
                     placeholder="选项（逗号分隔，如：选项1,选项2）"
-                    className="col-span-2 px-2 py-1.5 border rounded text-sm"
+                    className="col-span-2 px-2 py-1.5 border text-sm outline-none workbench-hard-edge workbench-field"
                   />
                 )}
               </div>
-              <label className="flex items-center gap-1 text-xs text-gray-500 pt-1.5">
+              <label className="flex items-center gap-1 pt-1.5 text-xs" style={{ color: 'var(--muted)' }}>
                 <input
                   type="checkbox"
                   checked={field.required}
                   onChange={(e) => updateField(field.id, { required: e.target.checked })}
-                  className="rounded"
                 />
                 必填
               </label>
               <button
                 onClick={() => removeField(field.id)}
-                className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition"
+                className="p-1.5 transition"
+                style={{ color: 'var(--danger)', border: '1px solid var(--border)', background: 'rgba(255,255,255,0.72)' }}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -106,7 +107,8 @@ export default function FieldTemplateManager({ templates, onChange }: FieldTempl
           ))}
           <button
             onClick={addField}
-            className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-[#78a587] hover:text-[#78a587] transition flex items-center justify-center gap-1"
+            className="flex w-full items-center justify-center gap-1 border py-2 text-sm transition workbench-hard-edge"
+            style={{ borderStyle: 'dashed', borderColor: 'var(--border)', color: 'var(--muted)', background: 'rgba(255,255,255,0.36)' }}
           >
             <Plus className="w-4 h-4" /> 添加字段
           </button>

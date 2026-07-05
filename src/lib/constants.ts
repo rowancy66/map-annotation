@@ -22,6 +22,9 @@ export const DEFAULT_ZOOM = 13;
 // 天地图子域名
 export const TIANDITU_SUBDOMAINS = ['0', '1', '2', '3', '4', '5', '6', '7'];
 
+export const LIGHT_BASEMAP = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+export const LIGHT_BASEMAP_SUBDOMAINS = ['a', 'b', 'c', 'd'];
+
 // 土地出让数据默认字段模板（对齐 Excel 表头）
 import { FieldTemplate } from './types';
 

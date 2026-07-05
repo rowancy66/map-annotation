@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Manrope } from "next/font/google";
+import { IBM_Plex_Sans, Noto_Sans_SC } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 
-const bodyFont = Manrope({
+const bodyFont = IBM_Plex_Sans({
   variable: "--font-body",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
 });
 
-const displayFont = Cormorant_Garamond({
+const displayFont = Noto_Sans_SC({
   variable: "--font-display",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["500", "700"],
 });
 
 export const metadata: Metadata = {

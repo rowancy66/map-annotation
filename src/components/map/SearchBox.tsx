@@ -180,13 +180,15 @@ export default function SearchBox({ map }: SearchBoxProps) {
   }, [clearMarker]);
 
   return (
-    <div className="absolute top-4 right-4 z-[1000] flex flex-col items-end">
-      <div className="relative w-72">
-        {/* 搜索结果下拉 - 显示在搜索框上方 */}
+    <div className="flex flex-col items-end">
+      <div className="relative w-80">
         {showResults && (
-          <div className="absolute top-full mt-1 left-0 right-0 bg-white rounded-lg shadow-xl border border-gray-200 max-h-72 overflow-y-auto">
+          <div
+            className="absolute top-full left-0 right-0 z-[1001] mt-1 max-h-72 overflow-y-auto border"
+            style={{ background: 'var(--surface-strong)', borderColor: 'var(--border)', boxShadow: '0 12px 32px rgba(17,24,22,0.08)' }}
+          >
             {results.length === 0 && !loading && (
-              <div className="px-4 py-3 text-sm text-gray-400 text-center">
+              <div className="px-4 py-3 text-center text-sm" style={{ color: 'var(--faint)' }}>
                 未找到结果
               </div>
             )}
@@ -194,35 +196,41 @@ export default function SearchBox({ map }: SearchBoxProps) {
               <button
                 key={`${result.lng}-${result.lat}-${idx}`}
                 onClick={() => handleSelect(result)}
-                className={`w-full px-4 py-3 text-left flex items-start gap-3 transition ${
+                className={`flex w-full items-start gap-3 px-4 py-3 text-left transition ${
                   idx === selectedIndex
-                    ? 'border-l-2 border-l-[#78a587]'
-                    : 'hover:bg-gray-50 border-l-2 border-l-transparent'
-                } ${idx > 0 ? 'border-t border-gray-100' : ''}`}
-                style={idx === selectedIndex ? { background: 'rgba(120,165,135,0.04)' } : undefined}
+                    ? 'border-l-2 border-l-[#0b4f45]'
+                    : 'border-l-2 border-l-transparent'
+                }`}
+                style={{
+                  background: idx === selectedIndex ? 'rgba(10,75,63,0.05)' : 'var(--surface-strong)',
+                  borderTop: idx > 0 ? '1px solid var(--border)' : 'none',
+                }}
               >
-                <MapPin className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#78a587' }} />
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--primary)' }} />
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-gray-900 truncate">
+                  <div className="truncate text-sm font-medium" style={{ color: 'var(--ink)' }}>
                     {result.name}
                   </div>
                   {result.address && (
-                    <div className="text-xs text-gray-500 mt-0.5 truncate">
+                    <div className="mt-0.5 truncate text-xs" style={{ color: 'var(--muted)' }}>
                       {result.address}
                     </div>
                   )}
-                  <div className="text-[10px] text-gray-400 mt-0.5">
+                  <div className="mt-0.5 text-[10px]" style={{ color: 'var(--faint)' }}>
                     {result.lat.toFixed(6)}, {result.lng.toFixed(6)}
                   </div>
                 </div>
-                <Navigation className="w-3.5 h-3.5 text-gray-300 mt-1 shrink-0" />
+                <Navigation className="mt-1 h-3.5 w-3.5 shrink-0" style={{ color: 'var(--faint)' }} />
               </button>
             ))}
           </div>
         )}
 
-        <div className="flex items-center bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
-          <div className="pl-3 pr-1 text-gray-400">
+        <div
+          className="flex items-center overflow-hidden border"
+          style={{ background: 'rgba(252,253,250,0.96)', borderColor: 'var(--border)', boxShadow: '0 8px 20px rgba(17,24,22,0.06)' }}
+        >
+          <div className="pl-3 pr-1" style={{ color: 'var(--faint)' }}>
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
@@ -237,13 +245,15 @@ export default function SearchBox({ map }: SearchBoxProps) {
             onKeyDown={handleKeyDown}
             onFocus={() => results.length > 0 && setShowResults(true)}
             placeholder="搜索地址、路名…"
-            className="flex-1 py-2.5 pr-2 text-sm outline-none text-gray-700 placeholder-gray-400"
+            className="flex-1 py-2.5 pr-2 text-sm outline-none"
+            style={{ color: 'var(--ink)' }}
           />
           {query && (
             <button
               onClick={handleClear}
               aria-label="清除搜索"
-              className="pr-2 pl-1 text-gray-400 hover:text-gray-600 transition"
+              className="pr-2 pl-1 transition"
+              style={{ color: 'var(--faint)' }}
             >
               <X className="w-3.5 h-3.5" aria-hidden="true" />
             </button>

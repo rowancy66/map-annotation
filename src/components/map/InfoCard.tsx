@@ -3,23 +3,39 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Annotation, PointStyle, LineStyle, PolygonStyle, TextStyle, PRESET_COLORS, PRESET_ICONS, FieldTemplate } from '@/lib/types';
 import { X, Save, Trash2, Loader2, Upload, Link2, Plus } from 'lucide-react';
 import { uploadAnnotationImage, deleteAnnotationImage } from '@/lib/supabase';
 
 const colors = {
-  surface: 'rgba(255,252,247,0.94)',
-  bg: '#f7f1e8',
-  border: 'rgba(52,44,35,0.1)',
-  ink: '#1a1a18',
-  muted: '#695f54',
-  faint: '#978a7b',
-  placeholder: '#b3a596',
+  surface: 'rgba(252,253,250,0.98)',
+  bg: 'rgba(245,247,243,0.9)',
+  border: 'rgba(23,33,28,0.12)',
+  ink: '#17211c',
+  muted: '#55615a',
+  faint: '#7a857e',
+  placeholder: '#9aa39d',
   accent: '#0b4f45',
   accentSoft: 'rgba(11,79,69,0.08)',
   danger: '#b95749',
 };
+
+function sanitizeExternalUrl(url: unknown): string | null {
+  if (typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return parsed.toString();
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 interface InfoCardProps {
   annotation: Annotation;
@@ -37,54 +53,11 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
-  const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const isDraggingRef = useRef(false);
-
   useEffect(() => {
     setEditData({ ...annotation });
     setEditing(false);
     setShowDeleteConfirm(false);
   }, [annotation]);
-
-  const handleDragStart = useCallback((e: React.MouseEvent) => {
-    if (editing) return;
-    e.preventDefault();
-    isDraggingRef.current = true;
-
-    const card = cardRef.current;
-    if (!card) return;
-
-    const rect = card.getBoundingClientRect();
-    if (!position) {
-      setPosition({ x: rect.left, y: rect.top });
-    }
-
-    const currentLeft = position ? position.x : rect.left;
-    const currentTop = position ? position.y : rect.top;
-
-    dragOffsetRef.current = {
-      x: e.clientX - currentLeft,
-      y: e.clientY - currentTop,
-    };
-
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      if (!isDraggingRef.current) return;
-      const newX = moveEvent.clientX - dragOffsetRef.current.x;
-      const newY = moveEvent.clientY - dragOffsetRef.current.y;
-      setPosition({ x: newX, y: newY });
-    };
-
-    const handleMouseUp = () => {
-      isDraggingRef.current = false;
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-  }, [editing, position]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -111,10 +84,6 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
     return editData.custom_fields.find((f) => f.fieldId === fieldId)?.value ?? null;
   };
 
-  const stylePos = position
-    ? { position: 'fixed' as const, left: position.x, top: position.y, zIndex: 2000 }
-    : {};
-
   const typeMeta = {
     point: { label: '点', accent: '#1a4735', bg: 'rgba(26,71,53,0.08)' },
     line: { label: '线', accent: '#2c6fbb', bg: 'rgba(44,111,187,0.08)' },
@@ -124,30 +93,33 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
   const tm = typeMeta[annotation.type as keyof typeof typeMeta] || typeMeta.point;
 
   return (
-    <div ref={cardRef} style={{ ...stylePos }}
-      className="w-80 max-w-[calc(100vw-2rem)] rounded-[26px] shadow-2xl overflow-hidden animate-fade-slide-up">
-      <div style={{ height: '3px', background: tm.accent }} />
-      <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderTop: 'none', boxShadow: '0 26px 64px rgba(37,28,18,0.14)', backdropFilter: 'blur(14px)' }}>
+    <div className="w-[360px] max-w-[calc(100vw-2rem)] overflow-hidden animate-fade-slide-up">
+      <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, boxShadow: '0 12px 24px rgba(23,33,28,0.08)' }}>
 
         {/* 标题栏 */}
-        <div onMouseDown={handleDragStart}
-          className={`flex items-center justify-between px-4 py-3 select-none ${editing ? '' : 'cursor-move'}`}
+        <div
+          className="flex items-center justify-between px-4 py-3 select-none"
           style={{ borderBottom: `1px solid ${colors.border}` }}>
           <div className="flex items-center gap-2 min-w-0">
-            <span className="text-[10px] font-semibold px-2 py-1 rounded-full leading-none tracking-wider"
+            <span className="px-2 py-1 text-[10px] font-semibold leading-none tracking-wider"
               style={{ background: tm.bg, color: tm.accent }}>{tm.label}</span>
-            <span style={{ color: colors.faint, fontSize: '10px' }}>
-              {new Date(annotation.updated_at).toLocaleDateString('zh-CN')}
-            </span>
+            <div className="min-w-0">
+              <div className="truncate text-[13px] font-medium" style={{ color: colors.ink }}>
+                {annotation.name || '未命名'}
+              </div>
+              <span style={{ color: colors.faint, fontSize: '10px' }}>
+                {new Date(annotation.updated_at).toLocaleDateString('zh-CN')}
+              </span>
+            </div>
           </div>
           <button onClick={onClose} aria-label="关闭"
-            className="rounded-full p-1 transition shrink-0" style={{ color: colors.faint, background: 'rgba(23,23,23,0.04)' }}>
+            className="shrink-0 p-1 transition" style={{ color: colors.faint, background: 'rgba(23,33,28,0.04)', border: `1px solid ${colors.border}` }}>
             <X className="w-3.5 h-3.5" aria-hidden="true" />
           </button>
         </div>
 
         {/* 内容 */}
-        <div className="px-4 py-3 max-h-[50vh] overflow-y-auto space-y-3 text-sm">
+          <div className="max-h-[calc(100vh-180px)] space-y-3 overflow-y-auto px-4 py-3 text-sm">
           {annotation.type === 'polygon' ? (
             <PolygonFields
               data={editing ? editData : annotation}
@@ -175,7 +147,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
                 {editing ? (
                   <textarea value={editData.description}
                     onChange={(e) => setEditData({ ...editData, description: e.target.value })}
-                    rows={2} className="w-full px-2.5 py-1.5 text-sm rounded-lg outline-none resize-none transition"
+                    rows={2} className="w-full resize-none px-2.5 py-2 text-sm outline-none transition"
                     style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.ink }}
                     onFocus={focusStyle} onBlur={blurStyle} placeholder="输入描述…" />
                 ) : (
@@ -185,7 +157,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
                 )}
               </Field>
               {editing && (
-                <div style={{ background: colors.bg, borderRadius: '8px', padding: '10px' }}>
+                <div style={{ background: colors.bg, padding: '10px', border: `1px solid ${colors.border}` }}>
                   <div className="text-[9px] font-semibold mb-2 tracking-widest uppercase" style={{ color: colors.muted }}>样式</div>
                   <StyleEditor type={annotation.type} style={editData.style}
                     onChange={(style) => setEditData({ ...editData, style })} />
@@ -193,7 +165,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
               )}
               {!editing && (
                 <Field label="坐标">
-                  <p className="text-[11px] font-mono px-2.5 py-1.5 rounded-lg"
+                  <p className="text-[11px] font-mono px-2.5 py-1.5"
                     style={{ background: colors.bg, color: colors.muted, border: `1px solid ${colors.border}` }}>
                     {(annotation.geometry as { coordinates: [number, number] }).coordinates.join(', ')}
                   </p>
@@ -204,14 +176,14 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
                   <div className="text-[9px] font-semibold mb-1.5 tracking-widest uppercase" style={{ color: colors.muted }}>自定义属性</div>
                   <div className="space-y-1.5">
                     {[...fieldTemplates].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)).map((field) => (
-                      <div key={field.id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg" style={{ background: colors.bg }}>
+                      <div key={field.id} className="flex items-center gap-2 border px-2.5 py-1.5" style={{ background: colors.bg, borderColor: colors.border }}>
                         <span className="text-[10px] font-medium min-w-[4rem]" style={{ color: colors.muted }}>{field.name}</span>
                         <div className="flex-1">
                           {editing ? (
                             field.type === 'select' ? (
                               <select value={String(getCustomFieldValue(field.id) ?? '')}
                                 onChange={(e) => handleCustomFieldChange(field.id, e.target.value || null)}
-                                className="w-full px-2 py-1 text-xs rounded-lg outline-none transition"
+                                className="w-full px-2 py-1 text-xs outline-none transition"
                                 style={{ background: '#ffffff', border: `1px solid ${colors.border}`, color: colors.ink }}>
                                 <option value="">未选择</option>
                                 {field.options?.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
@@ -220,7 +192,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
                               <input type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
                                 value={String(getCustomFieldValue(field.id) ?? '')}
                                 onChange={(e) => handleCustomFieldChange(field.id, field.type === 'number' ? (e.target.value ? Number(e.target.value) : null) : (e.target.value || null))}
-                                className="w-full px-2 py-1 text-xs rounded-lg outline-none transition"
+                                className="w-full px-2 py-1 text-xs outline-none transition"
                                 style={{ background: '#ffffff', border: `1px solid ${colors.border}`, color: colors.ink }}
                                 onFocus={focusStyle} onBlur={blurStyle} />
                             )
@@ -240,7 +212,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
         </div>
 
         {/* 底部操作栏 */}
-        <div style={{ borderTop: `1px solid ${colors.border}`, background: 'rgba(255,248,241,0.84)', padding: '10px 14px' }}
+        <div style={{ borderTop: `1px solid ${colors.border}`, background: 'rgba(247,248,244,0.96)', padding: '10px 14px' }}
           className="flex items-center gap-2">
           {editing ? (
             <>
@@ -249,14 +221,14 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
                 <span>{saving ? '保存中...' : '保存'}</span>
               </ActionBtn>
               <button onClick={() => { setEditData({ ...annotation }); setEditing(false); }} disabled={saving}
-                className="flex-1 rounded-full border py-2 text-xs font-medium transition"
+                className="flex-1 border py-2 text-xs font-medium transition"
                 style={{ background: colors.surface, color: colors.muted, borderColor: colors.border }}>
                 取消
               </button>
             </>
           ) : readOnly ? (
             <button onClick={onClose}
-              className="flex-1 rounded-full border py-2 text-xs font-medium transition"
+              className="flex-1 border py-2 text-xs font-medium transition"
               style={{ background: colors.bg, color: colors.muted, borderColor: colors.border }}>
               关闭
             </button>
@@ -271,14 +243,14 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
                     确认
                   </ActionBtn>
                   <button onClick={() => setShowDeleteConfirm(false)} disabled={deleting}
-                    className="rounded-full border px-3 py-2 text-xs transition"
+                    className="border px-3 py-2 text-xs transition"
                     style={{ background: colors.surface, color: colors.muted, borderColor: colors.border }}>
                     取消
                   </button>
                 </div>
               ) : (
                 <button onClick={() => setShowDeleteConfirm(true)}
-                  className="rounded-full p-2 transition" aria-label="删除" style={{ color: colors.faint, background: 'rgba(23,23,23,0.04)' }}>
+                  className="p-2 transition" aria-label="删除" style={{ color: colors.faint, background: 'rgba(23,23,23,0.04)' }}>
                   <Trash2 className="w-4 h-4" aria-hidden="true" />
                 </button>
               )}
@@ -303,7 +275,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function Input({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <input type="text" value={value} onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-xl px-2.5 py-1.5 text-sm outline-none transition"
+      className="w-full px-2.5 py-2 text-sm outline-none transition"
       style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.ink }}
       onFocus={focusStyle} onBlur={blurStyle} placeholder={placeholder} />
   );
@@ -312,7 +284,7 @@ function Input({ value, onChange, placeholder }: { value: string; onChange: (v: 
 function ActionBtn({ children, onClick, disabled, accent }: any) {
   return (
     <button onClick={onClick} disabled={disabled}
-      className="flex flex-1 items-center justify-center gap-1.5 rounded-full py-2 text-xs font-semibold transition-all"
+      className="flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-semibold transition-all"
       style={{ background: accent, color: 'white' }}>
       {children}
     </button>
@@ -322,7 +294,7 @@ function ActionBtn({ children, onClick, disabled, accent }: any) {
 function focusStyle(e: React.FocusEvent<HTMLElement>) {
   const el = e.currentTarget as HTMLElement;
   el.style.borderColor = colors.accent;
-  el.style.boxShadow = '0 0 0 3px rgba(31,52,45,0.12)';
+  el.style.boxShadow = 'inset 0 0 0 1px rgba(11,79,69,0.75)';
 }
 function blurStyle(e: React.FocusEvent<HTMLElement>) {
   const el = e.currentTarget as HTMLElement;
@@ -334,7 +306,7 @@ function StyleEditor({ type, style, onChange }: {
   type: string; style: PointStyle | LineStyle | PolygonStyle | TextStyle;
   onChange: (s: any) => void;
 }) {
-  const c = { accent: '#1a4735', border: '#e2e5e8', bg: '#f5f6f7', muted: '#6b7280' };
+  const c = { accent: '#0b4f45', border: 'rgba(23,33,28,0.12)', bg: 'rgba(255,255,255,0.7)', muted: '#55615a' };
 
   if (type === 'point') {
     const s = style as PointStyle;
@@ -344,11 +316,11 @@ function StyleEditor({ type, style, onChange }: {
           <div className="flex flex-wrap gap-1.5">
             {PRESET_COLORS.map((col) => (
               <button key={col.value} onClick={() => onChange({ ...s, color: col.value })}
-                className="w-5 h-5 rounded-full transition-all duration-150" title={col.name}
+                className="h-5 w-5 transition-all duration-150" title={col.name}
                 style={{
                   background: col.value,
                   transform: s.color === col.value ? 'scale(1.2)' : 'scale(1)',
-                  boxShadow: s.color === col.value ? `0 0 0 2px white, 0 0 0 4px ${c.accent}` : `0 0 0 1px ${c.border}`,
+                  boxShadow: s.color === col.value ? `inset 0 0 0 1px white, 0 0 0 1px ${c.accent}` : `0 0 0 1px ${c.border}`,
                 }} />
             ))}
           </div>
@@ -357,7 +329,7 @@ function StyleEditor({ type, style, onChange }: {
           <div className="flex flex-wrap gap-1">
             {PRESET_ICONS.map((icon) => (
               <button key={icon.value} onClick={() => onChange({ ...s, icon: icon.value })}
-                className="px-2 py-0.5 rounded text-[10px] transition-all duration-150"
+                className="px-2 py-0.5 text-[10px] transition-all duration-150"
                 style={{
                   background: s.icon === icon.value ? c.accent : c.bg,
                   color: s.icon === icon.value ? 'white' : c.muted,
@@ -383,11 +355,11 @@ function StyleEditor({ type, style, onChange }: {
           <div className="flex flex-wrap gap-1.5">
             {PRESET_COLORS.map((col) => (
               <button key={col.value} onClick={() => onChange({ ...s, color: col.value })}
-                className="w-5 h-5 rounded-full transition-all duration-150" title={col.name}
+                className="h-5 w-5 transition-all duration-150" title={col.name}
                 style={{
                   background: col.value,
                   transform: s.color === col.value ? 'scale(1.2)' : 'scale(1)',
-                  boxShadow: s.color === col.value ? `0 0 0 2px white, 0 0 0 4px ${c.accent}` : `0 0 0 1px ${c.border}`,
+                  boxShadow: s.color === col.value ? `inset 0 0 0 1px white, 0 0 0 1px ${c.accent}` : `0 0 0 1px ${c.border}`,
                 }} />
             ))}
           </div>
@@ -405,7 +377,7 @@ function StyleEditor({ type, style, onChange }: {
             ].map((item) => (
               <button key={item.label}
                 onClick={() => onChange({ ...s, dashArray: item.label === '虚线' ? '8, 4' : undefined })}
-                className="flex-1 py-1.5 rounded text-[10px] transition-all duration-150"
+                className="flex-1 py-1.5 text-[10px] transition-all duration-150"
                 style={{
                   background: item.active ? c.accent : c.bg,
                   color: item.active ? 'white' : c.muted,
@@ -426,11 +398,11 @@ function StyleEditor({ type, style, onChange }: {
           <div className="flex flex-wrap gap-1.5">
             {PRESET_COLORS.map((col) => (
               <button key={col.value} onClick={() => onChange({ ...s, color: col.value })}
-                className="w-5 h-5 rounded-full transition-all duration-150" title={col.name}
+                className="h-5 w-5 transition-all duration-150" title={col.name}
                 style={{
                   background: col.value,
                   transform: s.color === col.value ? 'scale(1.2)' : 'scale(1)',
-                  boxShadow: s.color === col.value ? `0 0 0 2px white, 0 0 0 4px ${c.accent}` : `0 0 0 1px ${c.border}`,
+                  boxShadow: s.color === col.value ? `inset 0 0 0 1px white, 0 0 0 1px ${c.accent}` : `0 0 0 1px ${c.border}`,
                 }} />
             ))}
           </div>
@@ -456,12 +428,12 @@ function StyleEditor({ type, style, onChange }: {
         <div className="flex flex-wrap gap-1.5">
           {PRESET_COLORS.map((col) => (
             <button key={col.value} onClick={() => onChange({ ...s, color: col.value })}
-              className="w-5 h-5 rounded-full transition-all duration-150" title={col.name}
-              style={{
-                background: col.value,
-                transform: s.color === col.value ? 'scale(1.2)' : 'scale(1)',
-                boxShadow: s.color === col.value ? `0 0 0 2px white, 0 0 0 4px ${c.accent}` : `0 0 0 1px ${c.border}`,
-              }} />
+            className="h-5 w-5 transition-all duration-150" title={col.name}
+            style={{
+              background: col.value,
+              transform: s.color === col.value ? 'scale(1.2)' : 'scale(1)',
+              boxShadow: s.color === col.value ? `inset 0 0 0 1px white, 0 0 0 1px ${c.accent}` : `0 0 0 1px ${c.border}`,
+            }} />
           ))}
         </div>
       </Sect>
@@ -469,12 +441,12 @@ function StyleEditor({ type, style, onChange }: {
         <div className="flex flex-wrap gap-1.5">
           {PRESET_COLORS.map((col) => (
             <button key={col.value} onClick={() => onChange({ ...s, fillColor: col.value })}
-              className="w-5 h-5 rounded-full transition-all duration-150" title={col.name}
-              style={{
-                background: col.value,
-                transform: s.fillColor === col.value ? 'scale(1.2)' : 'scale(1)',
-                boxShadow: s.fillColor === col.value ? `0 0 0 2px white, 0 0 0 4px ${c.accent}` : `0 0 0 1px ${c.border}`,
-              }} />
+            className="h-5 w-5 transition-all duration-150" title={col.name}
+            style={{
+              background: col.value,
+              transform: s.fillColor === col.value ? 'scale(1.2)' : 'scale(1)',
+              boxShadow: s.fillColor === col.value ? `inset 0 0 0 1px white, 0 0 0 1px ${c.accent}` : `0 0 0 1px ${c.border}`,
+            }} />
           ))}
         </div>
       </Sect>
@@ -615,7 +587,7 @@ function PolygonFields({ data, editing, onChange }: { data: any; editing: boolea
                       updateCF('houseType', JSON.stringify(updated));
                     }}
                     placeholder="如：三室两厅 120㎡"
-                    className="flex-1 px-2 py-1 text-xs rounded-lg outline-none transition"
+                    className="flex-1 px-2 py-1 text-xs outline-none transition"
                     style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.ink }}
                     onFocus={focusStyle} onBlur={blurStyle} />
                   {arr.length > 1 && (
@@ -625,7 +597,7 @@ function PolygonFields({ data, editing, onChange }: { data: any; editing: boolea
                 </div>
               ))}
               <button onClick={() => updateCF('houseType', JSON.stringify([...arr, '']))}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs transition"
+                className="flex items-center gap-1 px-2.5 py-1 text-xs transition"
                 style={{ background: colors.bg, border: `1px dashed ${colors.border}`, color: colors.muted }}>
                 <Plus className="w-3 h-3" aria-hidden="true" /> 添加户型
               </button>
@@ -651,7 +623,7 @@ function PolygonFields({ data, editing, onChange }: { data: any; editing: boolea
         {editing ? (
           <textarea value={getCF(cf, 'notes')}
             onChange={(e) => updateCF('notes', e.target.value)}
-            rows={2} className="w-full px-2.5 py-1.5 text-xs rounded-lg outline-none resize-none transition"
+            rows={2} className="w-full px-2.5 py-1.5 text-xs outline-none resize-none transition"
             style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.ink }}
             onFocus={focusStyle} onBlur={blurStyle} placeholder="补充说明…" />
         ) : (
@@ -664,7 +636,7 @@ function PolygonFields({ data, editing, onChange }: { data: any; editing: boolea
       {/* 图片 */}
       <Field label="图片">
         {editing && (
-          <label className="flex items-center gap-2 px-2.5 py-2 mb-2 rounded-lg cursor-pointer transition text-xs"
+          <label className="flex items-center gap-2 px-2.5 py-2 mb-2 cursor-pointer transition text-xs"
             style={{ background: colors.bg, border: `1px dashed ${colors.border}`, color: colors.muted }}>
             <Upload className="w-3.5 h-3.5" aria-hidden="true" />
             {uploading ? '上传中...' : '上传图片'}
@@ -675,10 +647,10 @@ function PolygonFields({ data, editing, onChange }: { data: any; editing: boolea
           <div className="flex flex-wrap gap-1.5">
             {images.map((url, i) => (
               <div key={i} className="relative group">
-                <img src={url} alt="" className="w-14 h-14 object-cover rounded-lg" style={{ border: `1px solid ${colors.border}` }} />
+                <img src={url} alt="" className="w-14 h-14 object-cover" style={{ border: `1px solid ${colors.border}` }} />
                 {editing && (
                   <button onClick={() => removeImage(url)}
-                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full flex items-center justify-center text-[8px] transition"
+                    className="absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center text-[8px] transition"
                     style={{ background: colors.danger, color: 'white' }}>×</button>
                 )}
               </div>
@@ -693,7 +665,7 @@ function PolygonFields({ data, editing, onChange }: { data: any; editing: boolea
       <Field label="链接">
         {editing && (
           <button onClick={addLink}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition mb-2"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs transition mb-2"
             style={{ background: colors.bg, border: `1px dashed ${colors.border}`, color: colors.muted }}>
             <Plus className="w-3 h-3" aria-hidden="true" /> 添加链接
           </button>
@@ -702,25 +674,42 @@ function PolygonFields({ data, editing, onChange }: { data: any; editing: boolea
           <div className="space-y-1.5">
             {links.map((link: any, i: number) => (
               <div key={i} className="flex items-center gap-1.5">
-                {(editing && !link.url) ? (
-                  <>
-                    <input value={link.title || ''} placeholder="标题"
-                      onChange={(e) => updateLink(i, 'title', e.target.value)}
-                      className="flex-1 px-2 py-1 text-[11px] rounded outline-none"
-                      style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.ink }} />
-                    <input value={link.url || ''} placeholder="https://..."
-                      onChange={(e) => updateLink(i, 'url', e.target.value)}
-                      className="flex-1 px-2 py-1 text-[11px] rounded outline-none"
-                      style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.accent }} />
-                    <button onClick={() => removeLink(i)} className="text-[10px] px-1" style={{ color: colors.danger }}>×</button>
-                  </>
-                ) : (
-                  <a href={link.url || '#'} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs hover:underline truncate" style={{ color: colors.accent }}>
-                    <Link2 className="w-3 h-3 shrink-0" aria-hidden="true" />
-                    <span className="truncate">{link.title || link.url || '查看链接'}</span>
-                  </a>
-                )}
+                {(() => {
+                  const safeUrl = sanitizeExternalUrl(link.url);
+                  return (editing && !link.url) ? (
+                    <>
+                      <input value={link.title || ''} placeholder="标题"
+                        onChange={(e) => updateLink(i, 'title', e.target.value)}
+                        className="flex-1 px-2 py-1 text-[11px] outline-none"
+                        style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.ink }} />
+                      <input value={link.url || ''} placeholder="https://..."
+                        onChange={(e) => updateLink(i, 'url', e.target.value)}
+                        className="flex-1 px-2 py-1 text-[11px] outline-none"
+                        style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.accent }} />
+                      <button onClick={() => removeLink(i)} className="text-[10px] px-1" style={{ color: colors.danger }}>×</button>
+                    </>
+                  ) : safeUrl ? (
+                    <a href={safeUrl} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs hover:underline truncate" style={{ color: colors.accent }}>
+                      <Link2 className="w-3 h-3 shrink-0" aria-hidden="true" />
+                      <span className="truncate">{link.title || safeUrl || '查看链接'}</span>
+                    </a>
+                  ) : editing ? (
+                    <>
+                      <input value={link.title || ''} placeholder="标题"
+                        onChange={(e) => updateLink(i, 'title', e.target.value)}
+                        className="flex-1 px-2 py-1 text-[11px] outline-none"
+                        style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.ink }} />
+                      <input value={link.url || ''} placeholder="https://..."
+                        onChange={(e) => updateLink(i, 'url', e.target.value)}
+                        className="flex-1 px-2 py-1 text-[11px] outline-none"
+                        style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.accent }} />
+                      <button onClick={() => removeLink(i)} className="text-[10px] px-1" style={{ color: colors.danger }}>×</button>
+                    </>
+                  ) : (
+                    <span className="text-xs" style={{ color: colors.placeholder }}>链接不可用</span>
+                  );
+                })()}
               </div>
             ))}
           </div>
@@ -731,7 +720,7 @@ function PolygonFields({ data, editing, onChange }: { data: any; editing: boolea
 
       {/* 样式编辑 */}
       {editing && (
-        <div style={{ background: colors.bg, borderRadius: '8px', padding: '10px' }}>
+        <div style={{ background: colors.bg, padding: '10px', border: `1px solid ${colors.border}` }}>
           <div className="text-[9px] font-semibold mb-2 tracking-widest uppercase" style={{ color: colors.muted }}>样式</div>
           <StyleEditor type="polygon" style={data.style}
             onChange={(style: any) => onChange({ ...data, style })} />
@@ -762,7 +751,7 @@ function LineFields({ data, editing, onChange }: { data: any; editing: boolean; 
         {editing ? (
           <textarea value={getCF(cf, 'notes')}
             onChange={(e) => updateCF('notes', e.target.value)}
-            rows={2} className="w-full px-2.5 py-1.5 text-xs rounded-lg outline-none resize-none transition"
+            rows={2} className="w-full px-2.5 py-1.5 text-xs outline-none resize-none transition"
             style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.ink }}
             onFocus={focusStyle} onBlur={blurStyle} placeholder="补充说明…" />
         ) : (
@@ -773,7 +762,7 @@ function LineFields({ data, editing, onChange }: { data: any; editing: boolean; 
       </Field>
 
       {editing && (
-        <div style={{ background: colors.bg, borderRadius: '8px', padding: '10px' }}>
+        <div style={{ background: colors.bg, padding: '10px', border: `1px solid ${colors.border}` }}>
           <div className="text-[9px] font-semibold mb-2 tracking-widest uppercase" style={{ color: colors.muted }}>样式</div>
           <StyleEditor type="line" style={data.style}
             onChange={(style: any) => onChange({ ...data, style })} />

@@ -407,7 +407,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
           <>
             <Link
               href="/admin"
-              className="ghost-button rounded-full p-2"
+              className="ghost-button workbench-hard-edge p-2"
               title="返回地图列表"
               aria-label="返回地图列表"
             >
@@ -415,45 +415,36 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             </Link>
             <Link
               href="/"
-              className="ghost-button rounded-full p-2"
+              className="ghost-button workbench-hard-edge p-2"
               title="返回前台"
               aria-label="返回前台"
             >
               <Home className="w-4 h-4" aria-hidden="true" />
             </Link>
             <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl" style={{ background: 'var(--primary)' }}>
-                <MapPin className="w-4 h-4 text-white" aria-hidden="true" />
+              <div className="flex h-8 w-8 items-center justify-center border" style={{ background: 'rgba(11,79,69,0.08)', borderColor: 'var(--border-strong)' }}>
+                <MapPin className="w-4 h-4" style={{ color: 'var(--primary)' }} aria-hidden="true" />
               </div>
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--faint)' }}>
-                    Kanvon Workbench
-                  </span>
-                  <span
-                    className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
-                    style={{ background: 'var(--primary-soft)', color: 'var(--primary)' }}
-                  >
-                    管理
-                  </span>
-                </div>
-                <h1 className="truncate text-sm font-semibold md:text-base" style={{ color: 'var(--ink)' }}>
+                <h1 className="truncate text-[13px] font-semibold md:text-[14px]" style={{ color: 'var(--ink)' }}>
                   {mapProject?.name || '地图标注平台'}
                 </h1>
+                <div className="text-[10px] font-medium uppercase tracking-[0.1em]" style={{ color: 'var(--faint)' }}>
+                  地图编辑
+                </div>
               </div>
             </div>
           </>
         )}
         center={(
-          <div className="relative w-full max-w-xl">
+            <div className="relative w-full max-w-xl">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: 'var(--faint)' }} aria-hidden="true" />
             <input
               type="text"
               value={filters.keyword}
               onChange={(e) => setFilters({ ...filters, keyword: e.target.value })}
-              placeholder="搜索标注名称、描述或属性值"
-              className="w-full rounded-full py-3 pl-10 pr-4 text-sm outline-none transition"
-              style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid var(--border)', color: 'var(--ink)' }}
+              placeholder="搜索标注名称、描述或字段值"
+              className="w-full py-2 pl-10 pr-4 text-sm outline-none transition workbench-hard-edge workbench-field"
             />
           </div>
         )}
@@ -461,14 +452,14 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
           <>
             <Link
               href="/admin"
-              className="ghost-button rounded-full px-4 py-2 text-sm font-medium"
+              className="ghost-button workbench-hard-edge px-3 py-2 text-sm font-medium"
             >
               地图管理
             </Link>
 
             <button
               onClick={() => setImportOpen(true)}
-              className="ghost-button flex items-center gap-1.5 rounded-full px-3 py-2 text-sm"
+              className="ghost-button workbench-hard-edge flex items-center gap-1.5 px-3 py-2 text-sm"
               title="批量导入"
               aria-label="批量导入"
             >
@@ -482,7 +473,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                   e.stopPropagation();
                   setShowExportMenu((prev) => !prev);
                 }}
-                className="ghost-button flex items-center gap-1.5 rounded-full px-3 py-2 text-sm"
+                className="ghost-button workbench-hard-edge flex items-center gap-1.5 px-3 py-2 text-sm"
                 title="导出"
                 aria-label="导出"
               >
@@ -491,35 +482,34 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
               </button>
               {showExportMenu && (
                 <div
-                  className="absolute right-0 top-full z-50 mt-2 w-36 overflow-hidden rounded-2xl border shadow-[0_24px_60px_rgba(37,28,18,0.16)]"
+                  className="absolute right-0 top-full z-50 mt-2 w-36 overflow-hidden border shadow-[0_18px_42px_rgba(24,32,27,0.08)]"
                   style={{ background: 'var(--surface-strong)', borderColor: 'var(--border)' }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                <button onClick={() => { handleExport('xlsx'); setShowExportMenu(false); }}
-                  className="w-full px-4 py-3 text-left text-sm transition"
-                  style={{ color: 'var(--ink)' }}>
-                  导出 Excel
-                </button>
-                <button onClick={() => { handleExport('csv'); setShowExportMenu(false); }}
-                  className="w-full px-4 py-3 text-left text-sm transition"
-                  style={{ color: 'var(--ink)', borderTop: '1px solid var(--border)' }}>
-                  导出 CSV
-                </button>
+                  <button onClick={() => { handleExport('xlsx'); setShowExportMenu(false); }}
+                    className="w-full px-4 py-3 text-left text-sm transition"
+                    style={{ color: 'var(--ink)' }}>
+                    导出 Excel
+                  </button>
+                  <button onClick={() => { handleExport('csv'); setShowExportMenu(false); }}
+                    className="w-full px-4 py-3 text-left text-sm transition"
+                    style={{ color: 'var(--ink)', borderTop: '1px solid var(--border)' }}>
+                    导出 CSV
+                  </button>
                 </div>
               )}
             </div>
 
             <button
               onClick={() => setShowSettings(!showSettings)}
-              className="rounded-full p-2 transition"
-              style={{ color: showSettings ? 'white' : 'var(--muted)', background: showSettings ? 'var(--primary)' : 'transparent' }}
+              className={`workbench-hard-edge p-2 transition ${showSettings ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
               title="设置"
               aria-label="设置"
             >
               <Settings className="w-4 h-4" aria-hidden="true" />
             </button>
 
-            <button onClick={logout} className="ghost-button rounded-full p-2" title="退出登录" aria-label="退出登录">
+            <button onClick={logout} className="ghost-button workbench-hard-edge p-2" title="退出登录" aria-label="退出登录">
               <LogOut className="w-4 h-4" aria-hidden="true" />
             </button>
           </>
@@ -528,18 +518,18 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
 
       {/* 反馈消息 */}
       {feedbackMessage && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9999] rounded-full px-4 py-2 text-sm animate-fade-in"
-          style={{ background: 'rgba(23,23,23,0.82)', color: 'white', boxShadow: 'var(--shadow-floating)' }}>
+        <div className="fixed top-18 left-1/2 -translate-x-1/2 z-[9999] border px-4 py-2 text-sm animate-fade-in"
+          style={{ background: 'rgba(24,32,27,0.92)', color: 'white', borderColor: 'rgba(255,255,255,0.08)', boxShadow: 'var(--shadow-floating)' }}>
           {feedbackMessage}
         </div>
       )}
 
       {/* 批量删除确认 */}
       {batchDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center animate-fade-in">
-          <div className="paper-panel max-w-sm rounded-[28px] p-6 mx-4 shadow-2xl">
+        <div className="fixed inset-0 bg-black/32 backdrop-blur-sm z-[9999] flex items-center justify-center animate-fade-in">
+          <div className="paper-panel max-w-sm p-6 mx-4 shadow-2xl workbench-hard-edge">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(192,57,43,0.1)' }}>
+              <div className="w-10 h-10 border flex items-center justify-center" style={{ background: 'rgba(192,57,43,0.08)', borderColor: 'rgba(185,87,73,0.18)' }}>
                 <AlertTriangle className="w-5 h-5" style={{ color: 'var(--danger)' }} aria-hidden="true" />
               </div>
               <div>
@@ -552,11 +542,11 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             </p>
             <div className="flex gap-2 justify-end">
               <button onClick={() => setBatchDeleteConfirm(false)}
-                className="ghost-button rounded-full px-4 py-2 text-sm">
+                className="ghost-button workbench-hard-edge px-4 py-2 text-sm">
                 取消
               </button>
               <button onClick={confirmBatchDelete}
-                className="rounded-full px-4 py-2 text-sm font-medium text-white transition"
+                className="px-4 py-2 text-sm font-medium text-white transition workbench-hard-edge"
                 style={{ background: 'var(--danger)' }}>
                 确认删除
               </button>
@@ -565,29 +555,24 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
         </div>
       )}
 
-      <div className="relative flex flex-1 overflow-hidden p-3 md:p-4">
+      <div className="relative flex flex-1 overflow-hidden p-1.5">
         <div
           className={`relative z-30 shrink-0 overflow-hidden transition-all duration-300 ${
-            sidebarOpen ? 'w-[344px] opacity-100' : 'w-0 opacity-0'
+            sidebarOpen ? 'w-[304px] opacity-100' : 'w-0 opacity-0'
           }`}
         >
-          <div className="workbench-sidebar flex h-full w-[344px] flex-col rounded-[28px]">
+          <div className="workbench-sidebar workbench-hard-edge flex h-full w-[304px] flex-col">
             <div className="shrink-0 px-4 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--faint)' }}>
-                    地图工作区
-                  </div>
-                  <h2 className="mt-1 text-lg font-semibold" style={{ color: 'var(--ink)' }}>
-                    地图工作区
-                  </h2>
+                  <h2 className="text-[14px] font-semibold" style={{ color: 'var(--ink)' }}>标注</h2>
                   <p className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>
-                    {filteredAnnotations.length} / {annotations.length} 条可见
+                    可见 {filteredAnnotations.length} / 全部 {annotations.length}
                   </p>
                 </div>
                 <button
                   onClick={() => { setBatchMode(!batchMode); setSelectedIds(new Set()); }}
-                  className="ghost-button inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium"
+                  className="ghost-button workbench-hard-edge inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium"
                   title="批量操作"
                   aria-label="批量操作"
                 >
@@ -596,22 +581,14 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                 </button>
               </div>
 
-              <div
-                className="mt-4 inline-flex rounded-full p-1"
-                style={{ background: 'rgba(255,255,255,0.62)', border: '1px solid var(--border)' }}
-              >
+              <div className="mt-4 grid grid-cols-2">
                 {(['list', 'groups'] as const).map((tab) => {
                   const active = sidebarTab === tab;
                   return (
                     <button
                       key={tab}
                       onClick={() => setSidebarTab(tab)}
-                      className="rounded-full px-4 py-2 text-xs font-medium transition-all duration-150"
-                      style={{
-                        background: active ? 'var(--primary)' : 'transparent',
-                        color: active ? '#fff' : 'var(--muted)',
-                        boxShadow: active ? '0 12px 24px rgba(11,79,69,0.16)' : 'none',
-                      }}
+                      className={`px-4 py-2 text-[11px] font-medium transition-all duration-150 workbench-hard-edge ${active ? 'workbench-tab-active' : 'workbench-tab'}`}
                     >
                       {tab === 'list' ? '标注' : '分组'}
                     </button>
@@ -625,13 +602,13 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                 <div className="flex shrink-0 items-center justify-between px-4 py-3" style={{ borderBottom: showFilters ? 'none' : '1px solid var(--border)' }}>
                   <button
                     onClick={() => setShowFilters((prev) => !prev)}
-                    className="ghost-button inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium"
+                    className="ghost-button workbench-hard-edge inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium"
                   >
                     <Search className="w-3.5 h-3.5" aria-hidden="true" />
                     {showFilters ? '收起筛选' : '展开筛选'}
                   </button>
                   <span className="text-xs" style={{ color: 'var(--faint)' }}>
-                    {filteredAnnotations.length} / {annotations.length} 条
+                    {filteredAnnotations.length} / {annotations.length}
                   </span>
                 </div>
                 {showFilters && (
@@ -649,7 +626,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
 
             {sidebarTab === 'list' && batchMode && (
               <div className="px-3 py-2 shrink-0 space-y-3"
-                style={{ borderBottom: '1px solid var(--border)', background: 'rgba(26,71,53,0.04)' }}>
+                style={{ borderBottom: '1px solid var(--border)', background: 'rgba(11,79,69,0.04)' }}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <button onClick={handleSelectAll} className="text-xs font-medium"
@@ -661,10 +638,10 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                   </div>
                   {selectedIds.size > 0 && (
                     <button onClick={onBatchDeleteClick}
-                      className="flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium text-white transition shadow-sm"
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white transition workbench-hard-edge"
                       style={{ background: 'var(--danger)' }}>
                       <Trash2 className="w-3 h-3" aria-hidden="true" />
-                      批量删除
+                      删除
                     </button>
                   )}
                 </div>
@@ -675,8 +652,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                       <select
                         value={batchGroupTarget}
                         onChange={(e) => setBatchGroupTarget(e.target.value)}
-                        className="px-3 py-2 rounded-xl text-xs outline-none"
-                        style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.8)', color: 'var(--ink)' }}
+                        className="px-3 py-2 text-xs outline-none workbench-hard-edge workbench-field"
                       >
                         <option value="__ungrouped__">移动到未分组</option>
                         {groups.map((group) => (
@@ -686,7 +662,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                       <button
                         onClick={handleBatchMoveToGroup}
                         disabled={batchActionLoading}
-                        className="primary-button rounded-xl px-3 py-2 text-xs font-medium"
+                        className="primary-button workbench-hard-edge px-3 py-2 text-xs font-medium"
                       >
                         移动分组
                       </button>
@@ -696,8 +672,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                       <select
                         value={batchFieldId}
                         onChange={(e) => setBatchFieldId(e.target.value)}
-                        className="px-3 py-2 rounded-xl text-xs outline-none"
-                        style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.8)', color: 'var(--ink)' }}
+                        className="px-3 py-2 text-xs outline-none workbench-hard-edge workbench-field"
                       >
                         <option value="">选择字段</option>
                         {(mapProject?.field_templates || []).map((field) => (
@@ -709,13 +684,12 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                         value={batchFieldValue}
                         onChange={(e) => setBatchFieldValue(e.target.value)}
                         placeholder="统一字段值"
-                        className="px-3 py-2 rounded-xl text-xs outline-none"
-                        style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.8)', color: 'var(--ink)' }}
+                        className="px-3 py-2 text-xs outline-none workbench-hard-edge workbench-field"
                       />
                       <button
                         onClick={handleBatchUpdateField}
                         disabled={batchActionLoading || !batchFieldId}
-                        className="rounded-xl px-3 py-2 text-xs font-medium text-white transition disabled:opacity-50"
+                        className="px-3 py-2 text-xs font-medium text-white transition disabled:opacity-50 workbench-hard-edge"
                         style={{ background: '#2c6fbb' }}
                       >
                         批量改值
@@ -743,7 +717,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                       <MapPin className="mx-auto mb-3 h-8 w-8" style={{ color: 'var(--faint)', opacity: 0.45 }} />
                       {annotations.length > 0 ? '没有符合当前筛选条件的标注' : '暂无标注'}<br />
                       {annotations.length === 0 && (
-                        <span className="text-xs" style={{ color: 'var(--faint)' }}>点击顶部工具栏在地图上添加</span>
+                        <span className="text-xs" style={{ color: 'var(--faint)' }}>点击左上工具组在地图上添加</span>
                       )}
                     </div>
                   ) : (
@@ -752,113 +726,102 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                         const groupColor = anno.group_id ? groupColorMap.get(anno.group_id) : null;
                         const groupName = anno.group_id ? groupNameMap.get(anno.group_id) : null;
                         return (
-                        <div
-                          key={anno.id}
-                          ref={(node) => {
-                            if (node) listItemRefs.current.set(anno.id, node);
-                            else listItemRefs.current.delete(anno.id);
-                          }}
-                          onClick={() => handleAnnotationClick(anno)}
-                          className="cursor-pointer transition-all duration-150"
-                          style={{
-                            borderBottom: '1px solid var(--border)',
-                            background: selectedAnnotation?.id === anno.id ? 'var(--primary-soft)' : 'transparent',
-                            borderLeft: selectedAnnotation?.id === anno.id ? '3px solid var(--primary)' : '3px solid transparent',
-                          }}
-                          onMouseEnter={(e) => { if (selectedAnnotation?.id !== anno.id) e.currentTarget.style.background = 'rgba(26,71,53,0.02)'; }}
-                          onMouseLeave={(e) => { if (selectedAnnotation?.id !== anno.id) e.currentTarget.style.background = ''; }}
-                        >
-                          <div className="px-4 py-3">
-                            <div className="flex items-center gap-2.5">
-                              {batchMode && (
-                                <button className="shrink-0"
-                                  onClick={(e) => { e.stopPropagation(); const next = new Set(selectedIds); if (next.has(anno.id)) next.delete(anno.id); else next.add(anno.id); setSelectedIds(next); }}
-                                  aria-label={selectedIds.has(anno.id) ? '取消选择' : '选择'}>
-                                  {selectedIds.has(anno.id) ? (
-                                    <CheckSquare className="w-4 h-4" style={{ color: 'var(--primary)' }} aria-hidden="true" />
-                                  ) : (
-                                    <Square className="w-4 h-4" style={{ color: 'var(--faint)' }} aria-hidden="true" />
-                                  )}
-                                </button>
-                              )}
-                              {/* 类型圆点 */}
-                              <span className={`w-2 h-2 rounded-full shrink-0 ${
-                                anno.type === 'point' ? 'bg-red-500 shadow-sm shadow-red-200' :
-                                anno.type === 'line' ? 'bg-blue-500 shadow-sm shadow-blue-200' :
-                                anno.type === 'text' ? 'bg-amber-500 shadow-sm shadow-amber-200' :
-                                'bg-purple-500 shadow-sm shadow-purple-200'
-                              }`} />
-                              <div className="min-w-0 flex-1">
-                                <span className="text-sm font-medium truncate block" style={{ color: 'var(--ink)' }}>
-                                  {anno.name || '未命名'}
-                                </span>
-                                {anno.description && (
-                                  <p className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--muted)' }}>{anno.description}</p>
+                          <div
+                            key={anno.id}
+                            ref={(node) => {
+                              if (node) listItemRefs.current.set(anno.id, node);
+                              else listItemRefs.current.delete(anno.id);
+                            }}
+                            onClick={() => handleAnnotationClick(anno)}
+                            className="workbench-list-row cursor-pointer transition-all duration-150"
+                            data-active={selectedAnnotation?.id === anno.id}
+                            onMouseEnter={(e) => { if (selectedAnnotation?.id !== anno.id) e.currentTarget.style.background = 'rgba(11,79,69,0.025)'; }}
+                            onMouseLeave={(e) => { if (selectedAnnotation?.id !== anno.id) e.currentTarget.style.background = ''; }}
+                          >
+                              <div className="px-4 py-2.5">
+                                <div className="flex items-center gap-2.5">
+                                {batchMode && (
+                                  <button className="shrink-0"
+                                    onClick={(e) => { e.stopPropagation(); const next = new Set(selectedIds); if (next.has(anno.id)) next.delete(anno.id); else next.add(anno.id); setSelectedIds(next); }}
+                                    aria-label={selectedIds.has(anno.id) ? '取消选择' : '选择'}>
+                                    {selectedIds.has(anno.id) ? (
+                                      <CheckSquare className="w-4 h-4" style={{ color: 'var(--primary)' }} aria-hidden="true" />
+                                    ) : (
+                                      <Square className="w-4 h-4" style={{ color: 'var(--faint)' }} aria-hidden="true" />
+                                    )}
+                                  </button>
                                 )}
-                              </div>
-                              {/* 分类标签 */}
-                              {groupName && (
-                                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded shrink-0"
-                                  style={{
-                                    background: groupColor ? `${groupColor}18` : 'var(--primary-soft)',
-                                    color: groupColor || 'var(--primary)',
-                                  }}>
-                                  {groupName}
+                                <span className={`h-2 w-2 shrink-0 ${
+                                  anno.type === 'point' ? 'bg-red-500' :
+                                  anno.type === 'line' ? 'bg-blue-500' :
+                                  anno.type === 'text' ? 'bg-amber-500' : 'bg-purple-500'
+                                }`} />
+                                <div className="min-w-0 flex-1">
+                                  <span className="text-[13px] font-medium truncate block" style={{ color: 'var(--ink)' }}>
+                                    {anno.name || '未命名'}
+                                  </span>
+                                  {anno.description && (
+                                    <p className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--muted)' }}>{anno.description}</p>
+                                  )}
+                                </div>
+                                {groupName && (
+                                  <span className="text-[10px] font-medium px-1.5 py-0.5 shrink-0"
+                                    style={{
+                                      background: groupColor ? `${groupColor}14` : 'var(--primary-soft)',
+                                      color: groupColor || 'var(--primary)',
+                                      border: `1px solid ${groupColor ? `${groupColor}28` : 'rgba(11,79,69,0.14)'}`,
+                                    }}>
+                                    {groupName}
+                                  </span>
+                                )}
+                                <span className="text-[10px] font-medium px-1.5 py-0.5 shrink-0" style={{
+                                  border: '1px solid var(--border)',
+                                  background: 'rgba(255,255,255,0.5)',
+                                  color: 'var(--muted)',
+                                }}>
+                                  {anno.type === 'point' ? '点' : anno.type === 'line' ? '线' : anno.type === 'text' ? '文字' : '面'}
                                 </span>
-                              )}
-                              {/* 类型徽章 */}
-                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0" style={{
-                                background: anno.type === 'point' ? 'rgba(239,68,68,0.08)' :
-                                            anno.type === 'line' ? 'rgba(59,130,246,0.08)' :
-                                            anno.type === 'text' ? 'rgba(245,158,11,0.08)' : 'rgba(139,92,246,0.08)',
-                                color: anno.type === 'point' ? '#EF4444' :
-                                       anno.type === 'line' ? '#3B82F6' :
-                                       anno.type === 'text' ? '#d4954e' : '#8B5CF6'
-                              }}>
-                                {anno.type === 'point' ? '点' : anno.type === 'line' ? '线' : anno.type === 'text' ? '文字' : '面'}
-                              </span>
-                            </div>
-                            {anno.type === 'point' && anno.custom_fields.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-2" style={{ paddingLeft: batchMode ? '2.25rem' : '0' }}>
-                                {[...anno.custom_fields]
-                                  .sort((a, b) => {
-                                    const fa = fieldTemplateMap.get(a.fieldId);
-                                    const fb = fieldTemplateMap.get(b.fieldId);
-                                    return (fa?.sort_order ?? 0) - (fb?.sort_order ?? 0);
-                                  })
-                                  .filter(cf => {
-                                    const field = fieldTemplateMap.get(cf.fieldId);
-                                    return field && field.name !== '成交总价';
-                                  })
-                                  .filter(cf => cf.value != null)
-                                  .slice(0, 3)
-                                  .map((cf) => {
-                                  const field = fieldTemplateMap.get(cf.fieldId);
-                                  if (!field) return null;
-                                  return (
-                                    <span key={cf.fieldId} className="px-1.5 py-0.5 rounded text-[10px]"
-                                      style={{ background: 'var(--primary-soft)', color: 'var(--muted)' }}>
-                                      {field.name}: {String(cf.value)}
-                                    </span>
-                                  );
-                                })}
                               </div>
-                            )}
+                              {anno.type === 'point' && anno.custom_fields.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2" style={{ paddingLeft: batchMode ? '2.25rem' : '0' }}>
+                                  {[...anno.custom_fields]
+                                    .sort((a, b) => {
+                                      const fa = fieldTemplateMap.get(a.fieldId);
+                                      const fb = fieldTemplateMap.get(b.fieldId);
+                                      return (fa?.sort_order ?? 0) - (fb?.sort_order ?? 0);
+                                    })
+                                    .filter((cf) => {
+                                      const field = fieldTemplateMap.get(cf.fieldId);
+                                      return field && field.name !== '成交总价';
+                                    })
+                                    .filter((cf) => cf.value != null)
+                                    .slice(0, 3)
+                                    .map((cf) => {
+                                      const field = fieldTemplateMap.get(cf.fieldId);
+                                      if (!field) return null;
+                                      return (
+                                        <span key={cf.fieldId} className="px-1.5 py-0.5 text-[10px]"
+                                          style={{ border: '1px solid var(--border)', color: 'var(--muted)', background: 'rgba(255,255,255,0.42)' }}>
+                                          {field.name}: {String(cf.value)}
+                                        </span>
+                                      );
+                                    })}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        );}
-                      )}
+                        );
+                      })}
                     </div>
                   )}
                 </>
               )}
             </div>
 
-            {/* 设置面板 */}
             {showSettings && mapProject && (
               <div className="shrink-0" style={{ borderTop: '1px solid var(--border)' }}>
                 <div className="px-4 pt-4">
-                  <div className="rounded-[22px] border p-4 space-y-4" style={{ background: 'rgba(255,255,255,0.78)', borderColor: 'var(--border)' }}>
+                  <div className="workbench-panel workbench-hard-edge p-4 space-y-4">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>访问设置</h3>
@@ -869,13 +832,13 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                       <button
                         onClick={() => handlePublicAccessChange(!(mapProject.settings.isPublic !== false))}
                         disabled={savingMapSettings}
-                        className="w-10 h-6 rounded-full relative transition-colors duration-200 disabled:opacity-60"
-                        style={{ background: mapProject.settings.isPublic !== false ? 'var(--primary)' : 'var(--border)' }}
+                        className="h-7 min-w-[44px] border relative transition-colors duration-200 disabled:opacity-60 workbench-hard-edge"
+                        style={{ background: mapProject.settings.isPublic !== false ? 'var(--primary)' : 'rgba(255,255,255,0.7)', borderColor: mapProject.settings.isPublic !== false ? 'var(--primary)' : 'var(--border)' }}
                         aria-label="公开访问开关"
                       >
                         <span
-                          className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all duration-200"
-                          style={{ left: mapProject.settings.isPublic !== false ? 'calc(100% - 22px)' : '2px' }}
+                          className="absolute top-[3px] h-4.5 w-4.5 bg-white transition-all duration-200"
+                          style={{ left: mapProject.settings.isPublic !== false ? '24px' : '3px' }}
                         />
                       </button>
                     </div>
@@ -890,13 +853,13 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                       <button
                         onClick={() => handleShowNamesSettingChange(!(mapProject.settings.showNames !== false))}
                         disabled={savingMapSettings}
-                        className="w-10 h-6 rounded-full relative transition-colors duration-200 disabled:opacity-60"
-                        style={{ background: mapProject.settings.showNames !== false ? 'var(--primary)' : 'var(--border)' }}
+                        className="h-7 min-w-[44px] border relative transition-colors duration-200 disabled:opacity-60 workbench-hard-edge"
+                        style={{ background: mapProject.settings.showNames !== false ? 'var(--primary)' : 'rgba(255,255,255,0.7)', borderColor: mapProject.settings.showNames !== false ? 'var(--primary)' : 'var(--border)' }}
                         aria-label="显示名称默认开关"
                       >
                         <span
-                          className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all duration-200"
-                          style={{ left: mapProject.settings.showNames !== false ? 'calc(100% - 22px)' : '2px' }}
+                          className="absolute top-[3px] h-4.5 w-4.5 bg-white transition-all duration-200"
+                          style={{ left: mapProject.settings.showNames !== false ? '24px' : '3px' }}
                         />
                       </button>
                     </div>
@@ -923,11 +886,11 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
         <WorkbenchSidebarToggle
           open={sidebarOpen}
           onToggle={() => setSidebarOpen(!sidebarOpen)}
-          offset={344}
+          offset={320}
         />
 
         <div className="flex-1 relative min-w-0">
-          <div className="absolute inset-0 rounded-[30px] border pointer-events-none z-[2]" style={{ borderColor: 'rgba(35,35,35,0.1)' }} />
+          <div className="absolute inset-0 border pointer-events-none z-[2]" style={{ borderColor: 'var(--border)' }} />
           <MapView
             annotations={filteredAnnotations}
             onMapClick={handleMapClick}
@@ -945,7 +908,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             showNames={showNamesEnabled}
           />
 
-          <div className="absolute left-5 top-5 z-[999]">
+          <div className="absolute left-3 top-3 z-[999]">
             <DrawingToolbar
               drawMode={drawMode}
               onDrawModeChange={setDrawMode}
@@ -953,27 +916,23 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             />
           </div>
 
-          <div className="absolute right-5 top-5 z-[999]">
-            <MapFloatingPanel className="gap-2">
+          <div className="absolute right-3 top-3 z-[999]">
+            <MapFloatingPanel className="gap-0">
               <button
                 onClick={() => setShowNamesOverride((prev) => !(prev ?? (mapProject?.settings.showNames !== false)))}
                 disabled={!mapProject}
                 aria-label="切换名称显示"
-                className="rounded-full px-3.5 py-2 text-xs font-medium transition disabled:opacity-60"
-                style={{
-                  background: showNamesEnabled ? 'var(--primary)' : 'transparent',
-                  color: showNamesEnabled ? '#fff' : 'var(--muted)',
-                }}
+                className={`h-9 px-3.5 text-xs font-medium transition disabled:opacity-60 workbench-hard-edge ${showNamesEnabled ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
               >
                 <span>名称</span>
               </button>
               <button
                 onClick={() => setShowHeatmap(!showHeatmap)}
                 aria-label="切换热力图显示"
-                className="rounded-full px-3.5 py-2 text-xs font-medium transition"
+                className={`h-9 px-3.5 text-xs font-medium transition workbench-hard-edge ${showHeatmap ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
                 style={{
-                  background: showHeatmap ? 'var(--accent)' : 'transparent',
-                  color: showHeatmap ? 'var(--ink)' : 'var(--muted)',
+                  background: showHeatmap ? 'rgba(11,79,69,0.12)' : undefined,
+                  color: showHeatmap ? 'var(--ink)' : undefined,
                 }}
               >
                 <span>热力</span>
@@ -981,7 +940,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             </MapFloatingPanel>
           </div>
 
-          <div className="absolute right-5 top-24 z-[1000]">
+          <div className="absolute right-3 top-[60px] z-[1000]">
             {selectedAnnotation && mapProject && !batchMode && (
               <InfoCard
                 annotation={selectedAnnotation}

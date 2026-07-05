@@ -73,11 +73,11 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
   if (loading) {
     return (
       <div className="h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
-        <div className="h-12 shrink-0" style={{ background: 'var(--primary)' }} />
+        <div className="h-12 shrink-0 border-b" style={{ background: 'var(--surface-strong)', borderColor: 'var(--border)' }} />
         <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
-            <div className="w-10 h-10 rounded-xl skeleton-shimmer" />
-            <div className="w-40 h-4 rounded skeleton-shimmer" />
+            <div className="w-10 h-10 skeleton-shimmer" />
+            <div className="w-40 h-4 skeleton-shimmer" />
           </div>
         </div>
       </div>
@@ -92,23 +92,23 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
             <>
               <Link
                 href="/"
-                className="ghost-button rounded-full p-2"
+                className="ghost-button workbench-hard-edge p-2"
                 title="返回地图目录"
                 aria-label="返回地图目录"
               >
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               </Link>
               <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl" style={{ background: 'var(--primary)' }}>
-                  <MapPin className="h-4 w-4 text-white" aria-hidden="true" />
+                <div className="flex h-8 w-8 items-center justify-center border" style={{ background: 'rgba(10,75,63,0.08)', borderColor: 'var(--border-strong)' }}>
+                  <MapPin className="h-4 w-4" style={{ color: 'var(--primary)' }} aria-hidden="true" />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--faint)' }}>
-                    Kanvon Atlas
-                  </div>
-                  <h1 className="truncate text-sm font-semibold md:text-base" style={{ color: 'var(--ink)' }}>
+                  <h1 className="truncate text-sm font-semibold md:text-[14px]" style={{ color: 'var(--ink)' }}>
                     {mapProject?.name || '地图标注平台'}
                   </h1>
+                  <div className="text-[10px] font-medium uppercase tracking-[0.1em]" style={{ color: 'var(--faint)' }}>
+                    地图浏览
+                  </div>
                 </div>
               </div>
             </>
@@ -121,8 +121,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="搜索名称或描述"
-                className="w-full rounded-full py-3 pl-10 pr-10 text-sm outline-none transition"
-                style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid var(--border)', color: 'var(--ink)' }}
+                className="w-full py-2.5 pl-10 pr-10 text-sm outline-none transition workbench-hard-edge workbench-field"
               />
               {searchQuery && (
                 <button
@@ -141,14 +140,14 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
               <div className="soft-pill">{annotations.length} 项标注</div>
               <Link
                 href={`/admin?mapId=${id}`}
-                className="ghost-button flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold"
+                className="ghost-button workbench-hard-edge flex items-center gap-1.5 px-4 py-2 text-xs font-semibold"
               >
                 <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
                 <span className="hidden sm:inline">后台管理</span>
               </Link>
               <Link
                 href="/admin"
-                className="ghost-button rounded-full px-4 py-2 text-xs font-semibold"
+                className="ghost-button workbench-hard-edge px-4 py-2 text-xs font-semibold"
               >
                 地图管理
               </Link>
@@ -156,19 +155,18 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
           )}
         />
 
-        <div className="relative flex flex-1 overflow-hidden p-3 md:p-4">
+        <div className="relative flex flex-1 overflow-hidden p-1.5">
           <div
             className={`relative z-30 shrink-0 overflow-hidden transition-all duration-300 ${
-              sidebarOpen ? 'w-[344px] opacity-100' : 'w-0 opacity-0'
+              sidebarOpen ? 'w-[304px] opacity-100' : 'w-0 opacity-0'
             }`}
           >
-            <div className="workbench-sidebar flex h-full w-[344px] flex-col rounded-[28px]">
+            <div className="workbench-sidebar workbench-hard-edge flex h-full w-[304px] flex-col">
               <div className="flex h-full flex-col">
                 <div className="px-4 py-4 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
-                  <div className="display-label mb-2">标注索引</div>
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <h2 className="text-lg font-semibold" style={{ color: 'var(--ink)' }}>地图浏览</h2>
+                      <h2 className="text-[14px] font-semibold" style={{ color: 'var(--ink)' }}>标注索引</h2>
                       <p className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>
                         点 {annotationTypeCounts.point} · 线 {annotationTypeCounts.line} · 面 {annotationTypeCounts.polygon}
                       </p>
@@ -183,8 +181,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="搜索名称或描述"
-                        className="w-full rounded-full py-3 pl-10 pr-10 text-sm outline-none transition"
-                        style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid var(--border)', color: 'var(--ink)' }}
+                        className="w-full py-2.5 pl-10 pr-10 text-sm outline-none transition workbench-hard-edge workbench-field"
                       />
                       {searchQuery && (
                         <button
@@ -218,19 +215,19 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
                             if (node) listItemRefs.current.set(anno.id, node);
                             else listItemRefs.current.delete(anno.id);
                           }}
-                          onClick={() => handleAnnotationClick(anno)}
-                          className="cursor-pointer rounded-[22px] transition-all duration-200"
+                        onClick={() => handleAnnotationClick(anno)}
+                          className="cursor-pointer transition-all duration-200"
                           style={{
                             marginBottom: '8px',
-                            background: selectedAnnotation?.id === anno.id ? 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,243,235,0.98))' : 'rgba(255,255,255,0.52)',
-                            border: selectedAnnotation?.id === anno.id ? '1px solid rgba(184,155,114,0.24)' : '1px solid rgba(36,32,28,0.02)',
-                            boxShadow: selectedAnnotation?.id === anno.id ? '0 20px 40px rgba(37,28,18,0.1)' : 'none',
+                            background: selectedAnnotation?.id === anno.id ? 'rgba(10,75,63,0.05)' : 'var(--surface-strong)',
+                            border: selectedAnnotation?.id === anno.id ? '1px solid rgba(10,75,63,0.22)' : '1px solid var(--border)',
+                            boxShadow: 'none',
                             transform: selectedAnnotation?.id === anno.id ? 'translateY(-1px)' : 'translateY(0)',
                           }}
                         >
                           <div className="px-4 py-3.5">
                             <div className="flex items-center gap-2.5">
-                              <span className="w-2 h-2 rounded-full shrink-0" style={{
+                              <span className="h-2 w-2 shrink-0" style={{
                                 background: anno.type === 'point' ? '#c0392b' :
                                   anno.type === 'line' ? '#2c6fbb' :
                                     anno.type === 'text' ? '#d4954e' : '#1a4735'
@@ -246,7 +243,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
                                   <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--muted)' }}>{anno.description}</p>
                                 )}
                               </div>
-                              <span className="text-[10px] font-medium px-2 py-1 rounded-full shrink-0" style={{
+                              <span className="shrink-0 px-2 py-1 text-[10px] font-medium" style={{
                                 background: anno.type === 'point' ? 'rgba(192,57,43,0.08)' :
                                   anno.type === 'line' ? 'rgba(44,111,187,0.08)' :
                                     anno.type === 'text' ? 'rgba(212,148,78,0.08)' : 'rgba(26,71,53,0.08)',
@@ -265,7 +262,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
                                   return (
                                     <span
                                       key={cf.fieldId}
-                                      className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                                      className="px-2 py-0.5 text-[10px] font-medium"
                                       style={{ background: selectedAnnotation?.id === anno.id ? 'rgba(184,155,114,0.14)' : 'rgba(23,23,23,0.04)', color: 'var(--muted)' }}
                                     >
                                       {name}: {String(cf.value)}
@@ -287,11 +284,10 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
           <WorkbenchSidebarToggle
             open={sidebarOpen}
             onToggle={() => setSidebarOpen(!sidebarOpen)}
-            offset={344}
+            offset={304}
           />
 
           <div className="flex-1 relative min-w-0">
-            <div className="absolute inset-0 rounded-[30px] border pointer-events-none z-[2]" style={{ borderColor: 'rgba(35,35,35,0.1)' }} />
             <MapView
               annotations={filteredAnnotations}
               onAnnotationClick={handleAnnotationClick}
@@ -320,7 +316,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
                 <button
                   onClick={() => setShowNames((prev) => !(prev ?? (mapProject?.settings.showNames !== false)))}
                   aria-label="切换名称显示"
-                  className="rounded-full px-3.5 py-2 text-xs font-medium transition"
+                  className="workbench-hard-edge px-3.5 py-2 text-xs font-medium transition"
                   style={{
                     background: effectiveShowNames ? 'var(--primary)' : 'transparent',
                     color: effectiveShowNames ? '#fff' : 'var(--muted)',
