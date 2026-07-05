@@ -3,14 +3,12 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/auth/AuthProvider';
-import DrawingToolbar from '@/components/map/DrawingToolbar';
 import InfoCard from '@/components/map/InfoCard';
 import FieldTemplateManager from '@/components/map/FieldTemplateManager';
 import ImportDialog from '@/components/import/ImportDialog';
 import GroupTree from '@/components/map/GroupTree';
 import AnnotationFilterPanel from '@/components/map/AnnotationFilterPanel';
 import WorkbenchSidebarToggle from '@/components/map/workbench/WorkbenchSidebarToggle';
-import MapFloatingPanel from '@/components/map/workbench/MapFloatingPanel';
 import { useMapData } from '@/hooks/useMapData';
 import { useAnnotationActions } from '@/hooks/useAnnotationActions';
 import { apiSend } from '@/lib/api';
@@ -21,7 +19,6 @@ import {
   FieldTemplate,
 } from '@/lib/types';
 import {
-  Upload,
   Download,
   LogOut,
   Settings,
@@ -34,7 +31,13 @@ import {
   AlertTriangle,
   Home,
   Search,
-  PenTool,
+  RefreshCcw,
+  Eye,
+  WandSparkles,
+  Wrench,
+  User,
+  Upload,
+  PanelLeft,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
@@ -80,7 +83,6 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
     setSelectedIds,
     filteredAnnotations,
     annotationCount,
-    fieldTemplateMap,
     feedbackMessage,
     showFeedback,
     handleSaveAnnotation,
@@ -100,16 +102,12 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
 
   const [drawMode, setDrawMode] = useState<DrawMode>('none');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [sidebarTab, setSidebarTab] = useState<'list' | 'groups'>('list');
+  const [panelMode, setPanelMode] = useState<'map' | 'annotations' | 'groups' | 'categories' | 'filters'>('annotations');
   const [importOpen, setImportOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
-  const [showFilters, setShowFilters] = useState(true);
+  const [showToolMenu, setShowToolMenu] = useState(false);
   const [batchDeleteConfirm, setBatchDeleteConfirm] = useState(false);
-  const [batchActionLoading, setBatchActionLoading] = useState(false);
-  const [batchGroupTarget, setBatchGroupTarget] = useState<string>('__ungrouped__');
-  const [batchFieldId, setBatchFieldId] = useState('');
-  const [batchFieldValue, setBatchFieldValue] = useState('');
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [showNamesOverride, setShowNamesOverride] = useState<boolean | null>(null);
   const [savingMapSettings, setSavingMapSettings] = useState(false);
@@ -126,6 +124,13 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
   }, [annotations]);
 
   const filteredByGroup = filteredAnnotations;
+  const panelTabs = [
+    { key: 'map', label: '地图' },
+    { key: 'annotations', label: '标注' },
+    { key: 'groups', label: '分组' },
+    { key: 'categories', label: '分类' },
+    { key: 'filters', label: '筛选' },
+  ] as const;
 
   // 分组颜色映射
   const groupColorMap = useMemo(() => {
@@ -323,46 +328,6 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
     await handleBatchDelete();
   }, [handleBatchDelete]);
 
-  const handleBatchMoveToGroup = useCallback(async () => {
-    if (selectedIds.size === 0) return;
-    setBatchActionLoading(true);
-    try {
-      const groupId = batchGroupTarget === '__ungrouped__' ? null : batchGroupTarget;
-      await apiSend('/api/annotations', 'PUT', { annotationIds: Array.from(selectedIds), groupId });
-      setAnnotations((prev) =>
-        prev.map((annotation) =>
-          selectedIds.has(annotation.id) ? { ...annotation, group_id: groupId ?? undefined } : annotation
-        )
-      );
-      showFeedback(`已更新 ${selectedIds.size} 个标注的分组`);
-    } catch (error) {
-      showFeedback(`批量移动失败: ${error instanceof Error ? error.message : '请求失败'}`);
-      await loadData();
-    } finally {
-      setBatchActionLoading(false);
-    }
-  }, [batchGroupTarget, loadData, selectedIds, setAnnotations, showFeedback]);
-
-  const handleBatchUpdateField = useCallback(async () => {
-    if (selectedIds.size === 0 || !batchFieldId) return;
-    setBatchActionLoading(true);
-    try {
-      const response = await apiSend<{ ok: true; data: Annotation[] }>('/api/annotations', 'PUT', {
-        annotationIds: Array.from(selectedIds),
-        fieldId: batchFieldId,
-        fieldValue: batchFieldValue.trim() ? batchFieldValue.trim() : null,
-      });
-      const updates = new Map(response.data.map((annotation) => [annotation.id, annotation]));
-      setAnnotations((prev) => prev.map((annotation) => updates.get(annotation.id) || annotation));
-      showFeedback(`已更新 ${response.data.length} 个标注的字段值`);
-    } catch (error) {
-      showFeedback(`批量字段更新失败: ${error instanceof Error ? error.message : '请求失败'}`);
-      await loadData();
-    } finally {
-      setBatchActionLoading(false);
-    }
-  }, [batchFieldId, batchFieldValue, loadData, selectedIds, setAnnotations, showFeedback]);
-
   const handleMoveAnnotationToGroup = useCallback(async (annotationId: string, groupId: string | null) => {
     setAnnotations((prev) =>
       prev.map((a) => (a.id === annotationId ? { ...a, group_id: groupId ?? undefined } : a))
@@ -375,19 +340,24 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
   }, [loadData, setAnnotations]);
 
   useEffect(() => {
-    if (!selectedAnnotation || sidebarTab !== 'list') return;
+    if (!selectedAnnotation || panelMode !== 'annotations') return;
     const element = listItemRefs.current.get(selectedAnnotation.id);
     if (!element) return;
     element.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }, [selectedAnnotation, sidebarTab, filteredByGroup]);
+  }, [selectedAnnotation, panelMode, filteredByGroup]);
 
   useEffect(() => {
-    if (!showExportMenu) return;
+    if (!showExportMenu && !showToolMenu) return;
 
     const handleClose = () => setShowExportMenu(false);
+    const handleToolClose = () => setShowToolMenu(false);
     window.addEventListener('click', handleClose);
-    return () => window.removeEventListener('click', handleClose);
-  }, [showExportMenu]);
+    window.addEventListener('click', handleToolClose);
+    return () => {
+      window.removeEventListener('click', handleClose);
+      window.removeEventListener('click', handleToolClose);
+    };
+  }, [showExportMenu, showToolMenu]);
 
   if (loading) {
     return (
@@ -398,17 +368,273 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
   }
 
   const showNamesEnabled = showNamesOverride ?? (mapProject?.settings.showNames !== false);
+  const quickTypeCards = [
+    { type: 'point', label: '默认（点）', count: annotationCount.point },
+    { type: 'line', label: '默认（线）', count: annotationCount.line },
+    { type: 'polygon', label: '默认（面）', count: annotationCount.polygon },
+    { type: 'text', label: '文字', count: annotationCount.text },
+  ] as const;
+
+  const mapOverviewCards = [
+    { label: '地图数量', value: '1' },
+    { label: '标注总数', value: String(annotations.length) },
+    { label: '点位数量', value: String(annotationCount.point) },
+    { label: '最近更新', value: mapProject?.updated_at ? new Date(mapProject.updated_at).toLocaleDateString('zh-CN') : '暂无' },
+  ];
+
+  const openTypeCategory = (type: typeof quickTypeCards[number]['type']) => {
+    setPanelMode('annotations');
+    setFilters((prev) => ({
+      ...prev,
+      selectedTypes: [type],
+    }));
+  };
+
+  const renderAnnotationRows = () => {
+    if (filteredByGroup.length === 0) {
+      return (
+        <div className="map-directory-empty">
+          <MapPin className="mx-auto mb-3 h-8 w-8" style={{ color: 'var(--faint)', opacity: 0.35 }} />
+          <p>暂无查询结果</p>
+          <span>{annotations.length > 0 ? '调整筛选条件后重试' : '还没有标注内容'}</span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="map-directory-list">
+        {filteredByGroup.map((anno) => {
+          const groupColor = anno.group_id ? groupColorMap.get(anno.group_id) : null;
+          const groupName = anno.group_id ? groupNameMap.get(anno.group_id) : null;
+          return (
+            <div
+              key={anno.id}
+              ref={(node) => {
+                if (node) listItemRefs.current.set(anno.id, node);
+                else listItemRefs.current.delete(anno.id);
+              }}
+              onClick={() => handleAnnotationClick(anno)}
+              className="map-directory-row"
+              data-active={selectedAnnotation?.id === anno.id}
+            >
+                  <div className="map-directory-row-main">
+                    {batchMode && (
+                  <button
+                    className="shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const next = new Set(selectedIds);
+                      if (next.has(anno.id)) next.delete(anno.id);
+                      else next.add(anno.id);
+                      setSelectedIds(next);
+                    }}
+                    aria-label={selectedIds.has(anno.id) ? '取消选择' : '选择'}
+                  >
+                    {selectedIds.has(anno.id) ? (
+                      <CheckSquare className="w-4 h-4" style={{ color: 'var(--primary)' }} aria-hidden="true" />
+                    ) : (
+                      <Square className="w-4 h-4" style={{ color: 'var(--faint)' }} aria-hidden="true" />
+                    )}
+                  </button>
+                )}
+                <span className={`map-directory-dot map-directory-dot-${anno.type}`} />
+                <div className="min-w-0 flex-1">
+                  <div className="map-directory-title">{anno.name || '未命名'}</div>
+                  {anno.description && (
+                    <div className="map-directory-subtitle">{anno.description}</div>
+                  )}
+                </div>
+                {groupName && (
+                  <span
+                    className="map-directory-group"
+                    style={{
+                      background: groupColor ? `${groupColor}12` : 'var(--primary-soft)',
+                      color: groupColor || 'var(--primary)',
+                      borderColor: groupColor ? `${groupColor}2d` : 'rgba(10,75,63,0.16)',
+                    }}
+                  >
+                    {groupName}
+                  </span>
+                )}
+                <span className="map-directory-type">
+                  {anno.type === 'point' ? '点' : anno.type === 'line' ? '线' : anno.type === 'text' ? '文字' : '面'}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderPanelContent = () => {
+    if (panelMode === 'map') {
+      return (
+        <div className="map-panel-shell">
+          <div className="map-panel-header">
+            <div>
+              <h2>地图</h2>
+              <p>{mapProject?.description || '当前地图工作台'}</p>
+            </div>
+          </div>
+          <div className="map-panel-stats">
+            {mapOverviewCards.map((card) => (
+              <div key={card.label} className="map-panel-stat">
+                <span>{card.label}</span>
+                <strong>{card.value}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    if (panelMode === 'groups') {
+      return (
+        <div className="map-panel-shell">
+          <div className="map-panel-header">
+            <div>
+              <h2>分组</h2>
+              <p>按分组整理当前地图标注</p>
+            </div>
+          </div>
+          <GroupTree
+            groups={groups}
+            mapId={mapProject?.id || ''}
+            selectedGroupId={filters.selectedGroupId}
+            onSelectGroup={(groupId) => setFilters((prev) => ({ ...prev, selectedGroupId: groupId }))}
+            onGroupsChange={loadData}
+            annotationCountByGroup={annotationCountByGroup}
+          />
+        </div>
+      );
+    }
+
+    if (panelMode === 'categories') {
+      return (
+        <div className="map-panel-shell">
+          <div className="map-panel-header">
+            <div>
+              <h2>分类</h2>
+              <p>按标注类型快速切换目录</p>
+            </div>
+          </div>
+          <div className="map-category-grid">
+            {quickTypeCards.map((card) => (
+              <button
+                key={card.type}
+                type="button"
+                onClick={() => openTypeCategory(card.type)}
+                className="map-category-card"
+              >
+                <span>{card.label}</span>
+                <strong>{card.count}</strong>
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    if (panelMode === 'filters') {
+      return (
+        <div className="map-panel-shell">
+          <AnnotationFilterPanel
+            filters={filters}
+            fieldTemplates={mapProject?.field_templates || []}
+            groups={groups}
+            resultCount={filteredAnnotations.length}
+            totalCount={annotations.length}
+            onChange={setFilters}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div className="map-panel-shell">
+        <div className="map-panel-header">
+          <div>
+            <h2>标注</h2>
+            <p>可见 {filteredAnnotations.length} / 全部 {annotations.length}</p>
+          </div>
+          <button
+            onClick={() => {
+              setBatchMode(!batchMode);
+              setSelectedIds(new Set());
+            }}
+                className="map-panel-action"
+                title="批量操作"
+                aria-label="批量操作"
+              >
+            <CheckSquare className="w-4 h-4" aria-hidden="true" />
+            批量
+          </button>
+        </div>
+
+        <div className="map-panel-subtabs">
+          <button
+            type="button"
+            className={`map-panel-subtab ${!filters.selectedGroupId ? 'is-active' : ''}`}
+            onClick={() => setFilters((prev) => ({ ...prev, selectedGroupId: null }))}
+          >
+            全部标注
+          </button>
+          <button
+            type="button"
+            className={`map-panel-subtab ${filters.selectedTypes.length > 0 ? 'is-active' : ''}`}
+            onClick={() => setPanelMode('categories')}
+          >
+            选择分类
+          </button>
+          <button
+            type="button"
+            className={`map-panel-subtab ${filters.keyword || filters.fieldFilters.length > 0 ? 'is-active' : ''}`}
+            onClick={() => setPanelMode('filters')}
+          >
+            高级筛选
+          </button>
+        </div>
+
+        {batchMode && (
+          <div className="map-batch-bar">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleSelectAll}
+                className="text-xs font-medium"
+                style={{ color: 'var(--primary)' }}
+              >
+                {selectedIds.size === filteredByGroup.length && filteredByGroup.length > 0 ? '取消全选' : '全选'}
+              </button>
+              <span className="text-xs" style={{ color: 'var(--muted)' }}>已选 {selectedIds.size} 个</span>
+            </div>
+            {selectedIds.size > 0 && (
+              <button
+                onClick={onBatchDeleteClick}
+                className="map-panel-danger"
+              >
+                <Trash2 className="w-3 h-3" aria-hidden="true" />
+                删除
+              </button>
+            )}
+          </div>
+        )}
+
+        {renderAnnotationRows()}
+      </div>
+    );
+  };
 
   return (
     <div className="workbench-shell">
       <div className="paper-panel workbench-frame">
-        <div className="workbench-editor-header shrink-0">
-          <div className="workbench-editor-row workbench-editor-row-main">
-            <div className="workbench-editor-brand">
-              <div className="flex items-center gap-2">
+        <header className="map-workbench-header shrink-0">
+          <div className="map-workbench-topline">
+            <div className="map-workbench-brand">
+              <div className="map-workbench-brand-lockup">
                 <Link
                   href="/admin"
-                  className="ghost-button workbench-hard-edge p-2"
+                  className="map-workbench-back"
                   title="返回地图列表"
                   aria-label="返回地图列表"
                 >
@@ -416,150 +642,120 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                 </Link>
                 <Link
                   href="/"
-                  className="ghost-button workbench-hard-edge p-2"
+                  className="map-workbench-back"
                   title="返回前台"
                   aria-label="返回前台"
                 >
                   <Home className="w-4 h-4" aria-hidden="true" />
                 </Link>
-              </div>
-
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center border" style={{ background: 'rgba(11,79,69,0.08)', borderColor: 'var(--border-strong)' }}>
+                </div>
+              <div className="map-workbench-brand-mark">
+                <div className="map-workbench-brand-icon">
                   <MapPin className="w-4 h-4" style={{ color: 'var(--primary)' }} aria-hidden="true" />
                 </div>
                 <div className="min-w-0">
-                  <h1 className="truncate text-[13px] font-semibold md:text-[14px]" style={{ color: 'var(--ink)' }}>
+                  <div className="map-workbench-brand-eyebrow">KANVON MAP</div>
+                  <h1 className="map-workbench-brand-title">
                     {mapProject?.name || '地图标注平台'}
                   </h1>
-                  <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.1em]" style={{ color: 'var(--faint)' }}>
-                    <span>地图编辑</span>
-                    <span className="hidden sm:inline">/</span>
-                    <Link href="/admin" className="hidden transition hover:opacity-70 sm:inline">
-                      地图管理
-                    </Link>
-                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="workbench-editor-search">
-              <div className="relative w-full">
+            <div className="map-workbench-search">
+              <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: 'var(--faint)' }} aria-hidden="true" />
                 <input
                   type="text"
                   value={filters.keyword}
                   onChange={(e) => setFilters({ ...filters, keyword: e.target.value })}
                   placeholder="搜索标注名称、描述或字段值"
-                  className="w-full py-2 pl-10 pr-4 text-sm outline-none transition workbench-hard-edge workbench-field"
+                  className="map-workbench-search-input"
                 />
               </div>
             </div>
 
-            <div className="workbench-editor-session">
-              <button onClick={logout} className="ghost-button workbench-hard-edge px-3 py-2 text-sm" title="退出登录" aria-label="退出登录">
-                <LogOut className="w-4 h-4" aria-hidden="true" />
+            <div className="map-workbench-account">
+              <button className="map-workbench-account-button" type="button" aria-label="账户">
+                <User className="h-4 w-4" aria-hidden="true" />
+                <span>账户</span>
               </button>
             </div>
           </div>
 
-          <div className="workbench-editor-row workbench-editor-row-tools">
-            <div className="workbench-editor-kicker">
-              <span>编辑工具</span>
+          <div className="map-workbench-toolbar">
+            <div className="map-workbench-toolbar-group">
+              <button
+                onClick={() => setSidebarOpen((prev) => !prev)}
+                className={`map-workbench-tool ${sidebarOpen ? 'is-active' : ''}`}
+                title={sidebarOpen ? '收起目录' : '展开目录'}
+                aria-label={sidebarOpen ? '收起目录' : '展开目录'}
+              >
+                <PanelLeft className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>目录</span>
+              </button>
+              <Link href="/admin" className="map-workbench-tool">
+                <span>地图管理</span>
+              </Link>
             </div>
 
-            <div className="workbench-editor-actions">
-              <MapFloatingPanel className="workbench-editor-toolgroup">
+            <div className="map-workbench-toolbar-group">
+              <button
+                onClick={() => setImportOpen(true)}
+                className="map-workbench-tool"
+              >
+                <Upload className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>导入</span>
+              </button>
+              <div className="relative">
                 <button
-                  onClick={() => setDrawMode(drawMode === 'point' ? 'none' : 'point')}
-                  className={`h-8 px-3 text-xs font-medium transition workbench-hard-edge ${drawMode === 'point' ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
-                  aria-label="新增点标注"
-                  title="新增点标注"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowExportMenu((prev) => !prev);
+                  }}
+                  className={`map-workbench-tool ${showExportMenu ? 'is-active' : ''}`}
                 >
-                  点
+                  <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>导出</span>
                 </button>
-                <button
-                  onClick={() => setDrawMode(drawMode === 'line' ? 'none' : 'line')}
-                  className={`h-8 px-3 text-xs font-medium transition workbench-hard-edge ${drawMode === 'line' ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
-                  aria-label="新增线标注"
-                  title="新增线标注"
-                >
-                  线
-                </button>
-                <button
-                  onClick={() => setDrawMode(drawMode === 'polygon' ? 'none' : 'polygon')}
-                  className={`h-8 px-3 text-xs font-medium transition workbench-hard-edge ${drawMode === 'polygon' ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
-                  aria-label="新增面标注"
-                  title="新增面标注"
-                >
-                  面
-                </button>
-                <button
-                  onClick={() => setDrawMode(drawMode === 'text' ? 'none' : 'text')}
-                  className={`h-8 px-3 text-xs font-medium transition workbench-hard-edge ${drawMode === 'text' ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
-                  aria-label="新增文字标注"
-                  title="新增文字标注"
-                >
-                  <PenTool className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
-              </MapFloatingPanel>
-
-              <div className="workbench-editor-system">
-                <button
-                  onClick={() => setImportOpen(true)}
-                  className="ghost-button workbench-hard-edge flex items-center gap-1.5 px-3 py-2 text-sm"
-                  title="批量导入"
-                  aria-label="批量导入"
-                >
-                  <Upload className="w-4 h-4" aria-hidden="true" />
-                  <span className="hidden sm:inline">导入</span>
-                </button>
-
-                <div className="relative">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowExportMenu((prev) => !prev);
-                    }}
-                    className="ghost-button workbench-hard-edge flex items-center gap-1.5 px-3 py-2 text-sm"
-                    title="导出"
-                    aria-label="导出"
-                  >
-                    <Download className="w-4 h-4" aria-hidden="true" />
-                    <span className="hidden sm:inline">导出</span>
-                  </button>
-                  {showExportMenu && (
-                    <div
-                      className="absolute right-0 top-full z-50 mt-2 w-36 overflow-hidden border shadow-[0_18px_42px_rgba(24,32,27,0.08)]"
-                      style={{ background: 'var(--surface-strong)', borderColor: 'var(--border)' }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button onClick={() => { handleExport('xlsx'); setShowExportMenu(false); }}
-                        className="w-full px-4 py-3 text-left text-sm transition"
-                        style={{ color: 'var(--ink)' }}>
-                        导出 Excel
-                      </button>
-                      <button onClick={() => { handleExport('csv'); setShowExportMenu(false); }}
-                        className="w-full px-4 py-3 text-left text-sm transition"
-                        style={{ color: 'var(--ink)', borderTop: '1px solid var(--border)' }}>
-                        导出 CSV
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => setShowSettings(!showSettings)}
-                  className={`workbench-hard-edge p-2 transition ${showSettings ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
-                  title="设置"
-                  aria-label="设置"
-                >
-                  <Settings className="w-4 h-4" aria-hidden="true" />
-                </button>
+                {showExportMenu && (
+                  <div className="map-workbench-menu" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={() => { handleExport('xlsx'); setShowExportMenu(false); }} className="map-workbench-menu-item">
+                      导出 Excel
+                    </button>
+                    <button onClick={() => { handleExport('csv'); setShowExportMenu(false); }} className="map-workbench-menu-item">
+                      导出 CSV
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
+
+            <div className="map-workbench-toolbar-group">
+              <button
+                onClick={() => void loadData()}
+                className="map-workbench-tool"
+              >
+                <RefreshCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>刷新</span>
+              </button>
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className={`map-workbench-tool ${showSettings ? 'is-active' : ''}`}
+              >
+                <Settings className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>设置</span>
+              </button>
+              <button
+                onClick={logout}
+                className="map-workbench-tool"
+              >
+                <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>退出</span>
+              </button>
+            </div>
           </div>
-        </div>
+        </header>
 
       {/* 反馈消息 */}
       {feedbackMessage && (
@@ -600,341 +796,185 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
         </div>
       )}
 
-      <div className="relative flex flex-1 overflow-hidden p-1">
+      <div className="relative flex flex-1 overflow-hidden">
         <div
           className={`relative z-30 shrink-0 overflow-hidden transition-all duration-300 ${
-            sidebarOpen ? 'w-[292px] opacity-100' : 'w-0 opacity-0'
+            sidebarOpen ? 'w-[368px] opacity-100' : 'w-0 opacity-0'
           }`}
         >
-          <div className="workbench-sidebar workbench-hard-edge flex h-full w-[292px] flex-col">
-            <div className="shrink-0 px-4 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h2 className="text-[14px] font-semibold" style={{ color: 'var(--ink)' }}>标注</h2>
-                  <p className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>
-                    可见 {filteredAnnotations.length} / 全部 {annotations.length}
-                  </p>
-                </div>
+          <aside className="map-workbench-sidebar">
+            <div className="map-workbench-panel-tabs">
+              {panelTabs.map((tab) => (
                 <button
-                  onClick={() => { setBatchMode(!batchMode); setSelectedIds(new Set()); }}
-                  className="ghost-button workbench-hard-edge inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium"
-                  title="批量操作"
-                  aria-label="批量操作"
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setPanelMode(tab.key)}
+                  className={`map-workbench-panel-tab ${panelMode === tab.key ? 'is-active' : ''}`}
                 >
-                  <CheckSquare className="w-4 h-4" aria-hidden="true" />
-                  批量
+                  {tab.label}
                 </button>
-              </div>
-
-              <div className="mt-4 grid grid-cols-2">
-                {(['list', 'groups'] as const).map((tab) => {
-                  const active = sidebarTab === tab;
-                  return (
-                    <button
-                      key={tab}
-                      onClick={() => setSidebarTab(tab)}
-                      className={`px-4 py-2 text-[11px] font-medium transition-all duration-150 workbench-hard-edge ${active ? 'workbench-tab-active' : 'workbench-tab'}`}
-                    >
-                      {tab === 'list' ? '标注' : '分组'}
-                    </button>
-                  );
-                })}
-              </div>
+              ))}
             </div>
 
-            {sidebarTab === 'list' && (
-              <>
-                <div className="flex shrink-0 items-center justify-between px-4 py-3" style={{ borderBottom: showFilters ? 'none' : '1px solid var(--border)' }}>
+            <div className="map-workbench-panel-body">
+              {renderPanelContent()}
+            </div>
+          </aside>
+        </div>
+        
+        <WorkbenchSidebarToggle
+          open={sidebarOpen}
+          onToggle={() => setSidebarOpen(!sidebarOpen)}
+          offset={396}
+        />
+
+        <div className="flex-1 relative min-w-0 bg-white">
+          {showSettings && mapProject && (
+            <div className="absolute left-4 top-4 z-[1100] w-[320px]">
+              <div className="workbench-panel workbench-hard-edge p-4 space-y-4" style={{ boxShadow: 'var(--shadow-floating)' }}>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>访问设置</h3>
+                    <p className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>
+                      关闭后，这张地图不会出现在前台列表，也不能被匿名访问。
+                    </p>
+                  </div>
                   <button
-                    onClick={() => setShowFilters((prev) => !prev)}
-                    className="ghost-button workbench-hard-edge inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium"
+                    onClick={() => handlePublicAccessChange(!(mapProject.settings.isPublic !== false))}
+                    disabled={savingMapSettings}
+                    className="h-7 min-w-[44px] border relative transition-colors duration-200 disabled:opacity-60 workbench-hard-edge"
+                    style={{ background: mapProject.settings.isPublic !== false ? 'var(--primary)' : 'rgba(255,255,255,0.7)', borderColor: mapProject.settings.isPublic !== false ? 'var(--primary)' : 'var(--border)' }}
+                    aria-label="公开访问开关"
                   >
-                    <Search className="w-3.5 h-3.5" aria-hidden="true" />
-                    {showFilters ? '收起筛选' : '展开筛选'}
+                    <span
+                      className="absolute top-[3px] h-4.5 w-4.5 bg-white transition-all duration-200"
+                      style={{ left: mapProject.settings.isPublic !== false ? '24px' : '3px' }}
+                    />
                   </button>
-                  <span className="text-xs" style={{ color: 'var(--faint)' }}>
-                    {filteredAnnotations.length} / {annotations.length}
+                </div>
+
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>默认显示名称</h3>
+                    <p className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>
+                      控制前台与后台地图加载时是否默认显示标注名称。
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleShowNamesSettingChange(!(mapProject.settings.showNames !== false))}
+                    disabled={savingMapSettings}
+                    className="h-7 min-w-[44px] border relative transition-colors duration-200 disabled:opacity-60 workbench-hard-edge"
+                    style={{ background: mapProject.settings.showNames !== false ? 'var(--primary)' : 'rgba(255,255,255,0.7)', borderColor: mapProject.settings.showNames !== false ? 'var(--primary)' : 'var(--border)' }}
+                    aria-label="显示名称默认开关"
+                  >
+                    <span
+                      className="absolute top-[3px] h-4.5 w-4.5 bg-white transition-all duration-200"
+                      style={{ left: mapProject.settings.showNames !== false ? '24px' : '3px' }}
+                    />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between text-xs">
+                  <span style={{ color: 'var(--faint)' }}>
+                    当前状态：{mapProject.settings.isPublic !== false ? '公开可访问' : '仅后台可见'} · 名称默认{mapProject.settings.showNames !== false ? '显示' : '隐藏'}
                   </span>
-                </div>
-                {showFilters && (
-                  <AnnotationFilterPanel
-                    filters={filters}
-                    fieldTemplates={mapProject?.field_templates || []}
-                    groups={groups}
-                    resultCount={filteredAnnotations.length}
-                    totalCount={annotations.length}
-                    onChange={setFilters}
-                  />
-                )}
-              </>
-            )}
-
-            {sidebarTab === 'list' && batchMode && (
-              <div className="px-3 py-2 shrink-0 space-y-3"
-                style={{ borderBottom: '1px solid var(--border)', background: 'rgba(11,79,69,0.04)' }}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <button onClick={handleSelectAll} className="text-xs font-medium"
-                      style={{ color: 'var(--primary)' }}
-                      aria-label={selectedIds.size === filteredByGroup.length && filteredByGroup.length > 0 ? '取消全选' : '全选'}>
-                      {selectedIds.size === filteredByGroup.length && filteredByGroup.length > 0 ? '取消全选' : '全选'}
-                    </button>
-                    <span className="text-xs" style={{ color: 'var(--muted)' }}>已选 {selectedIds.size} 个</span>
-                  </div>
-                  {selectedIds.size > 0 && (
-                    <button onClick={onBatchDeleteClick}
-                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white transition workbench-hard-edge"
-                      style={{ background: 'var(--danger)' }}>
-                      <Trash2 className="w-3 h-3" aria-hidden="true" />
-                      删除
-                    </button>
+                  {savingMapSettings && (
+                    <span style={{ color: 'var(--muted)' }}>保存中...</span>
                   )}
                 </div>
 
-                {selectedIds.size > 0 && (
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-[1fr,auto] gap-2">
-                      <select
-                        value={batchGroupTarget}
-                        onChange={(e) => setBatchGroupTarget(e.target.value)}
-                        className="px-3 py-2 text-xs outline-none workbench-hard-edge workbench-field"
-                      >
-                        <option value="__ungrouped__">移动到未分组</option>
-                        {groups.map((group) => (
-                          <option key={group.id} value={group.id}>{group.name}</option>
-                        ))}
-                      </select>
-                      <button
-                        onClick={handleBatchMoveToGroup}
-                        disabled={batchActionLoading}
-                        className="primary-button workbench-hard-edge px-3 py-2 text-xs font-medium"
-                      >
-                        移动分组
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-[1fr,1fr,auto] gap-2">
-                      <select
-                        value={batchFieldId}
-                        onChange={(e) => setBatchFieldId(e.target.value)}
-                        className="px-3 py-2 text-xs outline-none workbench-hard-edge workbench-field"
-                      >
-                        <option value="">选择字段</option>
-                        {(mapProject?.field_templates || []).map((field) => (
-                          <option key={field.id} value={field.id}>{field.name}</option>
-                        ))}
-                      </select>
-                      <input
-                        type="text"
-                        value={batchFieldValue}
-                        onChange={(e) => setBatchFieldValue(e.target.value)}
-                        placeholder="统一字段值"
-                        className="px-3 py-2 text-xs outline-none workbench-hard-edge workbench-field"
-                      />
-                      <button
-                        onClick={handleBatchUpdateField}
-                        disabled={batchActionLoading || !batchFieldId}
-                        className="px-3 py-2 text-xs font-medium text-white transition disabled:opacity-50 workbench-hard-edge"
-                        style={{ background: '#2c6fbb' }}
-                      >
-                        批量改值
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="flex-1 overflow-y-auto">
-              {sidebarTab === 'groups' ? (
-                <GroupTree
-                  groups={groups}
-                  mapId={mapProject?.id || ''}
-                  selectedGroupId={filters.selectedGroupId}
-                  onSelectGroup={(groupId) => setFilters((prev) => ({ ...prev, selectedGroupId: groupId }))}
-                  onGroupsChange={loadData}
-                  annotationCountByGroup={annotationCountByGroup}
-                />
-              ) : (
-                <>
-                  {filteredByGroup.length === 0 ? (
-                    <div className="p-8 text-center text-sm" style={{ color: 'var(--faint)' }}>
-                      <MapPin className="mx-auto mb-3 h-8 w-8" style={{ color: 'var(--faint)', opacity: 0.45 }} />
-                      {annotations.length > 0 ? '没有符合当前筛选条件的标注' : '暂无标注'}<br />
-                      {annotations.length === 0 && (
-                        <span className="text-xs" style={{ color: 'var(--faint)' }}>点击左上工具组在地图上添加</span>
-                      )}
-                    </div>
-                  ) : (
-                    <div>
-                      {filteredByGroup.map((anno) => {
-                        const groupColor = anno.group_id ? groupColorMap.get(anno.group_id) : null;
-                        const groupName = anno.group_id ? groupNameMap.get(anno.group_id) : null;
-                        return (
-                          <div
-                            key={anno.id}
-                            ref={(node) => {
-                              if (node) listItemRefs.current.set(anno.id, node);
-                              else listItemRefs.current.delete(anno.id);
-                            }}
-                            onClick={() => handleAnnotationClick(anno)}
-                            className="workbench-list-row cursor-pointer transition-all duration-150"
-                            data-active={selectedAnnotation?.id === anno.id}
-                            onMouseEnter={(e) => { if (selectedAnnotation?.id !== anno.id) e.currentTarget.style.background = 'rgba(11,79,69,0.025)'; }}
-                            onMouseLeave={(e) => { if (selectedAnnotation?.id !== anno.id) e.currentTarget.style.background = ''; }}
-                          >
-                              <div className="px-4 py-2.5">
-                                <div className="flex items-center gap-2.5">
-                                {batchMode && (
-                                  <button className="shrink-0"
-                                    onClick={(e) => { e.stopPropagation(); const next = new Set(selectedIds); if (next.has(anno.id)) next.delete(anno.id); else next.add(anno.id); setSelectedIds(next); }}
-                                    aria-label={selectedIds.has(anno.id) ? '取消选择' : '选择'}>
-                                    {selectedIds.has(anno.id) ? (
-                                      <CheckSquare className="w-4 h-4" style={{ color: 'var(--primary)' }} aria-hidden="true" />
-                                    ) : (
-                                      <Square className="w-4 h-4" style={{ color: 'var(--faint)' }} aria-hidden="true" />
-                                    )}
-                                  </button>
-                                )}
-                                <span className={`h-2 w-2 shrink-0 ${
-                                  anno.type === 'point' ? 'bg-red-500' :
-                                  anno.type === 'line' ? 'bg-blue-500' :
-                                  anno.type === 'text' ? 'bg-amber-500' : 'bg-purple-500'
-                                }`} />
-                                <div className="min-w-0 flex-1">
-                                  <span className="text-[13px] font-medium truncate block" style={{ color: 'var(--ink)' }}>
-                                    {anno.name || '未命名'}
-                                  </span>
-                                  {anno.description && (
-                                    <p className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--muted)' }}>{anno.description}</p>
-                                  )}
-                                </div>
-                                {groupName && (
-                                  <span className="text-[10px] font-medium px-1.5 py-0.5 shrink-0"
-                                    style={{
-                                      background: groupColor ? `${groupColor}14` : 'var(--primary-soft)',
-                                      color: groupColor || 'var(--primary)',
-                                      border: `1px solid ${groupColor ? `${groupColor}28` : 'rgba(11,79,69,0.14)'}`,
-                                    }}>
-                                    {groupName}
-                                  </span>
-                                )}
-                                <span className="text-[10px] font-medium px-1.5 py-0.5 shrink-0" style={{
-                                  border: '1px solid var(--border)',
-                                  background: 'rgba(255,255,255,0.5)',
-                                  color: 'var(--muted)',
-                                }}>
-                                  {anno.type === 'point' ? '点' : anno.type === 'line' ? '线' : anno.type === 'text' ? '文字' : '面'}
-                                </span>
-                              </div>
-                              {anno.type === 'point' && anno.custom_fields.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mt-2" style={{ paddingLeft: batchMode ? '2.25rem' : '0' }}>
-                                  {[...anno.custom_fields]
-                                    .sort((a, b) => {
-                                      const fa = fieldTemplateMap.get(a.fieldId);
-                                      const fb = fieldTemplateMap.get(b.fieldId);
-                                      return (fa?.sort_order ?? 0) - (fb?.sort_order ?? 0);
-                                    })
-                                    .filter((cf) => {
-                                      const field = fieldTemplateMap.get(cf.fieldId);
-                                      return field && field.name !== '成交总价';
-                                    })
-                                    .filter((cf) => cf.value != null)
-                                    .slice(0, 3)
-                                    .map((cf) => {
-                                      const field = fieldTemplateMap.get(cf.fieldId);
-                                      if (!field) return null;
-                                      return (
-                                        <span key={cf.fieldId} className="px-1.5 py-0.5 text-[10px]"
-                                          style={{ border: '1px solid var(--border)', color: 'var(--muted)', background: 'rgba(255,255,255,0.42)' }}>
-                                          {field.name}: {String(cf.value)}
-                                        </span>
-                                      );
-                                    })}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-
-            {showSettings && mapProject && (
-              <div className="shrink-0" style={{ borderTop: '1px solid var(--border)' }}>
-                <div className="px-4 pt-4">
-                  <div className="workbench-panel workbench-hard-edge p-4 space-y-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>访问设置</h3>
-                        <p className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>
-                          关闭后，这张地图不会出现在前台列表，也不能被匿名访问。
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => handlePublicAccessChange(!(mapProject.settings.isPublic !== false))}
-                        disabled={savingMapSettings}
-                        className="h-7 min-w-[44px] border relative transition-colors duration-200 disabled:opacity-60 workbench-hard-edge"
-                        style={{ background: mapProject.settings.isPublic !== false ? 'var(--primary)' : 'rgba(255,255,255,0.7)', borderColor: mapProject.settings.isPublic !== false ? 'var(--primary)' : 'var(--border)' }}
-                        aria-label="公开访问开关"
-                      >
-                        <span
-                          className="absolute top-[3px] h-4.5 w-4.5 bg-white transition-all duration-200"
-                          style={{ left: mapProject.settings.isPublic !== false ? '24px' : '3px' }}
-                        />
-                      </button>
-                    </div>
-
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>默认显示名称</h3>
-                        <p className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>
-                          控制前台与后台地图加载时是否默认显示标注名称。
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => handleShowNamesSettingChange(!(mapProject.settings.showNames !== false))}
-                        disabled={savingMapSettings}
-                        className="h-7 min-w-[44px] border relative transition-colors duration-200 disabled:opacity-60 workbench-hard-edge"
-                        style={{ background: mapProject.settings.showNames !== false ? 'var(--primary)' : 'rgba(255,255,255,0.7)', borderColor: mapProject.settings.showNames !== false ? 'var(--primary)' : 'var(--border)' }}
-                        aria-label="显示名称默认开关"
-                      >
-                        <span
-                          className="absolute top-[3px] h-4.5 w-4.5 bg-white transition-all duration-200"
-                          style={{ left: mapProject.settings.showNames !== false ? '24px' : '3px' }}
-                        />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs">
-                      <span style={{ color: 'var(--faint)' }}>
-                        当前状态：{mapProject.settings.isPublic !== false ? '公开可访问' : '仅后台可见'} · 名称默认{mapProject.settings.showNames !== false ? '显示' : '隐藏'}
-                      </span>
-                      {savingMapSettings && (
-                        <span style={{ color: 'var(--muted)' }}>保存中...</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
                 <FieldTemplateManager
                   templates={mapProject.field_templates}
                   onChange={handleFieldTemplatesChange}
                 />
               </div>
-            )}
+            </div>
+          )}
+
+          <div className="absolute inset-x-3 top-3 z-[1005] flex flex-wrap items-start gap-2">
+            <div className="map-overlay-toolbar">
+              <button
+                onClick={() => setShowNamesOverride((prev) => !(prev ?? (mapProject?.settings.showNames !== false)))}
+                className={`map-overlay-tool ${showNamesEnabled ? 'is-active' : ''}`}
+              >
+                <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>显示名称</span>
+              </button>
+              <button
+                onClick={() => showFeedback('智能标注功能整理中')}
+                className="map-overlay-tool"
+              >
+                <WandSparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>智能标注</span>
+              </button>
+            </div>
+
+            <div className="map-overlay-toolbar">
+              <button
+                onClick={() => setDrawMode(drawMode === 'point' ? 'none' : 'point')}
+                className={`map-overlay-tool ${drawMode === 'point' ? 'is-primary' : ''}`}
+              >
+                <span>点标注</span>
+              </button>
+              <button
+                onClick={() => setDrawMode(drawMode === 'line' ? 'none' : 'line')}
+                className={`map-overlay-tool ${drawMode === 'line' ? 'is-primary' : ''}`}
+              >
+                <span>线标注</span>
+              </button>
+              <button
+                onClick={() => setDrawMode(drawMode === 'polygon' ? 'none' : 'polygon')}
+                className={`map-overlay-tool ${drawMode === 'polygon' ? 'is-primary' : ''}`}
+              >
+                <span>面标注</span>
+              </button>
+            </div>
+
+            <div className="relative">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowToolMenu((prev) => !prev);
+                }}
+                className={`map-overlay-tool ${showToolMenu ? 'is-active' : ''}`}
+              >
+                <Wrench className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>工具</span>
+              </button>
+              {showToolMenu && (
+                <div className="map-workbench-menu" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => {
+                      setDrawMode(drawMode === 'measure' ? 'none' : 'measure');
+                      setShowToolMenu(false);
+                    }}
+                    className="map-workbench-menu-item"
+                  >
+                    测距
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDrawMode(drawMode === 'text' ? 'none' : 'text');
+                      setShowToolMenu(false);
+                    }}
+                    className="map-workbench-menu-item"
+                  >
+                    文字
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowHeatmap((prev) => !prev);
+                      setShowToolMenu(false);
+                    }}
+                    className="map-workbench-menu-item"
+                  >
+                    {showHeatmap ? '关闭热力' : '开启热力'}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        <WorkbenchSidebarToggle
-          open={sidebarOpen}
-          onToggle={() => setSidebarOpen(!sidebarOpen)}
-          offset={320}
-        />
-
-        <div className="flex-1 relative min-w-0">
           <div className="absolute inset-0 border pointer-events-none z-[2]" style={{ borderColor: 'var(--border)' }} />
           <MapView
             annotations={filteredAnnotations}
@@ -953,39 +993,24 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             showNames={showNamesEnabled}
           />
 
-          <div className="absolute left-2.5 top-2.5 z-[999]">
-            <DrawingToolbar
-              drawMode={drawMode}
-              onDrawModeChange={setDrawMode}
-              annotationCount={annotationCount}
-            />
-          </div>
-
-          <div className="absolute right-2.5 top-2.5 z-[999]">
-            <MapFloatingPanel className="gap-0">
+          <div className="absolute right-3 top-3 z-[1000]">
+            <div className="map-side-rail">
               <button
                 onClick={() => setShowNamesOverride((prev) => !(prev ?? (mapProject?.settings.showNames !== false)))}
-                disabled={!mapProject}
-                aria-label="切换名称显示"
-                className={`h-8 px-3 text-xs font-medium transition disabled:opacity-60 workbench-hard-edge ${showNamesEnabled ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
+                className={`map-side-rail-button ${showNamesEnabled ? 'is-active' : ''}`}
               >
-                <span>名称</span>
+                名称
               </button>
               <button
                 onClick={() => setShowHeatmap(!showHeatmap)}
-                aria-label="切换热力图显示"
-                className={`h-8 px-3 text-xs font-medium transition workbench-hard-edge ${showHeatmap ? 'workbench-toolbar-button-active' : 'workbench-toolbar-button'}`}
-                style={{
-                  background: showHeatmap ? 'rgba(11,79,69,0.12)' : undefined,
-                  color: showHeatmap ? 'var(--ink)' : undefined,
-                }}
+                className={`map-side-rail-button ${showHeatmap ? 'is-active' : ''}`}
               >
-                <span>热力</span>
+                热力
               </button>
-            </MapFloatingPanel>
+            </div>
           </div>
 
-          <div className="absolute right-2.5 top-[52px] z-[1000]">
+          <div className="absolute right-3 top-[56px] z-[1000]">
             {selectedAnnotation && mapProject && !batchMode && (
               <InfoCard
                 annotation={selectedAnnotation}
@@ -1000,14 +1025,16 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
         </div>
       </div>
 
-      <ImportDialog
-        open={importOpen}
-        onClose={() => setImportOpen(false)}
-        onImport={handleImport}
-        fieldTemplates={mapProject?.field_templates || []}
-        mapId={mapProject?.id || ''}
-        existingNames={annotations.filter((annotation) => annotation.type === 'point' && annotation.name).map((annotation) => annotation.name)}
-      />
+      {mapProject && (
+        <ImportDialog
+          open={importOpen}
+          onClose={() => setImportOpen(false)}
+          onImport={handleImport}
+          fieldTemplates={mapProject.field_templates || []}
+          mapId={mapProject.id}
+          existingNames={annotations.filter((annotation) => annotation.type === 'point' && annotation.name).map((annotation) => annotation.name)}
+        />
+      )}
       </div>
     </div>
   );

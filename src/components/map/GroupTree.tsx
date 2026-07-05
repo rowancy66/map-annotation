@@ -117,12 +117,10 @@ export default function GroupTree({
     return (
       <div key={group.id}>
         <div
-          className={`group flex items-center gap-1 px-2 py-1.5 cursor-pointer transition-all text-sm ${
-            isSelected ? 'font-medium' : ''
-          }`}
+          className="group-tree-row"
+          data-active={isSelected}
           style={Object.assign(
-            { paddingLeft: `${12 + depth * 16}px` },
-            isSelected ? { background: 'rgba(26,71,53,0.06)', color: 'var(--primary)' } : { color: 'var(--muted)' }
+            { paddingLeft: `${16 + depth * 18}px` }
           )}
           onClick={() => onSelectGroup(isSelected ? null : group.id)}
           onContextMenu={(e) => handleContextMenu(e, group)}
@@ -146,7 +144,7 @@ export default function GroupTree({
               e.stopPropagation();
               setChangingColor(changingColor === group.id ? null : group.id);
             }}
-            className="w-4 h-4 rounded shrink-0 transition-transform hover:scale-110"
+            className="group-tree-color"
             style={{ background: group.color || '#d1d5db' }}
             title="点击更换颜色"
             aria-label="更换颜色"
@@ -166,11 +164,11 @@ export default function GroupTree({
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
-            <span className="flex-1 min-w-0 truncate">{group.name}</span>
+            <span className="group-tree-name">{group.name}</span>
           )}
 
           {/* 标注数量 */}
-          <span className="text-xs ml-auto shrink-0" style={{ color: 'var(--faint)' }}>{count || ''}</span>
+          <span className="group-tree-count">{count || ''}</span>
 
           {/* 更多按钮 */}
           <button
@@ -184,16 +182,12 @@ export default function GroupTree({
 
         {/* 颜色选择器 */}
         {showColorPicker && (
-          <div
-            className="flex flex-wrap gap-1 px-2 py-1.5 ml-8"
-            style={{ background: 'var(--bg)' }}
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="group-tree-colors" onClick={(e) => e.stopPropagation()}>
             {GROUP_COLORS.map((c) => (
               <button
                 key={c}
                 onClick={() => handleColorChange(group.id, c)}
-                className="w-5 h-5 transition-all duration-150 hover:scale-125"
+                className="group-tree-color-swatch"
                 style={{
                   background: c,
                   outline: group.color === c ? '2px solid var(--ink)' : 'none',
@@ -205,7 +199,7 @@ export default function GroupTree({
             ))}
             <button
               onClick={() => handleColorChange(group.id, '')}
-              className="flex h-5 w-5 items-center justify-center text-[10px] font-bold transition-all duration-150 hover:scale-125"
+              className="group-tree-color-swatch"
               style={{ background: 'var(--border)', color: 'var(--muted)' }}
               title="清除颜色"
               aria-label="清除颜色"
@@ -226,18 +220,16 @@ export default function GroupTree({
   };
 
   return (
-    <div className="py-2">
+    <div className="group-tree-shell">
       {/* 全部标注 */}
       <div
-        className={`mb-1 flex items-center gap-2 px-3 py-1.5 cursor-pointer text-sm ${
-          selectedGroupId === null ? 'font-medium' : ''
-        }`}
-        style={selectedGroupId === null ? { background: 'rgba(26,71,53,0.06)', color: 'var(--primary)' } : { color: 'var(--muted)' }}
+        className="group-tree-row"
+        data-active={selectedGroupId === null}
         onClick={() => onSelectGroup(null)}
       >
         <FolderOpen className="w-4 h-4" style={{ color: 'var(--faint)' }} />
-        <span>全部标注</span>
-        <span className="ml-auto text-xs" style={{ color: 'var(--faint)' }}>
+        <span className="group-tree-name">全部标注</span>
+        <span className="group-tree-count">
           {Object.values(annotationCountByGroup).reduce((a, b) => a + b, 0) || ''}
         </span>
       </div>
@@ -247,7 +239,7 @@ export default function GroupTree({
 
       {/* 无分组状态 */}
       {rootGroups.length === 0 && (
-        <p className="py-4 text-center text-xs" style={{ color: 'var(--faint)' }}>暂无分组，右键「全部标注」可新建</p>
+        <p className="group-tree-empty">暂无分组，右键「全部标注」可新建</p>
       )}
 
       {/* 右键菜单 */}

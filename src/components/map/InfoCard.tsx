@@ -9,13 +9,13 @@ import { X, Save, Trash2, Loader2, Upload, Link2, Plus } from 'lucide-react';
 import { uploadAnnotationImage, deleteAnnotationImage } from '@/lib/supabase';
 
 const colors = {
-  surface: 'rgba(252,253,250,0.98)',
-  bg: 'rgba(245,247,243,0.9)',
-  border: 'rgba(23,33,28,0.12)',
-  ink: '#17211c',
-  muted: '#55615a',
-  faint: '#7a857e',
-  placeholder: '#9aa39d',
+  surface: '#ffffff',
+  bg: '#f4f5f1',
+  border: 'rgba(22,24,22,0.1)',
+  ink: '#161816',
+  muted: '#5c615c',
+  faint: '#868a84',
+  placeholder: '#a0a49e',
   accent: '#0b4f45',
   accentSoft: 'rgba(11,79,69,0.08)',
   danger: '#b95749',
@@ -93,27 +93,27 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
   const tm = typeMeta[annotation.type as keyof typeof typeMeta] || typeMeta.point;
 
   return (
-    <div className="w-[360px] max-w-[calc(100vw-2rem)] overflow-hidden animate-fade-slide-up">
-      <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, boxShadow: '0 12px 24px rgba(23,33,28,0.08)' }}>
+    <div className="w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden animate-fade-slide-up">
+      <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, boxShadow: '0 10px 26px rgba(17,24,22,0.08)' }}>
 
         {/* 标题栏 */}
         <div
-          className="flex items-center justify-between px-4 py-3 select-none"
+          className="flex items-center justify-between px-4 py-2.5 select-none"
           style={{ borderBottom: `1px solid ${colors.border}` }}>
           <div className="flex items-center gap-2 min-w-0">
-            <span className="px-2 py-1 text-[10px] font-semibold leading-none tracking-wider"
+            <span className="px-2 py-1 text-[10px] font-semibold leading-none tracking-[0.16em] uppercase"
               style={{ background: tm.bg, color: tm.accent }}>{tm.label}</span>
             <div className="min-w-0">
-              <div className="truncate text-[13px] font-medium" style={{ color: colors.ink }}>
+              <div className="truncate text-[12px] font-semibold" style={{ color: colors.ink }}>
                 {annotation.name || '未命名'}
               </div>
-              <span style={{ color: colors.faint, fontSize: '10px' }}>
+              <span style={{ color: colors.faint, fontSize: '10px', letterSpacing: '0.08em' }}>
                 {new Date(annotation.updated_at).toLocaleDateString('zh-CN')}
               </span>
             </div>
           </div>
           <button onClick={onClose} aria-label="关闭"
-            className="shrink-0 p-1 transition" style={{ color: colors.faint, background: 'rgba(23,33,28,0.04)', border: `1px solid ${colors.border}` }}>
+            className="shrink-0 h-8 w-8 p-0 transition" style={{ color: colors.faint, background: '#fff', border: `1px solid ${colors.border}` }}>
             <X className="w-3.5 h-3.5" aria-hidden="true" />
           </button>
         </div>
@@ -212,7 +212,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
         </div>
 
         {/* 底部操作栏 */}
-        <div style={{ borderTop: `1px solid ${colors.border}`, background: 'rgba(247,248,244,0.96)', padding: '10px 14px' }}
+        <div style={{ borderTop: `1px solid ${colors.border}`, background: colors.bg, padding: '10px 14px' }}
           className="flex items-center gap-2">
           {editing ? (
             <>
@@ -228,8 +228,8 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
             </>
           ) : readOnly ? (
             <button onClick={onClose}
-              className="flex-1 border py-2 text-xs font-medium transition"
-              style={{ background: colors.bg, color: colors.muted, borderColor: colors.border }}>
+                className="flex-1 border py-2 text-xs font-medium transition"
+                style={{ background: colors.bg, color: colors.muted, borderColor: colors.border }}>
               关闭
             </button>
           ) : (
@@ -250,7 +250,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
                 </div>
               ) : (
                 <button onClick={() => setShowDeleteConfirm(true)}
-                  className="p-2 transition" aria-label="删除" style={{ color: colors.faint, background: 'rgba(23,23,23,0.04)' }}>
+                  className="h-8 w-8 p-0 transition" aria-label="删除" style={{ color: colors.faint, background: '#fff', border: `1px solid ${colors.border}` }}>
                   <Trash2 className="w-4 h-4" aria-hidden="true" />
                 </button>
               )}
@@ -266,7 +266,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="mb-1 text-[9px] font-semibold tracking-widest uppercase" style={{ color: colors.faint }}>{label}</div>
+      <div className="mb-1 text-[10px] font-semibold tracking-[0.16em] uppercase" style={{ color: colors.faint }}>{label}</div>
       {children}
     </div>
   );
@@ -284,8 +284,8 @@ function Input({ value, onChange, placeholder }: { value: string; onChange: (v: 
 function ActionBtn({ children, onClick, disabled, accent }: any) {
   return (
     <button onClick={onClick} disabled={disabled}
-      className="flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-semibold transition-all"
-      style={{ background: accent, color: 'white' }}>
+      className="flex flex-1 items-center justify-center gap-1.5 border py-2 text-xs font-semibold transition-all"
+      style={{ background: accent, color: 'white', borderColor: accent }}>
       {children}
     </button>
   );
