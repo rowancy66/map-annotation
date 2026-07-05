@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Annotation, PointStyle, LineStyle, PolygonStyle, TextStyle, PRESET_COLORS, PRESET_ICONS, FieldTemplate } from '@/lib/types';
 import { X, Save, Trash2, Loader2, Upload, Link2, Plus } from 'lucide-react';
 import { uploadAnnotationImage, deleteAnnotationImage } from '@/lib/supabase';
@@ -52,12 +52,56 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const dragStateRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
 
   useEffect(() => {
     setEditData({ ...annotation });
     setEditing(false);
     setShowDeleteConfirm(false);
   }, [annotation]);
+
+  useEffect(() => {
+    if (!readOnly) {
+      setDragOffset({ x: 0, y: 0 });
+    }
+  }, [annotation.id, readOnly]);
+
+  useEffect(() => {
+    if (!readOnly) return;
+
+    const handlePointerMove = (event: MouseEvent) => {
+      if (!dragStateRef.current) return;
+      const nextX = dragStateRef.current.baseX + (event.clientX - dragStateRef.current.startX);
+      const nextY = dragStateRef.current.baseY + (event.clientY - dragStateRef.current.startY);
+      setDragOffset({ x: nextX, y: nextY });
+    };
+
+    const handlePointerUp = () => {
+      dragStateRef.current = null;
+    };
+
+    window.addEventListener('mousemove', handlePointerMove);
+    window.addEventListener('mouseup', handlePointerUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handlePointerMove);
+      window.removeEventListener('mouseup', handlePointerUp);
+    };
+  }, [readOnly]);
+
+  const handleDragStart = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!readOnly) return;
+    const target = event.target as HTMLElement;
+    if (target.closest('button, a, input, textarea, select, option')) return;
+
+    dragStateRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      baseX: dragOffset.x,
+      baseY: dragOffset.y,
+    };
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -104,13 +148,17 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
     .filter((field) => field.displayValue);
 
   return (
-    <div className="w-[312px] max-w-[calc(100vw-2rem)] overflow-hidden animate-fade-slide-up">
+    <div
+      className="w-[312px] max-w-[calc(100vw-2rem)] overflow-hidden animate-fade-slide-up"
+      style={{ transform: `translate(${dragOffset.x}px, ${dragOffset.y}px)` }}
+    >
       <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, boxShadow: '0 9px 22px rgba(17,24,22,0.08)' }}>
 
         {/* 标题栏 */}
         <div
           className="flex items-center justify-between px-3.5 py-2 select-none"
-          style={{ borderBottom: `1px solid ${colors.border}` }}>
+          style={{ borderBottom: `1px solid ${colors.border}`, cursor: readOnly ? 'move' : 'default' }}
+          onMouseDown={handleDragStart}>
           <div className="flex items-center gap-2 min-w-0">
             <span className="px-1.5 py-1 text-[9px] font-semibold leading-none tracking-[0.16em] uppercase"
               style={{ background: tm.bg, color: tm.accent }}>{tm.label}</span>
