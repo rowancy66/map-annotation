@@ -1,17 +1,12 @@
-import { type ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-// 目前简单实现，后续可加入 tailwind-merge
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+// 目前仅保留仓库内实际使用的工具函数，避免额外依赖。
+export function cn(...inputs: Array<string | false | null | undefined>) {
+  return inputs.filter(Boolean).join(' ');
 }
 
-// 生成唯一 ID
 export function generateId(): string {
   return crypto.randomUUID();
 }
 
-// 格式化日期
 export function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
   return date.toLocaleDateString('zh-CN', {
@@ -23,7 +18,6 @@ export function formatDate(dateStr: string): string {
   });
 }
 
-// 经纬度格式化
 export function formatCoordinate(lng: number, lat: number): string {
   return `${lng.toFixed(6)}, ${lat.toFixed(6)}`;
 }

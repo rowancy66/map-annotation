@@ -16,6 +16,31 @@ function rowToGroup(row: Record<string, unknown>): Group {
   };
 }
 
+async function ensureNoGroupCycle(groupId: string, nextParentId: string | null, mapId: string) {
+  let cursor = nextParentId;
+  const visited = new Set<string>();
+
+  while (cursor) {
+    if (cursor === groupId) {
+      throw new Error('父分组不能是当前分组或其子分组');
+    }
+    if (visited.has(cursor)) {
+      throw new Error('检测到分组层级异常');
+    }
+    visited.add(cursor);
+
+    const parentGroup = await getGroupById(cursor);
+    if (!parentGroup) {
+      throw new Error('父分组不存在');
+    }
+    if (parentGroup.map_id !== mapId) {
+      throw new Error('父分组不属于当前地图');
+    }
+
+    cursor = parentGroup.parent_id;
+  }
+}
+
 export async function listGroups(mapId: string) {
   await ensureSchema();
   const result = await turso.execute({
@@ -63,6 +88,9 @@ export async function updateGroup(groupId: string, updates: { name?: string; col
     if (parentGroup.id === groupId) {
       throw new Error('分组不能设置自己为父分组');
     }
+  }
+  if (updates.parent_id !== undefined) {
+    await ensureNoGroupCycle(groupId, updates.parent_id, group.map_id);
   }
   const now = new Date().toISOString();
   const sets: string[] = ['updated_at = ?'];

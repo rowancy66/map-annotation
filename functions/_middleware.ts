@@ -14,13 +14,36 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   const vercelOrigin = env.VERCEL_ORIGIN?.trim();
 
   if (!vercelOrigin) {
-    return new Response("Cloudflare 环境变量 VERCEL_ORIGIN 未配置", {
+    return new Response('Cloudflare 环境变量 VERCEL_ORIGIN 未配置', {
       status: 500,
-      headers: { "content-type": "text/plain; charset=utf-8" },
+      headers: { 'content-type': 'text/plain; charset=utf-8' },
     });
   }
 
-  const targetOrigin = new URL(vercelOrigin);
+  let targetOrigin: URL;
+  try {
+    targetOrigin = new URL(vercelOrigin);
+  } catch {
+    return new Response('VERCEL_ORIGIN 不是合法 URL', {
+      status: 500,
+      headers: { 'content-type': 'text/plain; charset=utf-8' },
+    });
+  }
+
+  if (targetOrigin.protocol !== 'https:') {
+    return new Response('VERCEL_ORIGIN 必须使用 https', {
+      status: 500,
+      headers: { 'content-type': 'text/plain; charset=utf-8' },
+    });
+  }
+
+  if (targetOrigin.pathname !== '/' || targetOrigin.search || targetOrigin.hash || targetOrigin.username || targetOrigin.password) {
+    return new Response('VERCEL_ORIGIN 必须是单一 origin，不能包含路径、查询或认证信息', {
+      status: 500,
+      headers: { 'content-type': 'text/plain; charset=utf-8' },
+    });
+  }
+
   const incomingUrl = new URL(request.url);
   const targetUrl = new URL(targetOrigin.toString());
 
@@ -31,7 +54,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   const response = await fetch(proxyRequest);
 
   const headers = new Headers(response.headers);
-  const location = headers.get("location");
+  const location = headers.get('location');
 
   if (location) {
     const resolvedLocation = new URL(location, targetOrigin);
@@ -39,15 +62,14 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     if (resolvedLocation.origin === targetOrigin.origin) {
       resolvedLocation.protocol = incomingUrl.protocol;
       resolvedLocation.host = incomingUrl.host;
-      headers.set("location", resolvedLocation.toString());
+      headers.set('location', resolvedLocation.toString());
     }
   }
 
-  // 干掉 Vercel 的长缓存头，否则 Cloudflare 会一直返回旧内容
-  headers.delete("Cache-Control");
-  headers.delete("CDN-Cache-Control");
-  headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
-  headers.set("CDN-Cache-Control", "no-store");
+  headers.delete('Cache-Control');
+  headers.delete('CDN-Cache-Control');
+  headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  headers.set('CDN-Cache-Control', 'no-store');
 
   return new Response(response.body, {
     status: response.status,

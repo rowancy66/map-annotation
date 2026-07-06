@@ -1,46 +1,151 @@
 import { turso } from '@/lib/turso';
 import { DEFAULT_LAND_FIELD_TEMPLATES } from '@/lib/constants';
-import { Annotation, FieldTemplate, MapProject, MapSettings } from '@/lib/types';
+import { Annotation, FieldTemplate, Geometry, MapProject, MapSettings } from '@/lib/types';
 import { ensureSchema } from './schema';
 
 const ADMIN_USER_ID = 'admin';
 const DEFAULT_DB_CENTER: [number, number] = [120.1976, 35.9607];
 
+function safeParseJson<T>(value: unknown, fallback: T): T {
+  if (value == null || value === '') return fallback;
+  try {
+    return JSON.parse(String(value)) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function isCoordinatePair(value: unknown): value is [number, number] {
+  return Array.isArray(value) && value.length === 2 && value.every((item) => typeof item === 'number' && Number.isFinite(item));
+}
+
+function normalizeCenter(value: unknown): [number, number] {
+  return isCoordinatePair(value) ? value : DEFAULT_DB_CENTER;
+}
+
+function normalizeFieldTemplates(value: unknown): FieldTemplate[] {
+  return Array.isArray(value) ? value as FieldTemplate[] : [];
+}
+
+function normalizeCustomFields(value: unknown): Annotation['custom_fields'] {
+  return Array.isArray(value) ? value as Annotation['custom_fields'] : [];
+}
+
+function normalizeSettings(value: unknown): MapSettings {
+  const rawSettings = value && typeof value === 'object' ? value as Partial<MapSettings> : {};
+  return {
+    isPublic: rawSettings.isPublic !== false,
+    showNames: rawSettings.showNames !== false,
+    defaultNames: {
+      point: rawSettings.defaultNames?.point ?? '',
+      line: rawSettings.defaultNames?.line ?? '',
+      polygon: rawSettings.defaultNames?.polygon ?? '',
+    },
+  };
+}
+
+function normalizeGeometry(type: Annotation['type'], value: unknown): Geometry {
+  const fallbackPoint: Geometry = { type: 'Point', coordinates: DEFAULT_DB_CENTER };
+  const parsed = value && typeof value === 'object' ? value as Partial<Geometry> : null;
+
+  if (type === 'point' || type === 'text') {
+    if (parsed?.type === 'Point' && isCoordinatePair((parsed as { coordinates?: unknown }).coordinates)) {
+      return parsed as Geometry;
+    }
+    return fallbackPoint;
+  }
+
+  if (type === 'line') {
+    const coordinates = (parsed as { coordinates?: unknown })?.coordinates;
+    if (
+      parsed?.type === 'LineString' &&
+      Array.isArray(coordinates) &&
+      coordinates.every((item) => isCoordinatePair(item))
+    ) {
+      return parsed as Geometry;
+    }
+    return { type: 'LineString', coordinates: [] };
+  }
+
+  const coordinates = (parsed as { coordinates?: unknown })?.coordinates;
+  if (
+    parsed?.type === 'Polygon' &&
+    Array.isArray(coordinates) &&
+    coordinates.every((item) => isCoordinatePair(item))
+  ) {
+    return parsed as Geometry;
+  }
+  return { type: 'Polygon', coordinates: [] };
+}
+
+function normalizeStyle(type: Annotation['type'], value: unknown): Annotation['style'] {
+  const parsed = value && typeof value === 'object' ? value as Record<string, unknown> : {};
+
+  if (type === 'point') {
+    return {
+      color: typeof parsed.color === 'string' ? parsed.color : '#EF4444',
+      icon: typeof parsed.icon === 'string' ? parsed.icon : 'map-pin',
+      size: typeof parsed.size === 'number' ? parsed.size : 2,
+    };
+  }
+
+  if (type === 'text') {
+    return {
+      color: typeof parsed.color === 'string' ? parsed.color : '#1a4735',
+      fontSize: typeof parsed.fontSize === 'number' ? parsed.fontSize : 16,
+      fontFamily: typeof parsed.fontFamily === 'string' ? parsed.fontFamily : undefined,
+      rotation: typeof parsed.rotation === 'number' ? parsed.rotation : undefined,
+    };
+  }
+
+  if (type === 'line') {
+    return {
+      color: typeof parsed.color === 'string' ? parsed.color : '#2c6fbb',
+      width: typeof parsed.width === 'number' ? parsed.width : 3,
+      dashArray: typeof parsed.dashArray === 'string' ? parsed.dashArray : undefined,
+    };
+  }
+
+  return {
+    color: typeof parsed.color === 'string' ? parsed.color : '#1a4735',
+    fillColor: typeof parsed.fillColor === 'string' ? parsed.fillColor : '#1a4735',
+    fillOpacity: typeof parsed.fillOpacity === 'number' ? parsed.fillOpacity : 0.3,
+    width: typeof parsed.width === 'number' ? parsed.width : 2,
+  };
+}
+
+function normalizeAnnotationType(value: unknown): Annotation['type'] {
+  return value === 'point' || value === 'line' || value === 'polygon' || value === 'text' ? value : 'point';
+}
+
 function rowToMapProject(row: Record<string, unknown>): MapProject {
-  const rawSettings = row.settings ? JSON.parse(String(row.settings)) : {};
+  const rawSettings = safeParseJson(row.settings, {} as unknown);
   return {
     id: String(row.id),
     user_id: String(row.user_id),
     name: String(row.name || ''),
     description: String(row.description || ''),
-    center: JSON.parse(String(row.center || JSON.stringify(DEFAULT_DB_CENTER))),
+    center: normalizeCenter(safeParseJson(row.center, DEFAULT_DB_CENTER)),
     zoom: Number(row.zoom || 13),
-    field_templates: JSON.parse(String(row.field_templates || '[]')),
-    settings: {
-      isPublic: rawSettings?.isPublic !== false,
-      showNames: rawSettings?.showNames !== false,
-      defaultNames: {
-        point: rawSettings?.defaultNames?.point ?? '',
-        line: rawSettings?.defaultNames?.line ?? '',
-        polygon: rawSettings?.defaultNames?.polygon ?? '',
-      },
-    },
+    field_templates: normalizeFieldTemplates(safeParseJson(row.field_templates, [] as unknown[])),
+    settings: normalizeSettings(rawSettings),
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
   };
 }
 
 function rowToAnnotation(row: Record<string, unknown>): Annotation {
+  const type = normalizeAnnotationType(String(row.type));
   return {
     id: String(row.id),
     map_id: String(row.map_id),
     group_id: row.group_id ? String(row.group_id) : undefined,
-    type: String(row.type) as Annotation['type'],
-    geometry: JSON.parse(String(row.geometry)),
+    type,
+    geometry: normalizeGeometry(type, safeParseJson(row.geometry, {} as unknown)),
     name: String(row.name || ''),
     description: String(row.description || ''),
-    style: JSON.parse(String(row.style || '{}')),
-    custom_fields: JSON.parse(String(row.custom_fields || '[]')),
+    style: normalizeStyle(type, safeParseJson(row.style, {} as unknown)),
+    custom_fields: normalizeCustomFields(safeParseJson(row.custom_fields, [] as unknown[])),
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
   };

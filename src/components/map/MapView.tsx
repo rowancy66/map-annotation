@@ -46,6 +46,7 @@ interface MapViewProps {
   annotations: Annotation[];
   onMapClick?: (latlng: L.LatLng) => void;
   onMapDrawComplete?: (type: AnnotationType, latlngs: L.LatLng[]) => void;
+  onTextAnnotationCreate?: (text: string, latlng: L.LatLng) => void;
   onAnnotationClick?: (annotation: Annotation) => void;
   onAnnotationMove?: (annotation: Annotation, newLatLng: L.LatLng) => void;
   onAnnotationDelete?: (annotation: Annotation) => void;
@@ -64,6 +65,7 @@ export default function MapView({
   annotations,
   onMapClick,
   onMapDrawComplete,
+  onTextAnnotationCreate,
   onAnnotationClick,
   onAnnotationMove,
   drawMode,
@@ -243,18 +245,20 @@ export default function MapView({
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    const vecLayer = L.tileLayer(TIANDITU_LAYERS.vec, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
-    const cvaLayer = L.tileLayer(TIANDITU_LAYERS.cva, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
-    const imgLayer = L.tileLayer(TIANDITU_LAYERS.img, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
-    const ciaLayer = L.tileLayer(TIANDITU_LAYERS.cia, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
-    const terLayer = L.tileLayer(TIANDITU_LAYERS.ter, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
+    if (TIANDITU_LAYERS.vec) {
+      const vecLayer = L.tileLayer(TIANDITU_LAYERS.vec, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
+      const cvaLayer = L.tileLayer(TIANDITU_LAYERS.cva, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
+      const imgLayer = L.tileLayer(TIANDITU_LAYERS.img, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
+      const ciaLayer = L.tileLayer(TIANDITU_LAYERS.cia, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
+      const terLayer = L.tileLayer(TIANDITU_LAYERS.ter, { subdomains: TIANDITU_SUBDOMAINS, maxZoom: 18 });
 
-    vecLayersRef.current = [vecLayer, cvaLayer];
-    imgLayersRef.current = [imgLayer, ciaLayer];
-    terrainLayersRef.current = [terLayer];
+      vecLayersRef.current = [vecLayer, cvaLayer];
+      imgLayersRef.current = [imgLayer, ciaLayer];
+      terrainLayersRef.current = [terLayer];
 
-    vecLayer.addTo(map);
-    cvaLayer.addTo(map);
+      vecLayer.addTo(map);
+      cvaLayer.addTo(map);
+    }
 
     const annotationsLayer = L.layerGroup().addTo(map);
     const drawLayer = L.layerGroup().addTo(map);
@@ -340,7 +344,7 @@ export default function MapView({
         if (editable) {
           (leafletLayer as L.Marker).on('contextmenu', (e: L.LeafletMouseEvent) => {
             L.DomEvent.stopPropagation(e);
-            L.DomEvent.preventDefault(e);
+            L.DomEvent.preventDefault(e.originalEvent);
             if (drawMode !== 'none') return;
 
             setContextMenu({
@@ -410,16 +414,18 @@ export default function MapView({
     if (!mapRef.current || !selectedAnnotation) return;
     const map = mapRef.current;
     const anno = selectedAnnotation;
-    const geom = anno.geometry as { type: string; coordinates: [number, number] | [number, number][] };
 
-    if (anno.type === 'point') {
+    if (anno.type === 'point' || anno.type === 'text') {
+      const geom = anno.geometry as { coordinates: [number, number] };
       const [lng, lat] = geom.coordinates;
       map.flyTo([lat, lng], Math.max(map.getZoom(), 14), { duration: 0.6 });
     } else if (anno.type === 'line') {
-      const bounds = L.latLngBounds(geom.coordinates.map(([lng, lat]: [number, number]) => [lat, lng]));
+      const geom = anno.geometry as { coordinates: [number, number][] };
+      const bounds = L.latLngBounds(geom.coordinates.map(([lng, lat]) => [lat, lng] as [number, number]));
       map.flyToBounds(bounds, { padding: [40, 40], duration: 0.6 });
     } else if (anno.type === 'polygon') {
-      const bounds = L.latLngBounds(geom.coordinates.map(([lng, lat]: [number, number]) => [lat, lng]));
+      const geom = anno.geometry as { coordinates: [number, number][] };
+      const bounds = L.latLngBounds(geom.coordinates.map(([lng, lat]) => [lat, lng] as [number, number]));
       map.flyToBounds(bounds, { padding: [40, 40], duration: 0.6 });
     }
   }, [selectedAnnotation]);
@@ -655,27 +661,11 @@ export default function MapView({
   const handleTextAnnotation = useCallback((text: string) => {
     if (!showTextInput) return;
     const latlng = showTextInput;
-    // Create a text annotation via onMapDrawComplete or directly
-    // We simulate a point annotation with text style
-    const mockAnnotation: Annotation = {
-      id: crypto.randomUUID(),
-      map_id: '',
-      type: 'text',
-      geometry: { type: 'Point', coordinates: [latlng.lng, latlng.lat] },
-      name: text,
-      description: '',
-      style: { color: '#1a4735', fontSize: 16 },
-      custom_fields: [],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    // Fire annotation click so the text appears
-    onAnnotationClickRef.current?.(mockAnnotation);
-    // Reset text mode
+    onTextAnnotationCreate?.(text, latlng);
     setShowTextInput(null);
     setTextValue('');
     onDrawModeChange('none');
-  }, [showTextInput, onDrawModeChange]);
+  }, [onDrawModeChange, onTextAnnotationCreate, showTextInput]);
 
   return (
     <div className="relative w-full h-full">

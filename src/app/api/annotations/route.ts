@@ -127,7 +127,7 @@ export async function PUT(request: Request) {
 
   if (annotationIds.length > 0) {
     try {
-      const existingAnnotations = await Promise.all(annotationIds.map((annotationId) => requireExistingAnnotation(annotationId)));
+      const existingAnnotations = await Promise.all(annotationIds.map((annotationId: string) => requireExistingAnnotation(annotationId)));
 
       if (fieldId && fieldValue !== undefined) {
         const updatedItems = await batchUpdateAnnotationField(annotationIds, fieldId, fieldValue);

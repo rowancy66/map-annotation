@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { hasAdminPassword, setAdminPassword, createSession } from '@/lib/server/auth';
 
+export async function GET() {
+  const configured = await hasAdminPassword();
+  return NextResponse.json({ configured });
+}
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const password = typeof body?.password === 'string' ? body.password : '';

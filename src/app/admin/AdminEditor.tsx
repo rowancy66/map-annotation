@@ -209,6 +209,28 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
     setSelectedAnnotation(saved);
   }, [mapProject, saveAnnotation, setAnnotations, setSelectedAnnotation]);
 
+  const handleTextAnnotationCreate = useCallback(async (text: string, latlng: L.LatLng) => {
+    if (!mapProject) return;
+
+    const annotation: Annotation = {
+      id: crypto.randomUUID(),
+      map_id: mapProject.id,
+      type: 'text',
+      geometry: { type: 'Point', coordinates: [latlng.lng, latlng.lat] },
+      name: text,
+      description: '',
+      style: { color: '#1a4735', fontSize: 16 },
+      custom_fields: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data } = await saveAnnotation(annotation);
+    const saved = data || annotation;
+    setAnnotations((prev) => [...prev, saved]);
+    setSelectedAnnotation(saved);
+  }, [mapProject, saveAnnotation, setAnnotations, setSelectedAnnotation]);
+
   const handleImport = useCallback(async (items: Omit<Annotation, 'id' | 'created_at' | 'updated_at'>[]) => {
     const { error } = await importAnnotations(items);
     return { error };
@@ -985,6 +1007,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             annotations={filteredAnnotations}
             onMapClick={handleMapClick}
             onMapDrawComplete={handleDrawComplete}
+            onTextAnnotationCreate={handleTextAnnotationCreate}
             onAnnotationClick={handleAnnotationClick}
             onAnnotationMove={handleAnnotationMove}
             onAnnotationDelete={(anno) => handleDeleteAnnotation(anno.id)}

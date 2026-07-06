@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import L from 'leaflet';
 import { Search, X, Loader2, Navigation, MapPin } from 'lucide-react';
-import { TIANDITU_KEY } from '@/lib/constants';
+import { HAS_TIANDITU_KEY, TIANDITU_KEY } from '@/lib/constants';
 
 interface SearchResult {
   name: string;
@@ -23,10 +23,11 @@ export default function SearchBox({ map }: SearchBoxProps) {
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [error, setError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const searchMarkerRef = useRef<L.Marker | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearMarker = useCallback(() => {
     if (searchMarkerRef.current && map) {
@@ -39,6 +40,14 @@ export default function SearchBox({ map }: SearchBoxProps) {
     if (!keyword.trim()) {
       setResults([]);
       setShowResults(false);
+      setError('');
+      return;
+    }
+
+    if (!HAS_TIANDITU_KEY) {
+      setResults([]);
+      setShowResults(true);
+      setError('未配置天地图 key，当前无法搜索地址');
       return;
     }
 
@@ -47,6 +56,7 @@ export default function SearchBox({ map }: SearchBoxProps) {
     abortRef.current = controller;
 
     setLoading(true);
+    setError('');
 
     try {
       const level = map?.getZoom() || 12;
@@ -70,7 +80,6 @@ export default function SearchBox({ map }: SearchBoxProps) {
 
       if ((data.status?.infocode === 1000 || data.status === 'OK') && Array.isArray(data.pois)) {
         const parsed: SearchResult[] = data.pois.map((poi: Record<string, unknown>) => {
-          // 天地图 API 返回的坐标在 lonlat 字段（如 "120.418,36.164"）
           let lng = Number(poi.lon || poi.lng || 0);
           let lat = Number(poi.lat || 0);
           if (!lng && !lat && poi.lonlat) {
@@ -87,15 +96,19 @@ export default function SearchBox({ map }: SearchBoxProps) {
           };
         });
         setResults(parsed);
-        setShowResults(parsed.length > 0);
+        setShowResults(true);
         setSelectedIndex(-1);
+        setError('');
       } else {
         setResults([]);
-        setShowResults(false);
+        setShowResults(true);
+        setError('未找到结果');
       }
     } catch (err: unknown) {
       if (err instanceof Error && err.name !== 'AbortError') {
         setResults([]);
+        setShowResults(true);
+        setError('搜索失败，请稍后再试');
       }
     } finally {
       setLoading(false);
@@ -150,6 +163,7 @@ export default function SearchBox({ map }: SearchBoxProps) {
     setQuery('');
     setResults([]);
     setShowResults(false);
+    setError('');
     clearMarker();
     inputRef.current?.focus();
   };
@@ -188,8 +202,8 @@ export default function SearchBox({ map }: SearchBoxProps) {
             style={{ background: 'var(--surface-strong)', borderColor: 'var(--border)', boxShadow: '0 12px 32px rgba(17,24,22,0.08)' }}
           >
             {results.length === 0 && !loading && (
-              <div className="px-4 py-3 text-center text-sm" style={{ color: 'var(--faint)' }}>
-                未找到结果
+              <div className="px-4 py-3 text-center text-sm" style={{ color: error ? 'var(--danger)' : 'var(--faint)' }}>
+                {error || '未找到结果'}
               </div>
             )}
             {results.map((result, idx) => (
@@ -243,9 +257,10 @@ export default function SearchBox({ map }: SearchBoxProps) {
             value={query}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            onFocus={() => results.length > 0 && setShowResults(true)}
-            placeholder="搜索地址、路名…"
-            className="flex-1 py-2 pr-2 text-sm outline-none"
+            onFocus={() => (results.length > 0 || error) && setShowResults(true)}
+            placeholder={HAS_TIANDITU_KEY ? '搜索地址、路名…' : '未配置地图搜索'}
+            disabled={!HAS_TIANDITU_KEY}
+            className="flex-1 py-2 pr-2 text-sm outline-none disabled:cursor-not-allowed"
             style={{ color: 'var(--ink)' }}
           />
           {query && (
@@ -260,13 +275,6 @@ export default function SearchBox({ map }: SearchBoxProps) {
           )}
         </div>
       </div>
-
-      <style jsx global>{`
-        @keyframes searchPulse {
-          0%, 100% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.1); opacity: 0.8; }
-        }
-      `}</style>
     </div>
   );
 }

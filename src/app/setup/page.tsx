@@ -2,8 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiSend } from '@/lib/api';
+import { apiGet, apiSend } from '@/lib/api';
 import { AlertCircle, Loader2, Lock, MapPin, ShieldCheck } from 'lucide-react';
+
+type SetupStatus = {
+  configured: boolean;
+};
 
 export default function SetupPage() {
   const router = useRouter();
@@ -15,18 +19,17 @@ export default function SetupPage() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    fetch('/api/auth/session')
-      .then((r) => r.json())
+    apiGet<{ loggedIn: boolean }>('/api/auth/session')
       .then((data) => {
         if (data.loggedIn) {
           router.replace('/admin');
-          return;
+          return null;
         }
-        return fetch('/api/auth/setup', { method: 'HEAD' });
+        return apiGet<SetupStatus>('/api/auth/setup');
       })
-      .then((res) => {
-        if (res) {
-          setAlreadySet(res.status === 405);
+      .then((status) => {
+        if (status) {
+          setAlreadySet(status.configured);
         }
         setChecking(false);
       })

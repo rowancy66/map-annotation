@@ -6,21 +6,42 @@ import { useRouter } from 'next/navigation';
 import { AlertCircle, Lock, LogIn, MapPinned, Shield } from 'lucide-react';
 import { apiGet } from '@/lib/api';
 
+type SetupStatus = {
+  configured: boolean;
+};
+
 export default function LoginForm({ redirectTo = '/admin' }: { redirectTo?: string }) {
   const { login } = useAuth();
   const router = useRouter();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showSetupLink, setShowSetupLink] = useState(false);
 
   useEffect(() => {
+    let active = true;
+
     apiGet<{ loggedIn: boolean }>('/api/auth/session')
       .then((data) => {
+        if (!active) return;
         if (data.loggedIn) {
           router.replace(redirectTo);
+          return;
         }
+        return apiGet<SetupStatus>('/api/auth/setup');
       })
-      .catch(() => {});
+      .then((status) => {
+        if (!active || !status) return;
+        setShowSetupLink(!status.configured);
+      })
+      .catch(() => {
+        if (!active) return;
+        setShowSetupLink(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, [redirectTo, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -109,11 +130,13 @@ export default function LoginForm({ redirectTo = '/admin' }: { redirectTo?: stri
                 </button>
               </form>
 
-              <p className="mt-6 border-t pt-4 text-sm" style={{ color: 'var(--muted)', borderColor: 'var(--border)' }}>
-                首次使用？
-                {' '}
-                <a href="/setup" style={{ color: 'var(--primary)' }}>设置管理密码</a>
-              </p>
+              {showSetupLink && (
+                <p className="mt-6 border-t pt-4 text-sm" style={{ color: 'var(--muted)', borderColor: 'var(--border)' }}>
+                  首次使用？
+                  {' '}
+                  <a href="/setup" style={{ color: 'var(--primary)' }}>设置管理密码</a>
+                </p>
+              )}
             </div>
           </div>
         </div>

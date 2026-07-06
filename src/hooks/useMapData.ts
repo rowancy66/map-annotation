@@ -137,7 +137,13 @@ export function useMapData(isLoggedIn: boolean, mapId?: string) {
 
     try {
       const result = await apiSend<{ data: Annotation[] }>('/api/annotations', 'POST', { annotations: items });
-      setAnnotations((prev) => [...prev, ...result.data]);
+      setAnnotations((prev) => {
+        const next = new Map(prev.map((annotation) => [annotation.id, annotation]));
+        result.data.forEach((annotation) => {
+          next.set(annotation.id, annotation);
+        });
+        return Array.from(next.values());
+      });
       return { error: null };
     } catch (error) {
       console.error('批量导入失败:', error);

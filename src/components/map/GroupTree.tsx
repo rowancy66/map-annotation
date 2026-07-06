@@ -106,7 +106,12 @@ export default function GroupTree({
     closeContextMenu();
   }, []);
 
-  const renderGroup = (group: Group, depth: number = 0) => {
+  const renderGroup = (group: Group, depth: number = 0, visited: Set<string> = new Set()) => {
+    if (visited.has(group.id)) {
+      return null;
+    }
+    const nextVisited = new Set(visited);
+    nextVisited.add(group.id);
     const children = childrenOf(group.id);
     const hasChildren = children.length > 0;
     const isExpanded = expanded.has(group.id);
@@ -212,7 +217,7 @@ export default function GroupTree({
         {/* 子分组 */}
         {hasChildren && isExpanded && (
           <div>
-            {children.map((child) => renderGroup(child, depth + 1))}
+            {children.map((child) => renderGroup(child, depth + 1, nextVisited))}
           </div>
         )}
       </div>
