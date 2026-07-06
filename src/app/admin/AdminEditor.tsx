@@ -896,8 +896,8 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             </div>
           )}
 
-          <div className="absolute inset-x-3 top-3 z-[1005] flex flex-wrap items-start gap-2">
-            <div className="map-overlay-toolbar">
+          <div className="absolute inset-x-3 top-3 z-[1005] flex flex-wrap items-start gap-2 pointer-events-none">
+            <div className="map-overlay-toolbar pointer-events-auto">
               <button
                 onClick={() => setShowNamesOverride((prev) => !(prev ?? (mapProject?.settings.showNames !== false)))}
                 className={`map-overlay-tool ${showNamesEnabled ? 'is-active' : ''}`}
@@ -914,7 +914,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
               </button>
             </div>
 
-            <div className="map-overlay-toolbar">
+            <div className="map-overlay-toolbar pointer-events-auto">
               <button
                 onClick={() => setDrawMode(drawMode === 'point' ? 'none' : 'point')}
                 className={`map-overlay-tool ${drawMode === 'point' ? 'is-primary' : ''}`}
@@ -935,7 +935,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
               </button>
             </div>
 
-            <div className="relative">
+            <div className="relative pointer-events-auto">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
