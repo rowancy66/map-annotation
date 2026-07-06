@@ -112,6 +112,7 @@ export default function MapView({
   } | null>(null);
 
   const lastClickTimeRef = useRef(0);
+  const previousDrawModeRef = useRef<DrawMode>('none');
 
   const syncAnnotationLabel = useCallback((layer: L.Layer, annotation: Annotation) => {
     const labelLayer = layer as L.Layer & {
@@ -588,6 +589,19 @@ export default function MapView({
       map.off('mousemove', handleMouseMove);
     };
   }, [cleanupTempDrawing, drawMode, onMapClick, onMapDrawComplete, onDrawModeChange, updateTempDrawing]);
+
+  useEffect(() => {
+    const previousDrawMode = previousDrawModeRef.current;
+
+    if (drawMode === previousDrawMode) return;
+
+    if (previousDrawMode !== 'none') {
+      cleanupTempDrawing();
+      lastClickTimeRef.current = 0;
+    }
+
+    previousDrawModeRef.current = drawMode;
+  }, [cleanupTempDrawing, drawMode]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

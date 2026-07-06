@@ -214,6 +214,11 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
     return { error };
   }, [importAnnotations]);
 
+  const handleSmartAnnotation = useCallback(() => {
+    setImportOpen(true);
+    showFeedback('已打开智能标注导入面板');
+  }, [showFeedback]);
+
   const handleExport = useCallback((format: 'xlsx' | 'csv') => {
     const pointAnnotations = annotations.filter((a) => a.type === 'point');
     const nonPointCount = annotations.length - pointAnnotations.length;
@@ -901,7 +906,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                 <span>显示名称</span>
               </button>
               <button
-                onClick={() => showFeedback('智能标注功能整理中')}
+                onClick={handleSmartAnnotation}
                 className="map-overlay-tool"
               >
                 <WandSparkles className="h-3.5 w-3.5" aria-hidden="true" />

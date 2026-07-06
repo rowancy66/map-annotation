@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { apiGet, apiSend } from '@/lib/api';
@@ -22,6 +22,26 @@ export default function AdminDashboard() {
   const [creating, setCreating] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const feedbackTimerRef = useRef<number | null>(null);
+
+  const showFeedback = useCallback((message: string) => {
+    setFeedbackMessage(message);
+    if (feedbackTimerRef.current !== null) {
+      window.clearTimeout(feedbackTimerRef.current);
+    }
+    feedbackTimerRef.current = window.setTimeout(() => {
+      setFeedbackMessage(null);
+    }, 3000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimerRef.current !== null) {
+        window.clearTimeout(feedbackTimerRef.current);
+      }
+    };
+  }, []);
 
   const loadMaps = useCallback(async () => {
     setLoading(true);
@@ -73,6 +93,26 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleOpenPublicMap = useCallback((mapId: string) => {
+    window.open(`/map/${mapId}`, '_blank', 'noopener,noreferrer');
+  }, []);
+
+  const handleShareMap = useCallback(async (map: MapListItem) => {
+    const shareUrl = `${window.location.origin}/map/${map.id}`;
+
+    if (map.settings?.isPublic === false) {
+      showFeedback('这张地图当前未公开，公开后才能正常分享');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      showFeedback('分享链接已复制');
+    } catch {
+      window.prompt('复制分享链接', shareUrl);
+    }
+  }, [showFeedback]);
+
   const thumbGradients = [
     'linear-gradient(135deg, #f4efe2 0%, #efe7d6 58%, #e4dac5 100%)',
     'linear-gradient(135deg, #edf2f0 0%, #e2e9e5 58%, #d5ddd8 100%)',
@@ -98,6 +138,15 @@ export default function AdminDashboard() {
   return (
     <div className="admin-shell">
       <div className="admin-frame">
+        {feedbackMessage && (
+          <div
+            className="fixed left-1/2 top-6 z-[9999] -translate-x-1/2 border px-4 py-2 text-sm animate-fade-in"
+            style={{ background: 'rgba(24,32,27,0.92)', color: 'white', borderColor: 'rgba(255,255,255,0.08)', boxShadow: 'var(--shadow-floating)' }}
+          >
+            {feedbackMessage}
+          </div>
+        )}
+
         <main className="admin-gallery">
           <section className="admin-gallery-topbar">
             <div className="admin-gallery-tabs" aria-label="地图分类">
@@ -207,8 +256,9 @@ export default function AdminDashboard() {
                       <button
                         type="button"
                         className="admin-gallery-icon-button"
-                        title="文档"
-                        aria-label="文档"
+                        title="查看前台"
+                        aria-label="查看前台"
+                        onClick={() => handleOpenPublicMap(map.id)}
                       >
                         <FileText className="h-5 w-5" />
                       </button>
@@ -225,6 +275,7 @@ export default function AdminDashboard() {
                         className="admin-gallery-icon-button"
                         title="分享"
                         aria-label="分享"
+                        onClick={() => void handleShareMap(map)}
                       >
                         <Share2 className="h-5 w-5" />
                       </button>
