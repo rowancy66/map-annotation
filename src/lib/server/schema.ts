@@ -8,7 +8,6 @@ export function ensureSchema() {
   if (!schemaPromise) {
     schemaPromise = (async () => {
       await turso.batch([
-        `DROP TABLE IF EXISTS users`,
         `CREATE TABLE IF NOT EXISTS settings (
           key TEXT PRIMARY KEY,
           value TEXT NOT NULL

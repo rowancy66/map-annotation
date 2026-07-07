@@ -6,7 +6,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Annotation, PointStyle, LineStyle, PolygonStyle, TextStyle, PRESET_COLORS, PRESET_ICONS, FieldTemplate } from '@/lib/types';
 import { X, Save, Trash2, Loader2, Upload, Link2, Plus } from 'lucide-react';
-import { uploadAnnotationImage, deleteAnnotationImage } from '@/lib/supabase';
+import { uploadAnnotationImage, deleteAnnotationImage, validateAnnotationImage } from '@/lib/supabase';
 
 const colors = {
   surface: '#ffffff',
@@ -655,6 +655,18 @@ function Sect({ label, color, children }: { label: string; color: string; childr
 
 // ==== 面标注专用字段 ====
 type CFKey = string;
+type LinkItem = { title?: string; url?: string };
+const MAX_ANNOTATION_IMAGES = 6;
+
+function safeParseJson<T>(value: unknown, fallback: T): T {
+  if (value == null || value === '') return fallback;
+  try {
+    return JSON.parse(String(value)) as T;
+  } catch {
+    return fallback;
+  }
+}
+
 function getCF(customFields: { fieldId: string; value: string | number | null }[], key: CFKey): string {
   const f = customFields.find((c) => c.fieldId === key);
   return f ? String(f.value ?? '') : '';
@@ -668,10 +680,23 @@ function setCF(customFields: { fieldId: string; value: string | number | null }[
   }
   return [...customFields, { fieldId: key, value }];
 }
+function getCFJson<T>(customFields: { fieldId: string; value: string | number | null }[], key: CFKey, fallback: T): T {
+  return safeParseJson(getCF(customFields, key), fallback);
+}
 function getCFArr(customFields: { fieldId: string; value: string | number | null }[], key: CFKey): string[] {
-  const f = customFields.find((c) => c.fieldId === key);
-  if (!f || !f.value) return [];
-  try { return JSON.parse(String(f.value)); } catch { return []; }
+  const parsed = getCFJson<unknown>(customFields, key, []);
+  return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : [];
+}
+function getCFLinks(customFields: { fieldId: string; value: string | number | null }[], key: CFKey): LinkItem[] {
+  const parsed = getCFJson<unknown>(customFields, key, []);
+  return Array.isArray(parsed) ? parsed.filter((item): item is LinkItem => Boolean(item) && typeof item === 'object') : [];
+}
+function getCFStringList(customFields: { fieldId: string; value: string | number | null }[], key: CFKey): string[] {
+  const parsed = getCFJson<unknown>(customFields, key, []);
+  if (Array.isArray(parsed)) {
+    return parsed.filter((item): item is string => typeof item === 'string');
+  }
+  return typeof parsed === 'string' && parsed ? [parsed] : [];
 }
 function setCFArr(customFields: { fieldId: string; value: string | number | null }[], key: CFKey, arr: any[]): { fieldId: string; value: string | number | null }[] {
   return setCF(customFields, key, JSON.stringify(arr));
@@ -679,47 +704,81 @@ function setCFArr(customFields: { fieldId: string; value: string | number | null
 
 function PolygonFields({ data, editing, onChange }: { data: any; editing: boolean; onChange: (d: any) => void }) {
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   const cf = data.custom_fields || [];
-  const images = editing ? getCFArr((data as any).custom_fields || [], 'images') : getCFArr(data.custom_fields || [], 'images');
-  const links = editing ? (() => { try { return JSON.parse(getCF((data as any).custom_fields || [], 'links') || '[]'); } catch { return []; } })() : (() => { try { return JSON.parse(getCF(data.custom_fields || [], 'links') || '[]'); } catch { return []; } })();
+  const images = getCFArr(cf, 'images');
+  const links = getCFLinks(cf, 'links');
+  const houseTypes = getCFStringList(cf, 'houseType');
 
   const updateName = (v: string) => onChange({ ...data, name: v });
   const updateCF = (key: CFKey, v: string) => onChange({ ...data, custom_fields: setCF((data).custom_fields || [], key, v) });
   const updateCFArr = (key: CFKey, arr: any[]) => onChange({ ...data, custom_fields: setCFArr((data).custom_fields || [], key, arr) });
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+    const input = e.target;
+    const files = input.files;
     if (!files || files.length === 0) return;
-    setUploading(true);
+
     const current = getCFArr((data).custom_fields || [], 'images');
-    const newUrls = [...current];
-    for (let i = 0; i < files.length; i++) {
-      const url = await uploadAnnotationImage(files[i]);
-      if (url) newUrls.push(url);
+    if (current.length >= MAX_ANNOTATION_IMAGES) {
+      setUploadError(`最多上传 ${MAX_ANNOTATION_IMAGES} 张图片`);
+      input.value = '';
+      return;
     }
-    updateCFArr('images', newUrls);
-    setUploading(false);
+
+    const selectedFiles = Array.from(files);
+    if (current.length + selectedFiles.length > MAX_ANNOTATION_IMAGES) {
+      setUploadError(`最多上传 ${MAX_ANNOTATION_IMAGES} 张图片`);
+      input.value = '';
+      return;
+    }
+
+    const validationError = selectedFiles.map(validateAnnotationImage).find(Boolean);
+    if (validationError) {
+      setUploadError(validationError);
+      input.value = '';
+      return;
+    }
+
+    setUploadError('');
+    setUploading(true);
+    try {
+      const newUrls = [...current];
+      for (const file of selectedFiles) {
+        const url = await uploadAnnotationImage(file);
+        if (!url) {
+          throw new Error('图片读取失败，请重试');
+        }
+        newUrls.push(url);
+      }
+      updateCFArr('images', newUrls);
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : '图片上传失败，请重试');
+    } finally {
+      setUploading(false);
+      input.value = '';
+    }
   };
 
   const removeImage = async (url: string) => {
+    setUploadError('');
     await deleteAnnotationImage(url);
     const current = getCFArr((data).custom_fields || [], 'images');
     updateCFArr('images', current.filter((u) => u !== url));
   };
 
   const addLink = () => {
-    const current = (() => { try { return JSON.parse(getCF((data).custom_fields || [], 'links') || '[]'); } catch { return []; } })();
-    updateCFArr('links', [...current, { title: '', url: '' }]);
+    updateCFArr('links', [...getCFLinks((data).custom_fields || [], 'links'), { title: '', url: '' }]);
   };
   const updateLink = (idx: number, field: 'title' | 'url', val: string) => {
-    const current = (() => { try { return JSON.parse(getCF((data).custom_fields || [], 'links') || '[]'); } catch { return []; } })();
+    const current = [...getCFLinks((data).custom_fields || [], 'links')];
     current[idx] = { ...current[idx], [field]: val };
     updateCFArr('links', current);
   };
   const removeLink = (idx: number) => {
-    const current = (() => { try { return JSON.parse(getCF((data).custom_fields || [], 'links') || '[]'); } catch { return []; } })();
-    updateCFArr('links', current.filter((_: any, i: number) => i !== idx));
+    const current = getCFLinks((data).custom_fields || [], 'links');
+    updateCFArr('links', current.filter((_: LinkItem, i: number) => i !== idx));
   };
 
   return (
@@ -759,8 +818,7 @@ function PolygonFields({ data, editing, onChange }: { data: any; editing: boolea
 
       <Field label="户型">
         {(editing ? (() => {
-          const h = (() => { try { return JSON.parse(getCF(cf, 'houseType') || '[]'); } catch { return []; } })();
-          const arr = Array.isArray(h) && h.length > 0 ? h : [''];
+          const arr = houseTypes.length > 0 ? houseTypes : [''];
           return (
             <div className="space-y-1.5">
               {arr.map((item: string, i: number) => (
@@ -776,7 +834,7 @@ function PolygonFields({ data, editing, onChange }: { data: any; editing: boolea
                     style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.ink }}
                     onFocus={focusStyle} onBlur={blurStyle} />
                   {arr.length > 1 && (
-                    <button onClick={() => updateCF('houseType', JSON.stringify(arr.filter((_: any, j: number) => j !== i)))}
+                    <button onClick={() => updateCF('houseType', JSON.stringify(arr.filter((_: string, j: number) => j !== i)))}
                       className="text-[10px] px-1 shrink-0" style={{ color: colors.danger }}>×</button>
                   )}
                 </div>
@@ -788,19 +846,17 @@ function PolygonFields({ data, editing, onChange }: { data: any; editing: boolea
               </button>
             </div>
           );
-        })() : (() => {
-          const h = (() => { try { return JSON.parse(getCF(data.custom_fields || [], 'houseType') || '[]'); } catch { return []; } })();
-          const arr = Array.isArray(h) ? h : (h ? [h] : []);
-          return arr.length > 0 ? (
+        })() : (
+          houseTypes.length > 0 ? (
             <div className="space-y-0.5">
-              {arr.map((item: string, i: number) => (
+              {houseTypes.map((item: string, i: number) => (
                 <span key={i} className="block text-xs" style={{ color: colors.ink }}>{item || '—'}</span>
               ))}
             </div>
           ) : (
             <span className="text-xs" style={{ color: colors.placeholder }}>—</span>
-          );
-        })())}
+          )
+        ))}
       </Field>
 
       {/* 备注 */}
@@ -821,12 +877,17 @@ function PolygonFields({ data, editing, onChange }: { data: any; editing: boolea
       {/* 图片 */}
       <Field label="图片">
         {editing && (
-          <label className="flex items-center gap-2 px-2.5 py-2 mb-2 cursor-pointer transition text-xs"
-            style={{ background: colors.bg, border: `1px dashed ${colors.border}`, color: colors.muted }}>
-            <Upload className="w-3.5 h-3.5" aria-hidden="true" />
-            {uploading ? '上传中...' : '上传图片'}
-            <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
-          </label>
+          <>
+            <label className="flex items-center gap-2 px-2.5 py-2 mb-2 cursor-pointer transition text-xs"
+              style={{ background: colors.bg, border: `1px dashed ${colors.border}`, color: colors.muted }}>
+              <Upload className="w-3.5 h-3.5" aria-hidden="true" />
+              {uploading ? '上传中...' : `上传图片（最多 ${MAX_ANNOTATION_IMAGES} 张，单张 2MB 以内）`}
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={handleImageUpload} className="hidden" />
+            </label>
+            {uploadError && (
+              <p className="mb-2 text-[11px]" style={{ color: colors.danger }}>{uploadError}</p>
+            )}
+          </>
         )}
         {images.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">

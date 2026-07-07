@@ -139,6 +139,46 @@ test('setup 状态、登录登出与重复 setup 拒绝正常工作', async ({ p
   await expect(page.getByText('设置管理密码')).toHaveCount(0);
 });
 
+test('登录失败达到阈值后会被限流', async ({ page }) => {
+  const appRequest = page.context().request;
+
+  const initialSetup = await appRequest.get('/api/auth/setup');
+  expect(initialSetup.ok()).toBeTruthy();
+  const initialStatus = await initialSetup.json() as SetupStatusResponse;
+
+  if (!initialStatus.configured) {
+    const setupResponse = await appRequest.post('/api/auth/setup', {
+      data: {
+        password: ADMIN_PASSWORD,
+        confirmPassword: ADMIN_PASSWORD,
+      },
+    });
+    expect(setupResponse.ok(), await setupResponse.text()).toBeTruthy();
+    await appRequest.post('/api/auth/logout');
+  }
+
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    const loginResponse = await appRequest.post('/api/auth/login', {
+      data: { password: 'definitely-wrong-password' },
+      headers: {
+        'x-forwarded-for': '198.51.100.77',
+      },
+    });
+    expect(loginResponse.status(), `attempt ${attempt} should return 401`).toBe(401);
+  }
+
+  const limitedResponse = await appRequest.post('/api/auth/login', {
+    data: { password: 'definitely-wrong-password' },
+    headers: {
+      'x-forwarded-for': '198.51.100.77',
+    },
+  });
+
+  expect(limitedResponse.status()).toBe(429);
+  expect(limitedResponse.headers()['retry-after']).toBeTruthy();
+  await expect(limitedResponse.json()).resolves.toMatchObject({ error: '尝试过于频繁，请稍后再试' });
+});
+
 test('文字标注可持久化，分组环会被拒绝', async ({ page }) => {
   const appRequest = page.context().request;
 
