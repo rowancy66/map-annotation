@@ -1,6 +1,7 @@
 import { test, expect, type APIRequestContext, type Page } from 'playwright/test';
 
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || 'playwright-admin-123';
+const SETUP_TOKEN = process.env.APP_SETUP_TOKEN || 'playwright-setup-token';
 
 type MapCreateResponse = {
   mapProject: {
@@ -11,6 +12,7 @@ type MapCreateResponse = {
 
 type SetupStatusResponse = {
   configured: boolean;
+  setupTokenRequired: boolean;
 };
 
 type SessionResponse = {
@@ -22,6 +24,7 @@ async function ensureLoggedIn(request: APIRequestContext) {
     data: {
       password: ADMIN_PASSWORD,
       confirmPassword: ADMIN_PASSWORD,
+      setupToken: SETUP_TOKEN,
     },
   });
 
@@ -98,6 +101,7 @@ test('setup 状态、登录登出与重复 setup 拒绝正常工作', async ({ p
       data: {
         password: ADMIN_PASSWORD,
         confirmPassword: ADMIN_PASSWORD,
+        setupToken: SETUP_TOKEN,
       },
     });
     expect(setupResponse.ok(), await setupResponse.text()).toBeTruthy();
@@ -115,6 +119,7 @@ test('setup 状态、登录登出与重复 setup 拒绝正常工作', async ({ p
     data: {
       password: ADMIN_PASSWORD,
       confirmPassword: ADMIN_PASSWORD,
+      setupToken: SETUP_TOKEN,
     },
   });
   expect(repeatedSetup.status()).toBe(403);
@@ -139,6 +144,30 @@ test('setup 状态、登录登出与重复 setup 拒绝正常工作', async ({ p
   await expect(page.getByText('设置管理密码')).toHaveCount(0);
 });
 
+test('setup 状态会暴露是否需要初始化口令', async ({ page }) => {
+  const appRequest = page.context().request;
+  const statusResponse = await appRequest.get('/api/auth/setup');
+  expect(statusResponse.ok()).toBeTruthy();
+  const status = await statusResponse.json() as SetupStatusResponse;
+  expect(typeof status.setupTokenRequired).toBe('boolean');
+
+  await page.goto('/setup');
+
+  if (status.configured) {
+    await expect(page.getByText('密码已设置')).toBeVisible();
+    return;
+  }
+
+  if (status.setupTokenRequired) {
+    await expect(page.getByText('初始化口令')).toBeVisible();
+    await page.getByRole('button', { name: '设置密码' }).click();
+    await expect(page.getByText('请输入初始化口令')).toBeVisible();
+    return;
+  }
+
+  await expect(page.getByText('设置管理密码')).toBeVisible();
+});
+
 test('登录失败达到阈值后会被限流', async ({ page }) => {
   const appRequest = page.context().request;
 
@@ -151,6 +180,7 @@ test('登录失败达到阈值后会被限流', async ({ page }) => {
       data: {
         password: ADMIN_PASSWORD,
         confirmPassword: ADMIN_PASSWORD,
+        setupToken: SETUP_TOKEN,
       },
     });
     expect(setupResponse.ok(), await setupResponse.text()).toBeTruthy();
@@ -179,11 +209,12 @@ test('登录失败达到阈值后会被限流', async ({ page }) => {
   await expect(limitedResponse.json()).resolves.toMatchObject({ error: '尝试过于频繁，请稍后再试' });
 });
 
-test('文字标注可持久化，分组环会被拒绝', async ({ page }) => {
+test('文字标注会按纯文本渲染并可持久化', async ({ page }) => {
   const appRequest = page.context().request;
 
   await ensureLoggedIn(appRequest);
   const mapProject = await createMap(appRequest);
+  const textValue = '<img src=x onerror=alert(1)> Playwright 文字标注';
 
   await page.goto(`/admin?mapId=${mapProject.id}`);
   await expect(page.getByRole('button', { name: '工具' })).toBeVisible({ timeout: 15000 });
@@ -195,12 +226,14 @@ test('文字标注可持久化，分组环会被拒绝', async ({ page }) => {
   await mapCanvas.click({ position: { x: 240, y: 220 } });
 
   await expect(page.getByRole('heading', { name: '添加文字标注' })).toBeVisible();
-  await page.getByPlaceholder('输入标注文字...').fill('Playwright 文字标注');
+  await page.getByPlaceholder('输入标注文字...').fill(textValue);
   await page.getByRole('button', { name: '添加' }).click();
 
-  await expect(page.getByText('Playwright 文字标注').first()).toBeVisible();
+  await expect(page.locator('.custom-text-marker')).toContainText(textValue);
+  await expect(page.locator('.custom-text-marker img')).toHaveCount(0);
   await page.reload();
-  await expect(page.getByText('Playwright 文字标注').first()).toBeVisible();
+  await expect(page.locator('.custom-text-marker')).toContainText(textValue);
+  await expect(page.locator('.custom-text-marker img')).toHaveCount(0);
 
   const groupAResponse = await appRequest.post('/api/groups', {
     data: { mapId: mapProject.id, name: 'Group A' },

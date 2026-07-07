@@ -106,8 +106,12 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
   const handleSave = async () => {
     setSaving(true);
     try {
-      await onSave(editData);
-      setEditing(false);
+      const saved = await onSave(editData);
+      if (saved) {
+        setEditing(false);
+      }
+    } catch {
+      // 保持编辑态，允许用户继续修改或重试
     } finally {
       setSaving(false);
     }

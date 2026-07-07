@@ -3,19 +3,22 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiGet, apiSend } from '@/lib/api';
-import { AlertCircle, Loader2, Lock, MapPin, ShieldCheck } from 'lucide-react';
+import { AlertCircle, Loader2, Lock, MapPin, ShieldCheck, KeyRound } from 'lucide-react';
 
 type SetupStatus = {
   configured: boolean;
+  setupTokenRequired: boolean;
 };
 
 export default function SetupPage() {
   const router = useRouter();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [setupToken, setSetupToken] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [alreadySet, setAlreadySet] = useState<boolean | null>(null);
+  const [setupTokenRequired, setSetupTokenRequired] = useState(false);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
@@ -30,11 +33,13 @@ export default function SetupPage() {
       .then((status) => {
         if (status) {
           setAlreadySet(status.configured);
+          setSetupTokenRequired(Boolean(status.setupTokenRequired));
         }
         setChecking(false);
       })
       .catch(() => {
         setAlreadySet(false);
+        setSetupTokenRequired(false);
         setChecking(false);
       });
   }, [router]);
@@ -42,6 +47,11 @@ export default function SetupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (setupTokenRequired && !setupToken.trim()) {
+      setError('请输入初始化口令');
+      return;
+    }
 
     if (password.length < 6) {
       setError('密码至少需要 6 个字符');
@@ -55,7 +65,7 @@ export default function SetupPage() {
 
     setLoading(true);
     try {
-      await apiSend('/api/auth/setup', 'POST', { password, confirmPassword });
+      await apiSend('/api/auth/setup', 'POST', { password, confirmPassword, setupToken });
       router.push('/admin');
     } catch (err) {
       setError(err instanceof Error ? err.message : '设置失败');
@@ -106,11 +116,31 @@ export default function SetupPage() {
           </div>
           <div className="display-label">Admin Setup</div>
           <h1 className="mt-3 text-3xl" style={{ color: 'var(--ink)' }}>设置管理密码</h1>
-          <p className="mt-2 text-sm" style={{ color: 'var(--muted)' }}>首次使用时完成初始化。</p>
+          <p className="mt-2 text-sm" style={{ color: 'var(--muted)' }}>
+            {setupTokenRequired ? '首次使用时需先输入部署者提供的初始化口令。' : '首次使用时完成初始化。'}
+          </p>
         </div>
 
         <div className="paper-panel mx-auto max-w-md p-7 workbench-hard-edge">
           <form onSubmit={handleSubmit} className="space-y-4">
+            {setupTokenRequired && (
+              <div>
+                <label className="mb-1.5 block text-sm font-medium" style={{ color: 'var(--muted)' }}>初始化口令</label>
+                <div className="relative">
+                  <KeyRound aria-hidden="true" className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: 'var(--faint)' }} />
+                  <input
+                    type="password"
+                    value={setupToken}
+                    onChange={(e) => setSetupToken(e.target.value)}
+                    placeholder="输入部署者提供的口令"
+                    autoComplete="one-time-code"
+                    required
+                    className="w-full px-11 py-3 text-sm outline-none transition workbench-hard-edge workbench-field"
+                  />
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="mb-1.5 block text-sm font-medium" style={{ color: 'var(--muted)' }}>管理密码</label>
               <div className="relative">

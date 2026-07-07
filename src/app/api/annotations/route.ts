@@ -31,34 +31,35 @@ export async function POST(request: Request) {
 
     if (annotations) {
       const now = new Date().toISOString();
-      const savedItems = await Promise.all(
-        annotations.map(async (item) => {
-          const existing =
-            item.type === 'point' && item.name
-              ? await findPointAnnotationByName(item.map_id, item.name)
-              : null;
+      const savedItems: Annotation[] = [];
 
-          const nextAnnotation = {
-            ...(existing || {}),
-            ...item,
-            id: existing?.id || crypto.randomUUID(),
-            description: item.description || existing?.description || '',
-            geometry: item.geometry || existing?.geometry,
-            custom_fields:
-              existing && item.custom_fields.length > 0
-                ? existing.custom_fields.map((field) => {
-                    const incoming = item.custom_fields.find((entry) => entry.fieldId === field.fieldId);
-                    if (!incoming || incoming.value == null || incoming.value === '') return field;
-                    return incoming;
-                  }).concat(item.custom_fields.filter((entry) => !existing.custom_fields.some((field) => field.fieldId === entry.fieldId)))
-                : item.custom_fields,
-            created_at: existing?.created_at || now,
-            updated_at: now,
-          } as Annotation;
-          await validateAnnotationPayload(nextAnnotation);
-          return saveAnnotation(nextAnnotation);
-        })
-      );
+      for (const item of annotations) {
+        const existing =
+          item.type === 'point' && item.name
+            ? await findPointAnnotationByName(item.map_id, item.name)
+            : null;
+
+        const nextAnnotation = {
+          ...(existing || {}),
+          ...item,
+          id: existing?.id || crypto.randomUUID(),
+          description: item.description || existing?.description || '',
+          geometry: item.geometry || existing?.geometry,
+          custom_fields:
+            existing && item.custom_fields.length > 0
+              ? existing.custom_fields.map((field) => {
+                  const incoming = item.custom_fields.find((entry) => entry.fieldId === field.fieldId);
+                  if (!incoming || incoming.value == null || incoming.value === '') return field;
+                  return incoming;
+                }).concat(item.custom_fields.filter((entry) => !existing.custom_fields.some((field) => field.fieldId === entry.fieldId)))
+              : item.custom_fields,
+          created_at: existing?.created_at || now,
+          updated_at: now,
+        } as Annotation;
+        await validateAnnotationPayload(nextAnnotation);
+        savedItems.push(await saveAnnotation(nextAnnotation));
+      }
+
       return NextResponse.json({ data: savedItems });
     }
   } catch (error) {

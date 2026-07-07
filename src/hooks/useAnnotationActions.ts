@@ -118,14 +118,17 @@ export function useAnnotationActions(
     const { data, error } = await onSave(updated);
     if (error) {
       showFeedback(`保存失败: ${error}`);
-      return;
+      throw new Error(error);
+    }
+    if (!data) {
+      showFeedback('保存失败: 保存结果为空');
+      throw new Error('保存结果为空');
     }
     // 更新本地列表
-    const finalAnnotation = data || updated;
-    setAnnotations((prev) => prev.map((a) => (a.id === updated.id ? finalAnnotation : a)));
-    setSelectedAnnotation(finalAnnotation);
+    setAnnotations((prev) => prev.map((a) => (a.id === updated.id ? data : a)));
+    setSelectedAnnotation(data);
     showFeedback('保存成功');
-    return finalAnnotation;
+    return data;
   }, [onSave, showFeedback, setAnnotations]);
 
   // 删除标注（修复 #2: 错误处理）

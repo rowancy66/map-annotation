@@ -8,6 +8,7 @@ import { apiGet } from '@/lib/api';
 
 type SetupStatus = {
   configured: boolean;
+  setupTokenRequired: boolean;
 };
 
 export default function LoginForm({ redirectTo = '/admin' }: { redirectTo?: string }) {

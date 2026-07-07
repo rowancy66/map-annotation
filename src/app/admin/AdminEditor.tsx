@@ -162,10 +162,14 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
       updated_at: new Date().toISOString(),
     };
 
-    const { data } = await saveAnnotation(annotation);
-    const saved = data || annotation;
-    setAnnotations((prev) => [...prev, saved]);
-    setSelectedAnnotation(saved);
+    const { data, error } = await saveAnnotation(annotation);
+    if (error || !data) {
+      alert(`创建点标注失败: ${error || '保存结果为空'}`);
+      return;
+    }
+
+    setAnnotations((prev) => [...prev, data]);
+    setSelectedAnnotation(data);
     setDrawMode('none');
   }, [drawMode, mapProject, saveAnnotation, setAnnotations, setSelectedAnnotation]);
 
@@ -203,10 +207,14 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
       };
     }
 
-    const { data } = await saveAnnotation(annotation);
-    const saved = data || annotation;
-    setAnnotations((prev) => [...prev, saved]);
-    setSelectedAnnotation(saved);
+    const { data, error } = await saveAnnotation(annotation);
+    if (error || !data) {
+      alert(`创建${type === 'line' ? '线标注' : '面标注'}失败: ${error || '保存结果为空'}`);
+      return;
+    }
+
+    setAnnotations((prev) => [...prev, data]);
+    setSelectedAnnotation(data);
   }, [mapProject, saveAnnotation, setAnnotations, setSelectedAnnotation]);
 
   const handleTextAnnotationCreate = useCallback(async (text: string, latlng: L.LatLng) => {
@@ -225,10 +233,14 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
       updated_at: new Date().toISOString(),
     };
 
-    const { data } = await saveAnnotation(annotation);
-    const saved = data || annotation;
-    setAnnotations((prev) => [...prev, saved]);
-    setSelectedAnnotation(saved);
+    const { data, error } = await saveAnnotation(annotation);
+    if (error || !data) {
+      alert(`创建文字标注失败: ${error || '保存结果为空'}`);
+      return;
+    }
+
+    setAnnotations((prev) => [...prev, data]);
+    setSelectedAnnotation(data);
   }, [mapProject, saveAnnotation, setAnnotations, setSelectedAnnotation]);
 
   const handleImport = useCallback(async (items: Omit<Annotation, 'id' | 'created_at' | 'updated_at'>[]) => {

@@ -32,6 +32,14 @@ function sanitizeIcon(icon: string): string {
 function sanitizeSize(size: number): number {
   return Math.max(1, Math.min(5, Math.round(size)));
 }
+function escapeHtml(text: string): string {
+  return text
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
 
 type LeafletHeatLayerFactory = {
   heatLayer: (points: [number, number, number][], options: {
@@ -130,8 +138,9 @@ export default function MapView({
       return;
     }
 
+    const safeLabel = escapeHtml(annotation.name);
     labelLayer.unbindTooltip?.();
-    labelLayer.bindTooltip?.(annotation.name, {
+    labelLayer.bindTooltip?.(safeLabel, {
       permanent: true,
       direction: annotation.type === 'point' ? 'top' : 'center',
       offset: annotation.type === 'point' ? [0, -12] : [0, 0],
@@ -360,6 +369,7 @@ export default function MapView({
         const geom = annotation.geometry as { type: string; coordinates: [number, number] };
         const style = annotation.style as TextStyle;
         const isSelected = selectedAnnotation?.id === annotation.id;
+        const safeText = escapeHtml(annotation.name);
         const textIcon = L.divIcon({
           className: 'custom-text-marker',
           html: `<div style="
@@ -371,7 +381,7 @@ export default function MapView({
             white-space: nowrap;
             cursor: pointer;
             ${isSelected ? 'outline: 2px solid #1a4735; outline-offset: 4px; border-radius: 4px; padding: 0 4px;' : ''}
-          ">${annotation.name}</div>`,
+          ">${safeText}</div>`,
           iconSize: [0, 0],
           iconAnchor: [0, 0],
         });

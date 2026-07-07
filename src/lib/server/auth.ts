@@ -60,6 +60,47 @@ export async function setAdminPassword(password: string): Promise<void> {
   });
 }
 
+export async function trySetAdminPassword(password: string): Promise<boolean> {
+  await ensureSchema();
+  const hash = hashPassword(password);
+  const now = new Date().toISOString();
+  const result = await turso.execute({
+    sql: 'INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)',
+    args: ['admin_password_hash', hash],
+  });
+
+  if (result.rowsAffected === 0) {
+    return false;
+  }
+
+  await turso.execute({
+    sql: `INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`,
+    args: ['admin_password_set_at', now],
+  });
+  return true;
+}
+
+export function requireSetupToken(token: unknown): string | null {
+  if (process.env.NODE_ENV !== 'production') {
+    return null;
+  }
+
+  const expected = process.env.APP_SETUP_TOKEN?.trim();
+  if (!expected) {
+    throw new Error('APP_SETUP_TOKEN 未设置，生产环境必须配置该变量');
+  }
+
+  if (typeof token !== 'string' || !token.trim()) {
+    return '缺少初始化口令';
+  }
+
+  if (token.trim() !== expected) {
+    return '初始化口令错误';
+  }
+
+  return null;
+}
+
 export async function verifyAdminPassword(password: string): Promise<boolean> {
   await ensureSchema();
   const result = await turso.execute({

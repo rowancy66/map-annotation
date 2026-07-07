@@ -25,6 +25,7 @@
 
 ### 认证
 - 🔐 **管理密码** — 单管理员密码认证，首次部署通过 `/setup` 设置
+- 🪪 **初始化口令** — 生产环境首次初始化需提供 `APP_SETUP_TOKEN`
 - 👤 **公开只读** — 前台地图对访客公开，无需登录即可浏览
 
 ## 🛠️ 技术栈
@@ -77,6 +78,9 @@ TURSO_AUTH_TOKEN=your-token
 # Session 加密密钥（随机字符串）
 APP_SESSION_SECRET=your-random-secret
 
+# 生产环境首次初始化口令（部署时自定义）
+APP_SETUP_TOKEN=your-setup-token
+
 # 天地图（可选，未配置时会禁用地图搜索）
 NEXT_PUBLIC_TIANDITU_KEY=your-tianditu-key
 ```
@@ -88,6 +92,7 @@ npm run dev
 ```
 
 首次访问 http://localhost:3000/setup 设置管理密码，然后前往 http://localhost:3000/admin 登录。
+生产环境首次初始化时，还需要输入部署者预先配置的 `APP_SETUP_TOKEN`。
 
 ## 📁 项目结构
 

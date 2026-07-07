@@ -1,20 +1,36 @@
 import { NextResponse } from 'next/server';
-import { hasAdminPassword, setAdminPassword, createSession } from '@/lib/server/auth';
+import { hasAdminPassword, trySetAdminPassword, createSession, requireSetupToken } from '@/lib/server/auth';
 
 export async function GET() {
   const configured = await hasAdminPassword();
-  return NextResponse.json({ configured });
+  return NextResponse.json({
+    configured,
+    setupTokenRequired: process.env.NODE_ENV === 'production',
+  });
 }
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const password = typeof body?.password === 'string' ? body.password : '';
   const confirmPassword = typeof body?.confirmPassword === 'string' ? body.confirmPassword : '';
+  const setupToken = body?.setupToken;
 
   // 如果密码已设置，拒绝重复设置
   const alreadySet = await hasAdminPassword();
   if (alreadySet) {
     return NextResponse.json({ error: '管理密码已设置，如需重置请联系部署者' }, { status: 403 });
+  }
+
+  try {
+    const tokenError = requireSetupToken(setupToken);
+    if (tokenError) {
+      return NextResponse.json({ error: tokenError }, { status: 403 });
+    }
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : '初始化配置错误' },
+      { status: 500 }
+    );
   }
 
   if (!password || password.length < 6) {
@@ -25,7 +41,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '两次输入的密码不一致' }, { status: 400 });
   }
 
-  await setAdminPassword(password);
+  const created = await trySetAdminPassword(password);
+  if (!created) {
+    return NextResponse.json({ error: '管理密码已设置，如需重置请联系部署者' }, { status: 403 });
+  }
+
   const session = await createSession();
   const response = NextResponse.json({ loggedIn: true });
   response.cookies.set(session.cookieName, session.token, {
