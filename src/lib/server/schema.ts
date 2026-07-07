@@ -3,6 +3,7 @@ import { turso } from '@/lib/turso';
 let schemaPromise: Promise<void> | null = null;
 const OLD_DEFAULT_CENTER = JSON.stringify([120.43, 36.16]);
 const NEW_DEFAULT_CENTER = JSON.stringify([120.1976, 35.9607]);
+const DEFAULT_MAP_KEY = 'default-admin-map';
 
 export function ensureSchema() {
   if (!schemaPromise) {
@@ -76,6 +77,51 @@ export function ensureSchema() {
       } catch {
         // 列已存在，忽略
       }
+      try {
+        await turso.execute("ALTER TABLE maps ADD COLUMN system_key TEXT DEFAULT NULL");
+      } catch {
+        // 列已存在，忽略
+      }
+      await turso.execute(
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_maps_system_key ON maps(system_key) WHERE system_key IS NOT NULL'
+      );
+      await turso.execute({
+        sql: `UPDATE maps
+              SET system_key = ?
+              WHERE id = (
+                SELECT id
+                FROM maps
+                WHERE user_id = ? AND (system_key IS NULL OR system_key = '')
+                ORDER BY created_at DESC
+                LIMIT 1
+              )
+              AND NOT EXISTS (
+                SELECT 1 FROM maps WHERE system_key = ?
+              )`,
+        args: [DEFAULT_MAP_KEY, 'admin', DEFAULT_MAP_KEY],
+      });
+
+      const duplicateNamedPoints = await turso.execute(`
+        SELECT map_id, name, COUNT(*) AS duplicate_count
+        FROM annotations
+        WHERE type = 'point' AND name <> ''
+        GROUP BY map_id, name
+        HAVING COUNT(*) > 1
+        LIMIT 1
+      `);
+
+      if (duplicateNamedPoints.rows[0]) {
+        const row = duplicateNamedPoints.rows[0] as Record<string, unknown>;
+        throw new Error(
+          `检测到重复点标注名称，无法启用唯一约束：地图 ${String(row.map_id)} 下的名称“${String(row.name)}”重复 ${String(row.duplicate_count)} 次`
+        );
+      }
+
+      await turso.execute(
+        `CREATE UNIQUE INDEX IF NOT EXISTS idx_annotations_unique_point_name
+         ON annotations(map_id, type, name)
+         WHERE type = 'point' AND name <> ''`
+      );
       await turso.execute({
         sql: 'UPDATE maps SET center = ? WHERE center = ?',
         args: [NEW_DEFAULT_CENTER, OLD_DEFAULT_CENTER],

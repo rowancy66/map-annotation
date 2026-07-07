@@ -4,10 +4,11 @@ import {
   batchDeleteAnnotations,
   batchUpdateAnnotationField,
   deleteAnnotation,
-  findPointAnnotationByName,
   requireExistingAnnotation,
   saveAnnotation,
+  saveImportedPointAnnotation,
   validateAnnotationPayload,
+  MAX_BULK_IMPORT_COUNT,
 } from '@/lib/server/maps';
 import { batchMoveAnnotationsToGroup, requireExistingGroup } from '@/lib/server/groups';
 import { Annotation } from '@/lib/types';
@@ -30,30 +31,27 @@ export async function POST(request: Request) {
     }
 
     if (annotations) {
+      if (annotations.length > MAX_BULK_IMPORT_COUNT) {
+        return NextResponse.json(
+          { error: `单次最多导入 ${MAX_BULK_IMPORT_COUNT} 条标注` },
+          { status: 400 }
+        );
+      }
+
       const now = new Date().toISOString();
       const savedItems: Annotation[] = [];
 
       for (const item of annotations) {
-        const existing =
-          item.type === 'point' && item.name
-            ? await findPointAnnotationByName(item.map_id, item.name)
-            : null;
+        if (item.type === 'point' && item.name) {
+          savedItems.push(await saveImportedPointAnnotation(item, now));
+          continue;
+        }
 
         const nextAnnotation = {
-          ...(existing || {}),
           ...item,
-          id: existing?.id || crypto.randomUUID(),
-          description: item.description || existing?.description || '',
-          geometry: item.geometry || existing?.geometry,
-          custom_fields:
-            existing && item.custom_fields.length > 0
-              ? existing.custom_fields.map((field) => {
-                  const incoming = item.custom_fields.find((entry) => entry.fieldId === field.fieldId);
-                  if (!incoming || incoming.value == null || incoming.value === '') return field;
-                  return incoming;
-                }).concat(item.custom_fields.filter((entry) => !existing.custom_fields.some((field) => field.fieldId === entry.fieldId)))
-              : item.custom_fields,
-          created_at: existing?.created_at || now,
+          id: crypto.randomUUID(),
+          description: item.description || '',
+          created_at: now,
           updated_at: now,
         } as Annotation;
         await validateAnnotationPayload(nextAnnotation);

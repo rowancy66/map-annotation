@@ -5,6 +5,8 @@ import { ensureSchema } from './schema';
 
 const ADMIN_USER_ID = 'admin';
 const DEFAULT_DB_CENTER: [number, number] = [120.1976, 35.9607];
+const DEFAULT_MAP_KEY = 'default-admin-map';
+export const MAX_BULK_IMPORT_COUNT = 500;
 
 function safeParseJson<T>(value: unknown, fallback: T): T {
   if (value == null || value === '') return fallback;
@@ -90,11 +92,19 @@ function normalizeStyle(type: Annotation['type'], value: unknown): Annotation['s
   }
 
   if (type === 'text') {
+    const rawColor = typeof parsed.color === 'string' ? parsed.color : '#1a4735';
+    const rawFontSize = typeof parsed.fontSize === 'number' ? parsed.fontSize : 16;
+    const rawRotation = typeof parsed.rotation === 'number' ? parsed.rotation : undefined;
+    const normalizedRotation =
+      rawRotation === undefined
+        ? undefined
+        : ((Math.round(rawRotation) % 360) + 360) % 360;
+
     return {
-      color: typeof parsed.color === 'string' ? parsed.color : '#1a4735',
-      fontSize: typeof parsed.fontSize === 'number' ? parsed.fontSize : 16,
+      color: /^#[0-9A-Fa-f]{6}$/.test(rawColor) ? rawColor : '#1a4735',
+      fontSize: Math.max(10, Math.min(48, Math.round(rawFontSize))),
       fontFamily: typeof parsed.fontFamily === 'string' ? parsed.fontFamily : undefined,
-      rotation: typeof parsed.rotation === 'number' ? parsed.rotation : undefined,
+      rotation: normalizedRotation,
     };
   }
 
@@ -167,47 +177,63 @@ function normalizeMapSettings(settings?: Partial<MapSettings> | null): MapSettin
   };
 }
 
+function mergeImportedPointAnnotation(
+  item: Omit<Annotation, 'id' | 'created_at' | 'updated_at'>,
+  existing: Annotation | null,
+  now: string
+): Annotation {
+  return {
+    ...(existing || {}),
+    ...item,
+    id: existing?.id || crypto.randomUUID(),
+    description: item.description || existing?.description || '',
+    geometry: item.geometry || existing?.geometry,
+    custom_fields:
+      existing && item.custom_fields.length > 0
+        ? existing.custom_fields.map((field) => {
+            const incoming = item.custom_fields.find((entry) => entry.fieldId === field.fieldId);
+            if (!incoming || incoming.value == null || incoming.value === '') return field;
+            return incoming;
+          }).concat(item.custom_fields.filter((entry) => !existing.custom_fields.some((field) => field.fieldId === entry.fieldId)))
+        : item.custom_fields,
+    created_at: existing?.created_at || now,
+    updated_at: now,
+  } as Annotation;
+}
+
 export async function getOrCreateDefaultMap() {
   await ensureSchema();
-  const existing = await turso.execute({
-    sql: 'SELECT * FROM maps WHERE user_id = ? ORDER BY created_at DESC LIMIT 1',
-    args: [ADMIN_USER_ID],
-  });
-
-  if (existing.rows[0]) {
-    return rowToMapProject(existing.rows[0] as Record<string, unknown>);
-  }
-
   const now = new Date().toISOString();
   const id = crypto.randomUUID();
   await turso.execute({
-    sql: `INSERT INTO maps (id, user_id, name, description, center, zoom, field_templates, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT OR IGNORE INTO maps
+          (id, user_id, system_key, name, description, center, zoom, field_templates, settings, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       id,
       ADMIN_USER_ID,
+      DEFAULT_MAP_KEY,
       '我的地图',
       '默认地图项目',
       stringifyJson(DEFAULT_DB_CENTER),
       13,
       stringifyJson(DEFAULT_LAND_FIELD_TEMPLATES),
+      stringifyJson(normalizeMapSettings()),
       now,
       now,
     ],
   });
 
-  return {
-    id,
-    user_id: ADMIN_USER_ID,
-    name: '我的地图',
-    description: '默认地图项目',
-    center: DEFAULT_DB_CENTER,
-    zoom: 13,
-    field_templates: DEFAULT_LAND_FIELD_TEMPLATES,
-    settings: normalizeMapSettings(),
-    created_at: now,
-    updated_at: now,
-  } satisfies MapProject;
+  const existing = await turso.execute({
+    sql: 'SELECT * FROM maps WHERE system_key = ? LIMIT 1',
+    args: [DEFAULT_MAP_KEY],
+  });
+
+  if (!existing.rows[0]) {
+    throw new Error('默认地图初始化失败');
+  }
+
+  return rowToMapProject(existing.rows[0] as Record<string, unknown>);
 }
 
 export async function getMapById(mapId: string) {
@@ -327,6 +353,37 @@ export async function saveAnnotation(annotation: Annotation) {
   });
 
   return { ...annotation, updated_at: now };
+}
+
+export async function saveImportedPointAnnotation(
+  item: Omit<Annotation, 'id' | 'created_at' | 'updated_at'>,
+  now = new Date().toISOString()
+) {
+  await ensureSchema();
+  let existing = item.name ? await findPointAnnotationByName(item.map_id, item.name) : null;
+  let nextAnnotation = mergeImportedPointAnnotation(item, existing, now);
+  await validateAnnotationPayload(nextAnnotation);
+
+  try {
+    return await saveAnnotation(nextAnnotation);
+  } catch (error) {
+    const message = error instanceof Error ? error.message.toLowerCase() : '';
+    const duplicatedPointName =
+      item.name && (message.includes('unique') || message.includes('constraint') || message.includes('idx_annotations_unique_point_name'));
+
+    if (!duplicatedPointName) {
+      throw error;
+    }
+
+    existing = await findPointAnnotationByName(item.map_id, item.name);
+    if (!existing) {
+      throw error;
+    }
+
+    nextAnnotation = mergeImportedPointAnnotation(item, existing, now);
+    await validateAnnotationPayload(nextAnnotation);
+    return saveAnnotation(nextAnnotation);
+  }
 }
 
 export async function deleteAnnotation(id: string) {

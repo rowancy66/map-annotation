@@ -32,6 +32,15 @@ function sanitizeIcon(icon: string): string {
 function sanitizeSize(size: number): number {
   return Math.max(1, Math.min(5, Math.round(size)));
 }
+function sanitizeTextFontSize(size: number): number {
+  if (!Number.isFinite(size)) return 16;
+  return Math.max(10, Math.min(48, Math.round(size)));
+}
+function sanitizeTextRotation(rotation: number | undefined): number {
+  if (!Number.isFinite(rotation)) return 0;
+  const normalized = Math.round(rotation as number) % 360;
+  return normalized < 0 ? normalized + 360 : normalized;
+}
 function escapeHtml(text: string): string {
   return text
     .replaceAll('&', '&amp;')
@@ -370,14 +379,17 @@ export default function MapView({
         const style = annotation.style as TextStyle;
         const isSelected = selectedAnnotation?.id === annotation.id;
         const safeText = escapeHtml(annotation.name);
+        const safeColor = sanitizeColor(style.color || '#1a4735');
+        const safeFontSize = sanitizeTextFontSize(style.fontSize || 16);
+        const safeRotation = sanitizeTextRotation(style.rotation);
         const textIcon = L.divIcon({
           className: 'custom-text-marker',
           html: `<div style="
-            font-size: ${style.fontSize || 16}px;
-            color: ${style.color || '#1a4735'};
+            font-size: ${safeFontSize}px;
+            color: ${safeColor};
             font-weight: 600;
             text-shadow: 0 1px 3px rgba(255,255,255,0.8), 0 0 6px rgba(255,255,255,0.6);
-            transform: ${style.rotation ? `rotate(${style.rotation}deg)` : 'none'};
+            transform: ${safeRotation ? `rotate(${safeRotation}deg)` : 'none'};
             white-space: nowrap;
             cursor: pointer;
             ${isSelected ? 'outline: 2px solid #1a4735; outline-offset: 4px; border-radius: 4px; padding: 0 4px;' : ''}
