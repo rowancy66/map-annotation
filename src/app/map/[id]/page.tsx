@@ -7,7 +7,7 @@ import { useMapData } from '@/hooks/useMapData';
 import InfoCard from '@/components/map/InfoCard';
 import WorkbenchHeader from '@/components/map/workbench/WorkbenchHeader';
 import WorkbenchSidebarToggle from '@/components/map/workbench/WorkbenchSidebarToggle';
-import MapFloatingPanel from '@/components/map/workbench/MapFloatingPanel';
+
 import { Annotation } from '@/lib/types';
 import { Loader2, LogIn, Search, X, ArrowLeft, MapPin, ScanSearch } from 'lucide-react';
 
@@ -29,7 +29,6 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
   const [selectedAnnotation, setSelectedAnnotation] = useState<Annotation | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showNames, setShowNames] = useState<boolean | null>(null);
   const listItemRefs = useRef(new Map<string, HTMLDivElement>());
 
   const filteredAnnotations = useMemo(() => {
@@ -60,8 +59,6 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
   const handleAnnotationClick = useCallback((annotation: Annotation) => {
     setSelectedAnnotation(annotation);
   }, []);
-
-  const effectiveShowNames = showNames ?? (mapProject?.settings.showNames !== false);
 
   useEffect(() => {
     if (!selectedAnnotation) return;
@@ -291,7 +288,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
               onDrawModeChange={() => {}}
               selectedAnnotation={selectedAnnotation}
               editable={false}
-              showNames={effectiveShowNames}
+              showNames={mapProject?.settings.showNames !== false}
               searchOverlayClassName="left-14 sm:left-16"
             />
 
@@ -306,22 +303,6 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
                   readOnly={true}
                 />
               )}
-            </div>
-
-            <div className="absolute right-5 top-16 z-[999] sm:top-20">
-              <MapFloatingPanel className="gap-2">
-                <button
-                  onClick={() => setShowNames((prev) => !(prev ?? (mapProject?.settings.showNames !== false)))}
-                  aria-label="切换名称显示"
-                  className="workbench-hard-edge px-3.5 py-2 text-xs font-medium transition"
-                  style={{
-                    background: effectiveShowNames ? 'var(--primary)' : 'transparent',
-                    color: effectiveShowNames ? '#fff' : 'var(--muted)',
-                  }}
-                >
-                  <span>名称</span>
-                </button>
-              </MapFloatingPanel>
             </div>
           </div>
         </div>

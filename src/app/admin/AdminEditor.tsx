@@ -1135,23 +1135,6 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             searchOverlayClassName="left-3 top-16"
           />
 
-          <div className="absolute right-[170px] top-3 z-[1000]">
-            <div className="map-side-rail">
-              <button
-                onClick={() => setShowNamesOverride((prev) => !(prev ?? (mapProject?.settings.showNames !== false)))}
-                className={`map-side-rail-button ${showNamesEnabled ? 'is-active' : ''}`}
-              >
-                名称
-              </button>
-              <button
-                onClick={() => setShowHeatmap(!showHeatmap)}
-                className={`map-side-rail-button ${showHeatmap ? 'is-active' : ''}`}
-              >
-                热力
-              </button>
-            </div>
-          </div>
-
           <div className="absolute right-3 top-[56px] z-[1000]">
             {selectedAnnotation && mapProject && !batchMode && (
               <InfoCard
