@@ -258,72 +258,79 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
   }, [showFeedback]);
 
   const handleExport = useCallback((format: 'xlsx' | 'csv') => {
-    const pointAnnotations = annotations.filter((a) => a.type === 'point');
-    const nonPointCount = annotations.length - pointAnnotations.length;
-    if (pointAnnotations.length === 0) {
-      alert('没有可导出的点标注');
-      return;
-    }
-    if (nonPointCount > 0) {
-      const confirmed = window.confirm(`当前有 ${nonPointCount} 条线/面标注不会被导出，仅导出 ${pointAnnotations.length} 条点标注，是否继续？`);
-      if (!confirmed) return;
-    }
+    try {
+      const pointAnnotations = annotations.filter((a) => a.type === 'point');
+      const nonPointCount = annotations.length - pointAnnotations.length;
+      if (pointAnnotations.length === 0) {
+        alert('没有可导出的点标注');
+        return;
+      }
+      if (nonPointCount > 0) {
+        const confirmed = window.confirm(`当前有 ${nonPointCount} 条线/面标注不会被导出，仅导出 ${pointAnnotations.length} 条点标注，是否继续？`);
+        if (!confirmed) return;
+      }
 
-    const templates = mapProject?.field_templates || [];
-    const baseHeaders = ['编号', '位置', '经度', '纬度'];
-    const customHeaders = templates.map((t) => t.name);
-    const allHeaders = [...baseHeaders, ...customHeaders];
+      const templates = mapProject?.field_templates || [];
+      const baseHeaders = ['编号', '位置', '经度', '纬度'];
+      const customHeaders = templates.map((t) => t.name);
+      const allHeaders = [...baseHeaders, ...customHeaders];
 
-    const rows = pointAnnotations.map((a) => {
-      const geom = a.geometry as { type: string; coordinates: [number, number] };
-      const getFieldValue = (fieldId: string) => {
-        const val = a.custom_fields.find((cf) => cf.fieldId === fieldId)?.value;
-        return val?.toString() || '';
-      };
-      const row: Record<string, string | number> = {
-        '编号': a.name,
-        '位置': a.description,
-        '经度': geom.coordinates[0],
-        '纬度': geom.coordinates[1],
-      };
-      templates.forEach((field) => {
-        row[field.name] = getFieldValue(field.id);
+      const rows = pointAnnotations.map((a) => {
+        const geom = a.geometry as { type: string; coordinates: [number, number] };
+        const getFieldValue = (fieldId: string) => {
+          const val = a.custom_fields.find((cf) => cf.fieldId === fieldId)?.value;
+          return val?.toString() || '';
+        };
+        const row: Record<string, string | number> = {
+          '编号': a.name,
+          '位置': a.description,
+          '经度': geom.coordinates[0],
+          '纬度': geom.coordinates[1],
+        };
+        templates.forEach((field) => {
+          row[field.name] = getFieldValue(field.id);
+        });
+        return row;
       });
-      return row;
-    });
 
-    const mapName = (mapProject?.name || '地图标注').replace(/[\\/:*?"<>|]/g, '_');
-    const dateSuffix = new Date().toLocaleDateString('zh-CN');
-    const fileName = `${mapName}_${dateSuffix}`;
+      const mapName = (mapProject?.name || '地图标注').replace(/[\\/:*?"<>|]/g, '_');
+      const dateSuffix = new Date().toLocaleDateString('zh-CN');
+      const fileName = `${mapName}_${dateSuffix}`;
 
-    const downloadBlob = (blob: Blob, name: string) => {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
-    };
+      const downloadBlob = (blob: Blob, name: string) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+      };
 
-    if (format === 'xlsx') {
-      const ws = XLSX.utils.json_to_sheet(rows, { header: allHeaders });
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, '标注数据');
-      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-      downloadBlob(
-        new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
-        `${fileName}.xlsx`
-      );
-    } else {
-      const csv = Papa.unparse(rows, { columns: allHeaders });
-      downloadBlob(
-        new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' }),
-        `${fileName}.csv`
-      );
+      if (format === 'xlsx') {
+        const ws = XLSX.utils.json_to_sheet(rows, { header: allHeaders });
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '标注数据');
+        const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array', compression: false });
+        downloadBlob(
+          new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+          `${fileName}.xlsx`
+        );
+      } else {
+        const csv = Papa.unparse(rows, { columns: allHeaders });
+        downloadBlob(
+          new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' }),
+          `${fileName}.csv`
+        );
+      }
+
+      showFeedback(`已开始下载 ${format.toUpperCase()} 文件`);
+    } catch (error) {
+      console.error('导出失败:', error);
+      alert(`导出失败：${error instanceof Error ? error.message : '未知错误'}，请查看控制台详情`);
     }
-  }, [annotations, mapProject]);
+  }, [annotations, mapProject, showFeedback]);
 
   const handleFieldTemplatesChange = useCallback(async (templates: FieldTemplate[]) => {
     if (!mapProject) return;
