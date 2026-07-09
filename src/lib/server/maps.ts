@@ -8,6 +8,15 @@ const DEFAULT_DB_CENTER: [number, number] = [120.1976, 35.9607];
 const DEFAULT_MAP_KEY = 'default-admin-map';
 export const MAX_BULK_IMPORT_COUNT = 500;
 
+export interface MapAuditEntry {
+  id: string;
+  map_id: string;
+  action: string;
+  previous_value: string;
+  next_value: string;
+  created_at: string;
+}
+
 function safeParseJson<T>(value: unknown, fallback: T): T {
   if (value == null || value === '') return fallback;
   try {
@@ -163,6 +172,17 @@ function rowToAnnotation(row: Record<string, unknown>): Annotation {
 
 function stringifyJson(value: unknown) {
   return JSON.stringify(value);
+}
+
+function rowToMapAudit(row: Record<string, unknown>): MapAuditEntry {
+  return {
+    id: String(row.id),
+    map_id: String(row.map_id),
+    action: String(row.action),
+    previous_value: String(row.previous_value || ''),
+    next_value: String(row.next_value || ''),
+    created_at: String(row.created_at),
+  };
 }
 
 function normalizeMapSettings(settings?: Partial<MapSettings> | null): MapSettings {
@@ -479,7 +499,7 @@ export async function createMap(name: string, description: string, fieldTemplate
 
 export async function updateMap(mapId: string, updates: { name?: string; description?: string; center?: [number, number]; zoom?: number; settings?: MapSettings }) {
   await ensureSchema();
-  await requireExistingMap(mapId);
+  const existingMap = await requireExistingMap(mapId);
   const now = new Date().toISOString();
   const sets: string[] = ['updated_at = ?'];
   const args: (string | number | null)[] = [now];
@@ -487,9 +507,35 @@ export async function updateMap(mapId: string, updates: { name?: string; descrip
   if (updates.description !== undefined) { sets.push('description = ?'); args.push(updates.description); }
   if (updates.center !== undefined) { sets.push('center = ?'); args.push(stringifyJson(updates.center)); }
   if (updates.zoom !== undefined) { sets.push('zoom = ?'); args.push(updates.zoom); }
-  if (updates.settings !== undefined) { sets.push('settings = ?'); args.push(stringifyJson(normalizeMapSettings(updates.settings))); }
+  const normalizedSettings = updates.settings !== undefined ? normalizeMapSettings(updates.settings) : undefined;
+  if (normalizedSettings !== undefined) { sets.push('settings = ?'); args.push(stringifyJson(normalizedSettings)); }
   args.push(mapId);
   await turso.execute({ sql: `UPDATE maps SET ${sets.join(', ')} WHERE id = ?`, args });
+
+  if (normalizedSettings !== undefined) {
+    await turso.execute({
+      sql: `INSERT INTO map_audits (id, map_id, action, previous_value, next_value, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+      args: [
+        crypto.randomUUID(),
+        mapId,
+        'settings_updated',
+        stringifyJson(existingMap.settings),
+        stringifyJson(normalizedSettings),
+        now,
+      ],
+    });
+  }
+}
+
+export async function listMapAudits(mapId: string, limit = 20) {
+  await ensureSchema();
+  await requireExistingMap(mapId);
+  const result = await turso.execute({
+    sql: `SELECT * FROM map_audits WHERE map_id = ? ORDER BY created_at DESC LIMIT ?`,
+    args: [mapId, limit],
+  });
+  return result.rows.map((row) => rowToMapAudit(row as Record<string, unknown>));
 }
 
 export async function deleteMap(mapId: string) {

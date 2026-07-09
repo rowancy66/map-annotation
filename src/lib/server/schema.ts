@@ -53,11 +53,20 @@ export function ensureSchema() {
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL
         )`,
+        `CREATE TABLE IF NOT EXISTS map_audits (
+          id TEXT PRIMARY KEY,
+          map_id TEXT NOT NULL,
+          action TEXT NOT NULL,
+          previous_value TEXT NOT NULL,
+          next_value TEXT NOT NULL,
+          created_at TEXT NOT NULL
+        )`,
         `CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id)`,
         `CREATE INDEX IF NOT EXISTS idx_maps_user_id ON maps(user_id)`,
         `CREATE INDEX IF NOT EXISTS idx_groups_map_id ON groups(map_id)`,
         `CREATE INDEX IF NOT EXISTS idx_annotations_map_id ON annotations(map_id)`,
         `CREATE INDEX IF NOT EXISTS idx_annotations_type ON annotations(type)`,
+        `CREATE INDEX IF NOT EXISTS idx_map_audits_map_id_created_at ON map_audits(map_id, created_at DESC)`,
       ], 'write');
 
       // 为已有 annotations 表迁移 group_id 列和索引
