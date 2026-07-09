@@ -296,20 +296,32 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
     const dateSuffix = new Date().toLocaleDateString('zh-CN');
     const fileName = `${mapName}_${dateSuffix}`;
 
+    const downloadBlob = (blob: Blob, name: string) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    };
+
     if (format === 'xlsx') {
       const ws = XLSX.utils.json_to_sheet(rows, { header: allHeaders });
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, '标注数据');
-      XLSX.writeFile(wb, `${fileName}.xlsx`);
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      downloadBlob(
+        new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+        `${fileName}.xlsx`
+      );
     } else {
       const csv = Papa.unparse(rows, { columns: allHeaders });
-      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${fileName}.csv`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      downloadBlob(
+        new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' }),
+        `${fileName}.csv`
+      );
     }
   }, [annotations, mapProject]);
 
@@ -829,9 +841,6 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                 <PanelLeft className="h-3.5 w-3.5" aria-hidden="true" />
                 <span>目录</span>
               </button>
-              <Link href="/admin" className="map-workbench-tool">
-                <span>地图管理</span>
-              </Link>
             </div>
 
             <div className="map-workbench-toolbar-group">
@@ -880,6 +889,70 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                 <Eye className="h-3.5 w-3.5" aria-hidden="true" />
                 <span>显示名称</span>
               </button>
+            </div>
+
+            <div className="map-workbench-toolbar-group">
+              <button
+                onClick={() => setDrawMode(drawMode === 'point' ? 'none' : 'point')}
+                className={`map-workbench-tool ${drawMode === 'point' ? 'is-primary' : ''}`}
+              >
+                <span>点标注</span>
+              </button>
+              <button
+                onClick={() => setDrawMode(drawMode === 'line' ? 'none' : 'line')}
+                className={`map-workbench-tool ${drawMode === 'line' ? 'is-primary' : ''}`}
+              >
+                <span>线标注</span>
+              </button>
+              <button
+                onClick={() => setDrawMode(drawMode === 'polygon' ? 'none' : 'polygon')}
+                className={`map-workbench-tool ${drawMode === 'polygon' ? 'is-primary' : ''}`}
+              >
+                <span>面标注</span>
+              </button>
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowToolMenu((prev) => !prev);
+                  }}
+                  className={`map-workbench-tool ${showToolMenu ? 'is-active' : ''}`}
+                >
+                  <Wrench className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>工具</span>
+                </button>
+                {showToolMenu && (
+                  <div className="map-workbench-menu" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => {
+                        setDrawMode(drawMode === 'measure' ? 'none' : 'measure');
+                        setShowToolMenu(false);
+                      }}
+                      className="map-workbench-menu-item"
+                    >
+                      测距
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDrawMode(drawMode === 'text' ? 'none' : 'text');
+                        setShowToolMenu(false);
+                      }}
+                      className="map-workbench-menu-item"
+                    >
+                      文字
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowHeatmap((prev) => !prev);
+                        setShowToolMenu(false);
+                      }}
+                      className="map-workbench-menu-item"
+                    >
+                      {showHeatmap ? '关闭热力' : '开启热力'}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="map-workbench-toolbar-group">
@@ -1050,73 +1123,6 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
               </div>
             </div>
           )}
-
-          <div className="absolute inset-x-3 top-3 z-[1005] flex flex-wrap items-start gap-2 pointer-events-none">
-            <div className="map-overlay-toolbar pointer-events-auto">
-              <button
-                onClick={() => setDrawMode(drawMode === 'point' ? 'none' : 'point')}
-                className={`map-overlay-tool ${drawMode === 'point' ? 'is-primary' : ''}`}
-              >
-                <span>点标注</span>
-              </button>
-              <button
-                onClick={() => setDrawMode(drawMode === 'line' ? 'none' : 'line')}
-                className={`map-overlay-tool ${drawMode === 'line' ? 'is-primary' : ''}`}
-              >
-                <span>线标注</span>
-              </button>
-              <button
-                onClick={() => setDrawMode(drawMode === 'polygon' ? 'none' : 'polygon')}
-                className={`map-overlay-tool ${drawMode === 'polygon' ? 'is-primary' : ''}`}
-              >
-                <span>面标注</span>
-              </button>
-            </div>
-
-            <div className="relative pointer-events-auto">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowToolMenu((prev) => !prev);
-                }}
-                className={`map-overlay-tool ${showToolMenu ? 'is-active' : ''}`}
-              >
-                <Wrench className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>工具</span>
-              </button>
-              {showToolMenu && (
-                <div className="map-workbench-menu" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    onClick={() => {
-                      setDrawMode(drawMode === 'measure' ? 'none' : 'measure');
-                      setShowToolMenu(false);
-                    }}
-                    className="map-workbench-menu-item"
-                  >
-                    测距
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDrawMode(drawMode === 'text' ? 'none' : 'text');
-                      setShowToolMenu(false);
-                    }}
-                    className="map-workbench-menu-item"
-                  >
-                    文字
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowHeatmap((prev) => !prev);
-                      setShowToolMenu(false);
-                    }}
-                    className="map-workbench-menu-item"
-                  >
-                    {showHeatmap ? '关闭热力' : '开启热力'}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
 
           <div className="absolute inset-0 border pointer-events-none z-[2]" style={{ borderColor: 'var(--border)' }} />
           <MapView
