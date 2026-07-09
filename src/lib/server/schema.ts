@@ -112,16 +112,16 @@ export function ensureSchema() {
 
       if (duplicateNamedPoints.rows[0]) {
         const row = duplicateNamedPoints.rows[0] as Record<string, unknown>;
-        throw new Error(
-          `检测到重复点标注名称，无法启用唯一约束：地图 ${String(row.map_id)} 下的名称“${String(row.name)}”重复 ${String(row.duplicate_count)} 次`
+        console.warn(
+          `跳过点标注名称唯一索引：地图 ${String(row.map_id)} 下的名称“${String(row.name)}”重复 ${String(row.duplicate_count)} 次`
+        );
+      } else {
+        await turso.execute(
+          `CREATE UNIQUE INDEX IF NOT EXISTS idx_annotations_unique_point_name
+           ON annotations(map_id, type, name)
+           WHERE type = 'point' AND name <> ''`
         );
       }
-
-      await turso.execute(
-        `CREATE UNIQUE INDEX IF NOT EXISTS idx_annotations_unique_point_name
-         ON annotations(map_id, type, name)
-         WHERE type = 'point' AND name <> ''`
-      );
       await turso.execute({
         sql: 'UPDATE maps SET center = ? WHERE center = ?',
         args: [NEW_DEFAULT_CENTER, OLD_DEFAULT_CENTER],
