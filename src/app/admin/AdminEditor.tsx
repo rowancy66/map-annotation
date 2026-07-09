@@ -39,8 +39,6 @@ import {
   Upload,
   PanelLeft,
 } from 'lucide-react';
-import * as XLSX from 'xlsx';
-import Papa from 'papaparse';
 import L from 'leaflet';
 import Link from 'next/link';
 
@@ -106,6 +104,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
   const [importOpen, setImportOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [showToolMenu, setShowToolMenu] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [batchDeleteConfirm, setBatchDeleteConfirm] = useState(false);
@@ -257,78 +256,60 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
     showFeedback('已打开智能标注导入面板');
   }, [showFeedback]);
 
-  const handleExport = useCallback((format: 'xlsx' | 'csv') => {
+  const handleExport = useCallback(async (format: 'xlsx' | 'csv') => {
+    if (!mapProject) return;
+
+    const pointAnnotations = annotations.filter((a) => a.type === 'point');
+    const nonPointCount = annotations.length - pointAnnotations.length;
+    if (pointAnnotations.length === 0) {
+      alert('没有可导出的点标注');
+      return;
+    }
+    if (nonPointCount > 0) {
+      const confirmed = window.confirm(`当前有 ${nonPointCount} 条线/面标注不会被导出，仅导出 ${pointAnnotations.length} 条点标注，是否继续？`);
+      if (!confirmed) return;
+    }
+
+    setExporting(true);
     try {
-      const pointAnnotations = annotations.filter((a) => a.type === 'point');
-      const nonPointCount = annotations.length - pointAnnotations.length;
-      if (pointAnnotations.length === 0) {
-        alert('没有可导出的点标注');
-        return;
-      }
-      if (nonPointCount > 0) {
-        const confirmed = window.confirm(`当前有 ${nonPointCount} 条线/面标注不会被导出，仅导出 ${pointAnnotations.length} 条点标注，是否继续？`);
-        if (!confirmed) return;
-      }
-
-      const templates = mapProject?.field_templates || [];
-      const baseHeaders = ['编号', '位置', '经度', '纬度'];
-      const customHeaders = templates.map((t) => t.name);
-      const allHeaders = [...baseHeaders, ...customHeaders];
-
-      const rows = pointAnnotations.map((a) => {
-        const geom = a.geometry as { type: string; coordinates: [number, number] };
-        const getFieldValue = (fieldId: string) => {
-          const val = a.custom_fields.find((cf) => cf.fieldId === fieldId)?.value;
-          return val?.toString() || '';
-        };
-        const row: Record<string, string | number> = {
-          '编号': a.name,
-          '位置': a.description,
-          '经度': geom.coordinates[0],
-          '纬度': geom.coordinates[1],
-        };
-        templates.forEach((field) => {
-          row[field.name] = getFieldValue(field.id);
-        });
-        return row;
+      const response = await fetch('/api/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mapId: mapProject.id, format }),
       });
 
-      const mapName = (mapProject?.name || '地图标注').replace(/[\\/:*?"<>|]/g, '_');
-      const dateSuffix = new Date().toLocaleDateString('zh-CN');
-      const fileName = `${mapName}_${dateSuffix}`;
-
-      const downloadBlob = (blob: Blob, name: string) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = name;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 10000);
-      };
-
-      if (format === 'xlsx') {
-        const ws = XLSX.utils.json_to_sheet(rows, { header: allHeaders });
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, '标注数据');
-        const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array', compression: false });
-        downloadBlob(
-          new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
-          `${fileName}.xlsx`
-        );
-      } else {
-        const csv = Papa.unparse(rows, { columns: allHeaders });
-        downloadBlob(
-          new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' }),
-          `${fileName}.csv`
-        );
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({ error: '导出失败' }));
+        alert(data.error || '导出失败');
+        return;
       }
 
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+
+      const disposition = response.headers.get('content-disposition');
+      let fileName = `地图标注_${new Date().toLocaleDateString('zh-CN')}.${format}`;
+      if (disposition) {
+        const match = disposition.match(/filename\*=UTF-8''(.+)/);
+        if (match?.[1]) {
+          fileName = decodeURIComponent(match[1]);
+        }
+      }
+      a.download = fileName;
+
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
       showFeedback(`已开始下载 ${format.toUpperCase()} 文件`);
     } catch (error) {
       console.error('导出失败:', error);
       alert(`导出失败：${error instanceof Error ? error.message : '未知错误'}，请查看控制台详情`);
+    } finally {
+      setExporting(false);
+      setShowExportMenu(false);
     }
   }, [annotations, mapProject, showFeedback]);
 
@@ -862,19 +843,21 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (exporting) return;
                     setShowExportMenu((prev) => !prev);
                   }}
+                  disabled={exporting}
                   className={`map-workbench-tool ${showExportMenu ? 'is-active' : ''}`}
                 >
                   <Download className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span>导出</span>
+                  <span>{exporting ? '导出中' : '导出'}</span>
                 </button>
-                {showExportMenu && (
+                {showExportMenu && !exporting && (
                   <div className="map-workbench-menu" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => { handleExport('xlsx'); setShowExportMenu(false); }} className="map-workbench-menu-item">
+                    <button onClick={() => { void handleExport('xlsx'); }} className="map-workbench-menu-item">
                       导出 Excel
                     </button>
-                    <button onClick={() => { handleExport('csv'); setShowExportMenu(false); }} className="map-workbench-menu-item">
+                    <button onClick={() => { void handleExport('csv'); }} className="map-workbench-menu-item">
                       导出 CSV
                     </button>
                   </div>
