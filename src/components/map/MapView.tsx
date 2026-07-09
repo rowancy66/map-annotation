@@ -76,6 +76,7 @@ interface MapViewProps {
   onAnnotationMoveToGroup?: (annotationId: string, groupId: string | null) => void;
   showHeatmap?: boolean;
   showNames?: boolean;
+  searchOverlayClassName?: string;
 }
 
 export default function MapView({
@@ -94,6 +95,7 @@ export default function MapView({
   onAnnotationMoveToGroup,
   showHeatmap = false,
   showNames = true,
+  searchOverlayClassName,
 }: MapViewProps) {
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -722,7 +724,7 @@ export default function MapView({
         }
       `}</style>
 
-      <div className="absolute left-3 top-3 z-[1000]">
+      <div className={`absolute top-3 z-[1000] ${searchOverlayClassName ?? 'left-3'}`}>
         <SearchBox map={mapInstance} />
       </div>
 

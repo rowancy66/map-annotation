@@ -292,6 +292,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
               selectedAnnotation={selectedAnnotation}
               editable={false}
               showNames={effectiveShowNames}
+              searchOverlayClassName="left-14 sm:left-16"
             />
 
             <div className="absolute right-5 top-24 z-[1000]">
@@ -307,7 +308,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
               )}
             </div>
 
-            <div className="absolute right-5 top-5 z-[999]">
+            <div className="absolute right-5 top-16 z-[999] sm:top-20">
               <MapFloatingPanel className="gap-2">
                 <button
                   onClick={() => setShowNames((prev) => !(prev ?? (mapProject?.settings.showNames !== false)))}
