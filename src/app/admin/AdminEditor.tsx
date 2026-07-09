@@ -292,18 +292,22 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
       return row;
     });
 
+    const mapName = (mapProject?.name || '地图标注').replace(/[\\/:*?"<>|]/g, '_');
+    const dateSuffix = new Date().toLocaleDateString('zh-CN');
+    const fileName = `${mapName}_${dateSuffix}`;
+
     if (format === 'xlsx') {
       const ws = XLSX.utils.json_to_sheet(rows, { header: allHeaders });
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, '土地出让数据');
-      XLSX.writeFile(wb, `土地出让数据_${new Date().toLocaleDateString('zh-CN')}.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, '标注数据');
+      XLSX.writeFile(wb, `${fileName}.xlsx`);
     } else {
       const csv = Papa.unparse(rows, { columns: allHeaders });
       const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `土地出让数据_${new Date().toLocaleDateString('zh-CN')}.csv`;
+      a.download = `${fileName}.csv`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 10000);
     }
@@ -860,6 +864,22 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                   </div>
                 )}
               </div>
+              <button
+                onClick={handleSmartAnnotation}
+                className="map-workbench-tool"
+              >
+                <WandSparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>智能标注</span>
+              </button>
+              <button
+                onClick={() => setShowNamesOverride((prev) => !(prev ?? (mapProject?.settings.showNames !== false)))}
+                className={`map-workbench-tool ${showNamesEnabled ? 'is-active' : ''}`}
+                title="切换名称显示"
+                aria-label="切换名称显示"
+              >
+                <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>显示名称</span>
+              </button>
             </div>
 
             <div className="map-workbench-toolbar-group">
@@ -1032,23 +1052,6 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
           )}
 
           <div className="absolute inset-x-3 top-3 z-[1005] flex flex-wrap items-start gap-2 pointer-events-none">
-            <div className="map-overlay-toolbar pointer-events-auto">
-              <button
-                onClick={() => setShowNamesOverride((prev) => !(prev ?? (mapProject?.settings.showNames !== false)))}
-                className={`map-overlay-tool ${showNamesEnabled ? 'is-active' : ''}`}
-              >
-                <Eye className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>显示名称</span>
-              </button>
-              <button
-                onClick={handleSmartAnnotation}
-                className="map-overlay-tool"
-              >
-                <WandSparkles className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>智能标注</span>
-              </button>
-            </div>
-
             <div className="map-overlay-toolbar pointer-events-auto">
               <button
                 onClick={() => setDrawMode(drawMode === 'point' ? 'none' : 'point')}
