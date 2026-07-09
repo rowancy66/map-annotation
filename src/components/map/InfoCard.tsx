@@ -62,14 +62,10 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
   }, [annotation]);
 
   useEffect(() => {
-    if (!readOnly) {
-      setDragOffset({ x: 0, y: 0 });
-    }
-  }, [annotation.id, readOnly]);
+    setDragOffset({ x: 0, y: 0 });
+  }, [annotation.id]);
 
   useEffect(() => {
-    if (!readOnly) return;
-
     const handlePointerMove = (event: MouseEvent) => {
       if (!dragStateRef.current) return;
       const nextX = dragStateRef.current.baseX + (event.clientX - dragStateRef.current.startX);
@@ -91,7 +87,6 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
   }, [readOnly]);
 
   const handleDragStart = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (!readOnly) return;
     const target = event.target as HTMLElement;
     if (target.closest('button, a, input, textarea, select, option')) return;
 
@@ -161,7 +156,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
         {/* 标题栏 */}
         <div
           className="flex items-center justify-between px-3 py-1.5 select-none"
-          style={{ borderBottom: `1px solid ${colors.border}`, cursor: readOnly ? 'move' : 'default' }}
+          style={{ borderBottom: `1px solid ${colors.border}`, cursor: 'move' }}
           onMouseDown={handleDragStart}>
           <div className="flex items-center gap-2 min-w-0">
             <span className="px-1.5 py-0.5 text-[8px] font-semibold leading-none tracking-[0.16em] uppercase"
