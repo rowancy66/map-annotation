@@ -19,6 +19,13 @@ type SessionResponse = {
   loggedIn: boolean;
 };
 
+type DefaultMapResponse = {
+  mapProject: {
+    id: string;
+    name: string;
+  } | null;
+};
+
 async function ensureLoggedIn(request: APIRequestContext) {
   const setupResponse = await request.post('/api/auth/setup', {
     data: {
@@ -126,6 +133,20 @@ test('前台地图控件不会互相遮挡', async ({ page }) => {
 
   expect(boxesOverlap(sidebarToggleBox!, mapSearchInputBox!)).toBeFalsy();
   expect(boxesOverlap(vectorButtonBox!, showNamesButtonBox!)).toBeFalsy();
+});
+
+test('后台默认地图会打开最近更新的现有地图，而不是新建空白默认图', async ({ page }) => {
+  const appRequest = page.context().request;
+
+  await ensureLoggedIn(appRequest);
+  await createMap(appRequest);
+  const latestMap = await createMap(appRequest);
+
+  const defaultMapResponse = await appRequest.get('/api/map');
+  expect(defaultMapResponse.ok(), await defaultMapResponse.text()).toBeTruthy();
+  const defaultMapData = await defaultMapResponse.json() as DefaultMapResponse;
+
+  expect(defaultMapData.mapProject?.id).toBe(latestMap.id);
 });
 
 test('setup 状态、登录登出与重复 setup 拒绝正常工作', async ({ page }) => {

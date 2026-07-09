@@ -203,6 +203,20 @@ function mergeImportedPointAnnotation(
 
 export async function getOrCreateDefaultMap() {
   await ensureSchema();
+
+  const latestExisting = await turso.execute({
+    sql: `SELECT *
+          FROM maps
+          WHERE user_id = ?
+          ORDER BY updated_at DESC
+          LIMIT 1`,
+    args: [ADMIN_USER_ID],
+  });
+
+  if (latestExisting.rows[0]) {
+    return rowToMapProject(latestExisting.rows[0] as Record<string, unknown>);
+  }
+
   const now = new Date().toISOString();
   const id = crypto.randomUUID();
   await turso.execute({
