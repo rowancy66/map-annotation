@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { apiGet, apiSend } from '@/lib/api';
 import { MapProject } from '@/lib/types';
-import { Edit3, FileText, Loader2, LogOut, MapPinned, Plus, Search, Share2, Trash2 } from 'lucide-react';
+import { AlertTriangle, Edit3, FileText, Loader2, LogOut, MapPinned, Plus, Search, Share2, Trash2 } from 'lucide-react';
 
 interface MapListItem extends MapProject {
   annotation_count: number;
@@ -219,6 +219,7 @@ export default function AdminDashboard() {
               {filteredMaps.map((map, idx) => (
                 <article
                   key={map.id}
+                  onClick={() => router.push('/admin?mapId=' + map.id)}
                   className="group bg-[var(--surface-primary)] border border-[var(--border-subtle)] rounded-[var(--radius-lg)] overflow-hidden cursor-pointer transition-colors hover:border-[var(--border-default)] hover:shadow-[var(--shadow-raised)]"
                 >
                   <div
