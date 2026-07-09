@@ -107,10 +107,14 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
   const [showSettings, setShowSettings] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showToolMenu, setShowToolMenu] = useState(false);
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [batchDeleteConfirm, setBatchDeleteConfirm] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [showNamesOverride, setShowNamesOverride] = useState<boolean | null>(null);
   const [savingMapSettings, setSavingMapSettings] = useState(false);
+  const [editingMapName, setEditingMapName] = useState(false);
+  const [mapNameDraft, setMapNameDraft] = useState('');
+  const [savingMapName, setSavingMapName] = useState(false);
   const listItemRefs = useRef(new Map<string, HTMLDivElement>());
 
   // 分组标注计数
@@ -386,17 +390,43 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
   }, [selectedAnnotation, panelMode, filteredByGroup]);
 
   useEffect(() => {
-    if (!showExportMenu && !showToolMenu) return;
+    if (!showExportMenu && !showToolMenu && !showAccountMenu) return;
 
-    const handleClose = () => setShowExportMenu(false);
-    const handleToolClose = () => setShowToolMenu(false);
+    const handleClose = () => {
+      setShowExportMenu(false);
+      setShowToolMenu(false);
+      setShowAccountMenu(false);
+    };
     window.addEventListener('click', handleClose);
-    window.addEventListener('click', handleToolClose);
     return () => {
       window.removeEventListener('click', handleClose);
-      window.removeEventListener('click', handleToolClose);
     };
-  }, [showExportMenu, showToolMenu]);
+  }, [showAccountMenu, showExportMenu, showToolMenu]);
+
+  const handleSaveMapName = useCallback(async () => {
+    if (!mapProject || savingMapName) return;
+
+    const nextName = mapNameDraft.trim();
+    if (!nextName) {
+      alert('请输入地图名称');
+      return;
+    }
+
+    setSavingMapName(true);
+    const previousProject = mapProject;
+    setMapProject({ ...mapProject, name: nextName });
+
+    try {
+      await apiSend(`/api/maps/${mapProject.id}`, 'PUT', { name: nextName });
+      setEditingMapName(false);
+      showFeedback('地图名称已更新');
+    } catch (error) {
+      setMapProject(previousProject);
+      alert(`更新地图名称失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    } finally {
+      setSavingMapName(false);
+    }
+  }, [mapNameDraft, mapProject, savingMapName, setMapProject, showFeedback]);
 
   if (loading) {
     return (
@@ -694,9 +724,46 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                 </div>
                 <div className="min-w-0">
                   <div className="map-workbench-brand-eyebrow">KANVON MAP</div>
-                  <h1 className="map-workbench-brand-title">
-                    {mapProject?.name || '地图标注平台'}
-                  </h1>
+                  <div className="map-workbench-brand-title-row">
+                    {editingMapName ? (
+                      <>
+                        <label className="sr-only" htmlFor="map-name-input">地图名称</label>
+                        <input
+                          id="map-name-input"
+                          className="map-workbench-brand-input"
+                          value={mapNameDraft}
+                          onChange={(e) => setMapNameDraft(e.target.value)}
+                          aria-label="地图名称"
+                          maxLength={80}
+                        />
+                        <button
+                          type="button"
+                          className="map-workbench-inline-button"
+                          onClick={() => void handleSaveMapName()}
+                          disabled={savingMapName}
+                        >
+                          {savingMapName ? '保存中' : '保存地图名称'}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <h1 className="map-workbench-brand-title">
+                          {mapProject?.name || '地图标注平台'}
+                        </h1>
+                        <button
+                          type="button"
+                          className="map-workbench-inline-button"
+                          onClick={() => {
+                            setMapNameDraft(mapProject?.name || '');
+                            setEditingMapName(true);
+                          }}
+                          aria-label="编辑地图名称"
+                        >
+                          编辑
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -715,10 +782,35 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             </div>
 
             <div className="map-workbench-account">
-              <button className="map-workbench-account-button" type="button" aria-label="账户">
-                <User className="h-4 w-4" aria-hidden="true" />
-                <span>账户</span>
-              </button>
+              <div className="relative">
+                <button
+                  className={`map-workbench-account-button ${showAccountMenu ? 'is-active' : ''}`}
+                  type="button"
+                  aria-label="账户"
+                  aria-expanded={showAccountMenu}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowAccountMenu((prev) => !prev);
+                  }}
+                >
+                  <User className="h-4 w-4" aria-hidden="true" />
+                  <span>账户</span>
+                </button>
+                {showAccountMenu && (
+                  <div className="map-workbench-menu" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      className="map-workbench-menu-item"
+                      onClick={() => {
+                        setShowAccountMenu(false);
+                        void logout();
+                      }}
+                    >
+                      退出登录
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
