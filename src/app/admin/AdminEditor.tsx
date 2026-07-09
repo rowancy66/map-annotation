@@ -961,8 +961,17 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
 
         <div className="flex-1 relative min-w-0 bg-white">
           {showSettings && mapProject && (
-            <div className="absolute left-4 top-4 z-[1100] w-[320px]">
-              <div className="workbench-panel workbench-hard-edge p-4 space-y-4" style={{ boxShadow: 'var(--shadow-floating)' }}>
+            <div className="absolute left-4 top-[120px] z-[1100] w-[320px]">
+              <div className="relative workbench-panel workbench-hard-edge p-4 space-y-4" style={{ boxShadow: 'var(--shadow-floating)' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowSettings(false)}
+                  className="absolute top-2 right-2 inline-flex items-center justify-center w-6 h-6 text-xs rounded-[var(--radius-sm)]"
+                  style={{ color: 'var(--muted)' }}
+                  aria-label="关闭设置"
+                >
+                  ✕
+                </button>
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>访问设置</h3>
@@ -1123,9 +1132,10 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             groups={groups}
             showHeatmap={showHeatmap}
             showNames={showNamesEnabled}
+            searchOverlayClassName="left-3 top-16"
           />
 
-          <div className="absolute right-3 top-3 z-[1000]">
+          <div className="absolute right-[170px] top-3 z-[1000]">
             <div className="map-side-rail">
               <button
                 onClick={() => setShowNamesOverride((prev) => !(prev ?? (mapProject?.settings.showNames !== false)))}
