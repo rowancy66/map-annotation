@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MapMark · Notion 风格原型预览</title>
+  <!--
+    Design System: MapMark / Notion Direction
+    Source: /Users/cy/Documents/cola输出文件/map/map-annotation/design-tokens.md
+  -->
+  <style>
+    :root {
+      /* Background */
+      --bg-page: #ffffff;
+      --bg-sidebar: #f7f6f3;
+      --bg-surface: #ffffff;
+      --bg-subtle: #f7f6f3;
+      --bg-hover: #efefec;
+      --bg-active: #e3e3e0;
+      --bg-selected: #e3f5fa;
+      --bg-overlay: rgba(0, 0, 0, 0.35);
+
+      /* Surface */
+      --surface-primary: #ffffff;
+      --surface-secondary: #f7f6f3;
+      --surface-tertiary: #f1f1ef;
+      --surface-pressed: #e3e3e0;
+
+      /* Text */
+      --text-primary: #37352f;
+      --text-secondary: #6f6e69;
+      --text-tertiary: #9e9d99;
+      --text-inverse: #ffffff;
+      --text-link: #2eaadc;
+
+      /* Border */
+      --border-subtle: #e9e9e7;
+      --border-default: #d3d1cb;
+      --border-strong: #b7b5ae;
+      --border-divider: #e9e9e7;
+
+      /* Primary & Accent */
+      --primary-default: #0a4b3f;
+      --primary-hover: #073a31;
+      --primary-pressed: #052c25;
+      --accent-default: #2eaadc;
+      --accent-hover: #2496c4;
+      --accent-subtle: #e3f5fa;
+
+      /* Semantic */
+      --success-text: #0f7b6c;
+      --success-bg: #e6f4f1;
+      --warning-text: #d97706;
+      --warning-bg: #fef3c7;
+      --danger-text: #dc2626;
+      --danger-bg: #fee2e2;
+      --danger-hover: #b91c1c;
+      --info-text: #2eaadc;
+      --info-bg: #e3f5fa;
+
+      /* Typography */
+      --font-sans: "Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", "Source Han Sans SC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: "SFMono-Regular", "Fira Code", "JetBrains Mono", "Noto Sans SC", "Sarasa Mono SC", monospace;
+
+      /* Spacing (base 4px) */
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --space-10: 40px;
+      --space-12: 48px;
+      --space-16: 64px;
+
+      /* Radius */
+      --radius-xs: 2px;
+      --radius-sm: 3px;
+      --radius-md: 4px;
+      --radius-lg: 6px;
+      --radius-xl: 8px;
+
+      /* Shadows */
+      --shadow-raised: 0 1px 3px rgba(55, 53, 47, 0.06);
+      --shadow-floating: 0 4px 12px rgba(55, 53, 47, 0.08);
+      --shadow-overlay: 0 8px 24px rgba(55, 53, 47, 0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-primary);
+      background: var(--bg-page);
+      padding-top: 48px; /* prototype switcher */
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Typography scale */
+    .type-display { font-size: 28px; line-height: 1.25; font-weight: 700; }
+    .type-h1 { font-size: 24px; line-height: 1.35; font-weight: 700; }
+    .type-h2 { font-size: 20px; line-height: 1.35; font-weight: 600; }
+    .type-h3 { font-size: 16px; line-height: 1.4; font-weight: 600; }
+    .type-body { font-size: 14px; line-height: 1.6; font-weight: 400; }
+    .type-body-sm { font-size: 13px; line-height: 1.5; font-weight: 400; }
+    .type-label { font-size: 12px; line-height: 1.4; font-weight: 500; }
+    .type-caption { font-size: 11px; line-height: 1.4; font-weight: 500; }
+    .type-mono { font-family: var(--font-mono); }
+
+    /* Prototype switcher */
+    .prototype-switcher {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 48px;
+      background: var(--surface-primary);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--space-4);
+      z-index: 500;
+      box-shadow: var(--shadow-raised);
+    }
+    .prototype-switcher .title {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .prototype-switcher .switcher-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-1);
+      height: 32px;
+      padding: 6px 12px;
+      border-radius: var(--radius-md);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn:focus-visible { outline: 1.5px solid var(--accent-default); outline-offset: 1px; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-default { background: var(--surface-secondary); border-color: var(--border-subtle); }
+    .btn-default:hover { background: var(--bg-hover); }
+    .btn-default:active { background: var(--bg-active); }
+
+    .btn-primary { background: var(--primary-default); color: var(--text-inverse); border-color: transparent; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-primary:active { background: var(--primary-pressed); }
+
+    .btn-ghost { background: transparent; color: var(--text-primary); }
+    .btn-ghost:hover { background: var(--bg-hover); }
+
+    .btn-danger { color: var(--danger-text); }
+    .btn-danger:hover { background: var(--danger-bg); }
+
+    .btn-icon { width: 28px; height: 28px; padding: 0; color: var(--text-secondary); }
+    .btn-icon:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .btn-icon-danger:hover { color: var(--danger-text); background: var(--danger-bg); }
+
+    .btn-active { background: var(--bg-active); color: var(--text-primary); }
+
+    /* Inputs */
+    .input {
+      height: 32px;
+      padding: 6px 10px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      background: var(--surface-primary);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      width: 100%;
+    }
+    .input::placeholder { color: var(--text-tertiary); }
+    .input:focus { border-color: var(--border-strong); box-shadow: 0 0 0 1.5px var(--accent-default); }
+    textarea.input { height: auto; min-height: 64px; resize: vertical; }
+
+    .input-with-icon { position: relative; }
+    .input-with-icon svg {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-tertiary);
+      pointer-events: none;
+    }
+    .input-with-icon .input { padding-left: 32px; }
+
+    /* Cards */
+    .card {
+      background: var(--surface-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .card-hover:hover { border-color: var(--border-default); background: var(--bg-hover); }
+
+    /* Tags */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--surface-tertiary);
+      color: var(--text-primary);
+    }
+    .tag-blue { background: var(--accent-subtle); color: var(--accent-default); }
+    .tag-green { background: var(--success-bg); color: var(--success-text); }
+    .tag-orange { background: var(--warning-bg); color: var(--warning-text); }
+    .tag-red { background: var(--danger-bg); color: var(--danger-text); }
+    .tag-gray { background: var(--surface-tertiary); color: var(--text-primary); }
+
+    /* Avatar */
+    .avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--surface-tertiary);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .avatar:hover { background: var(--bg-active); }
+
+    /* Icon utility */
+    .icon { flex-shrink: 0; }
+    .icon-16 { width: 16px; height: 16px; }
+    .icon-18 { width: 18px; height: 18px; }
+    .icon-20 { width: 20px; height: 20px; }
+
+    /* View containers */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ================= Admin Dashboard ================= */
+    .admin-view { min-height: calc(100vh - 48px); background: var(--bg-page); }
+    .admin-header {
+      height: 56px;
+      background: var(--surface-primary);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--space-5);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .admin-header-left {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+    .admin-logo {
+      width: 28px;
+      height: 28px;
+      background: var(--primary-default);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-inverse);
+    }
+    .admin-title { font-size: 16px; font-weight: 600; }
+    .admin-header-center {
+      flex: 1;
+      max-width: 360px;
+      margin: 0 var(--space-6);
+    }
+    .admin-header-right { display: flex; align-items: center; gap: var(--space-2); }
+
+    .admin-main { padding: var(--space-6); max-width: 1280px; margin: 0 auto; }
+    .admin-utility {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: var(--space-4);
+      margin-bottom: var(--space-5);
+    }
+    .stats-row { display: flex; align-items: stretch; gap: var(--space-3); }
+    .stat-card {
+      width: 160px;
+      padding: var(--space-3) var(--space-4);
+      background: var(--surface-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+    }
+    .stat-card .label { color: var(--text-secondary); font-size: 12px; font-weight: 500; margin-bottom: var(--space-1); }
+    .stat-card .value { font-size: 24px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
+
+    .map-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
+    @media (max-width: 1024px) { .map-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 640px) { .map-grid { grid-template-columns: 1fr; } }
+
+    .map-card { cursor: pointer; position: relative; }
+    .map-card:hover { border-color: var(--border-default); box-shadow: var(--shadow-raised); }
+    .map-card-thumb {
+      height: 168px;
+      background: var(--surface-tertiary);
+      position: relative;
+      overflow: hidden;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .map-card-thumb svg { width: 100%; height: 100%; display: block; }
+    .map-card-badge {
+      position: absolute;
+      top: var(--space-2);
+      right: var(--space-2);
+      background: rgba(55, 53, 47, 0.72);
+      color: var(--text-inverse);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+    }
+    .map-card-actions {
+      position: absolute;
+      top: var(--space-2);
+      left: var(--space-2);
+      display: flex;
+      gap: var(--space-1);
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    .map-card:hover .map-card-actions { opacity: 1; }
+    .map-card-body { padding: var(--space-3); }
+    .map-card-title { font-size: 15px; font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .map-card-desc {
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: var(--space-2);
+      min-height: 39px;
+    }
+    .map-card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-tertiary);
+      font-size: 12px;
+    }
+    .map-card-meta-left { display: flex; align-items: center; gap: var(--space-3); }
+    .map-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-2) var(--space-3);
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-subtle);
+    }
+    .map-card-actions-row { display: flex; gap: var(--space-1); }
+
+    /* Dialogs */
+    .dialog-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-overlay);
+      backdrop-filter: blur(2px);
+      z-index: 300;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-4);
+    }
+    .dialog-overlay.open { display: flex; }
+    .dialog {
+      background: var(--surface-primary);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-overlay);
+      width: 100%;
+      max-width: 480px;
+      overflow: hidden;
+    }
+    .dialog-narrow { max-width: 360px; }
+    .dialog-header {
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .dialog-title { font-size: 18px; font-weight: 600; }
+    .dialog-body { padding: var(--space-4) var(--space-5); }
+    .dialog-footer {
+      padding: var(--space-3) var(--space-5);
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--space-2);
+    }
+    .form-field { margin-bottom: var(--space-3); }
+    .form-label { display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: var(--space-1); }
+    .form-required { color: var(--danger-text); }
+    .dialog-alert {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      margin-bottom: var(--space-2);
+    }
+    .dialog-alert-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      background: var(--danger-bg);
+      color: var(--danger-text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .dialog-alert-text h3 { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+    .dialog-alert-text p { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+
+    /* ================= Editor ================= */
+    .editor-view { height: calc(100vh - 48px); flex-direction: column; }
+    .editor-view.active { display: flex; }
+
+    .app-bar {
+      height: 44px;
+      background: var(--surface-primary);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--space-3);
+      flex-shrink: 0;
+      z-index: 100;
+    }
+    .app-bar-left, .app-bar-right { display: flex; align-items: center; gap: var(--space-2); }
+    .app-bar-center { display: flex; align-items: center; gap: var(--space-1); }
+    .app-title { font-size: 14px; font-weight: 600; }
+    .app-title-tag {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 1px 7px;
+      border-radius: var(--radius-sm);
+      background: var(--accent-subtle);
+      color: var(--accent-default);
+      margin-left: var(--space-2);
+    }
+    .toolbar-group { display: flex; align-items: center; gap: var(--space-1); }
+    .toolbar-divider {
+      width: 1px;
+      height: 20px;
+      background: var(--border-subtle);
+      margin: 0 var(--space-1);
+    }
+    .tool-btn { padding: 6px 10px; font-size: 13px; }
+
+    .editor-body { display: flex; flex: 1; overflow: hidden; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .sidebar-tabs {
+      display: flex;
+      padding: 0 var(--space-3);
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-sidebar);
+    }
+    .sidebar-tab {
+      flex: 1;
+      padding: var(--space-2) 0;
+      margin-bottom: -1px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+    .sidebar-tab:hover { color: var(--text-primary); }
+    .sidebar-tab.active { color: var(--text-primary); border-bottom-color: var(--accent-default); }
+    .sidebar-panel { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+    .sidebar-panel.active { display: flex; }
+    .sidebar-section-header {
+      padding: var(--space-2) var(--space-3);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .sidebar-section-title { font-size: 13px; font-weight: 600; }
+    .sidebar-search { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--border-subtle); }
+    .annotation-list { flex: 1; overflow-y: auto; padding: var(--space-1) 0; }
+    .annotation-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 8px var(--space-3);
+      margin: 0 var(--space-2);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      border-left: 2px solid transparent;
+      transition: background 0.12s ease;
+    }
+    .annotation-item:hover { background: var(--bg-hover); }
+    .annotation-item.active { background: var(--bg-selected); border-left-color: var(--accent-default); }
+    .annotation-item .marker-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .annotation-item .info { flex: 1; min-width: 0; }
+    .annotation-item .name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .annotation-item .desc { font-size: 11px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .group-list { padding: var(--space-2) var(--space-3); }
+    .group-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 8px var(--space-2);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+    }
+    .group-item:hover { background: var(--bg-hover); }
+    .group-color { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+    .group-name { flex: 1; font-size: 13px; }
+    .group-count { font-size: 12px; color: var(--text-tertiary); font-family: var(--font-mono); }
+
+    /* Map canvas */
+    .map-canvas {
+      flex: 1;
+      position: relative;
+      background: var(--surface-tertiary);
+      overflow: hidden;
+    }
+    .map-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .map-marker {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      transform: translate(-50%, -100%);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+      z-index: 10;
+    }
+    .map-marker:hover { transform: translate(-50%, -100%) scale(1.15); z-index: 11; }
+    .map-marker svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 1px 2px rgba(55,53,47,0.25)); }
+    .map-marker-label {
+      position: absolute;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-primary);
+      background: rgba(255,255,255,0.9);
+      padding: 1px 5px;
+      border-radius: var(--radius-xs);
+      border: 1px solid var(--border-subtle);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    /* Map controls */
+    .map-controls {
+      position: absolute;
+      right: var(--space-3);
+      bottom: var(--space-3);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-1);
+      z-index: 20;
+    }
+    .map-control-btn {
+      width: 32px;
+      height: 32px;
+      background: var(--surface-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--shadow-raised);
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .map-control-btn:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border-default); }
+
+    .layer-switch {
+      position: absolute;
+      top: var(--space-3);
+      right: var(--space-3);
+      display: flex;
+      background: var(--surface-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      z-index: 20;
+      box-shadow: var(--shadow-raised);
+    }
+    .layer-btn {
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .layer-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+    .layer-btn.active { background: var(--primary-default); color: var(--text-inverse); }
+
+    .measure-banner {
+      position: absolute;
+      top: var(--space-3);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-floating);
+      padding: 8px var(--space-4);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      z-index: 20;
+      font-size: 13px;
+    }
+    .measure-banner .dist { font-weight: 600; color: var(--accent-default); font-family: var(--font-mono); font-size: 14px; }
+    .measure-banner .hint { color: var(--text-secondary); }
+
+    .info-card {
+      position: absolute;
+      top: calc(var(--space-3) + 44px);
+      right: var(--space-3);
+      width: 280px;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-raised);
+      z-index: 20;
+      overflow: hidden;
+    }
+    .info-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-3);
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-subtle);
+    }
+    .info-card-title { display: flex; align-items: center; gap: var(--space-2); }
+    .info-card-close {
+      width: 24px; height: 24px; border-radius: var(--radius-md); border: none; background: transparent;
+      color: var(--text-tertiary); display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .info-card-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .info-card-body { padding: var(--space-3); }
+    .info-field { margin-bottom: var(--space-3); }
+    .info-field:last-child { margin-bottom: 0; }
+    .info-field-label { font-size: 11px; font-weight: 500; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 2px; }
+    .info-field-value { font-size: 13px; color: var(--text-primary); }
+    .info-field-value.muted { color: var(--text-secondary); }
+    .info-coord { font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); background: var(--bg-subtle); padding: 6px 8px; border-radius: var(--radius-md); margin-top: 2px; }
+    .info-tags { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-1); }
+    .info-card-footer {
+      display: flex;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-subtle);
+    }
+    .info-card-footer .btn { flex: 1; }
+
+    /* Status bar */
+    .status-bar {
+      height: 28px;
+      background: var(--surface-secondary);
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--space-3);
+      flex-shrink: 0;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .status-left, .status-right { display: flex; align-items: center; gap: var(--space-4); }
+    .status-item { display: flex; align-items: center; gap: var(--space-1); }
+    .toggle { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; }
+    .toggle-track {
+      width: 30px;
+      height: 16px;
+      border-radius: 999px;
+      background: var(--border-default);
+      position: relative;
+      transition: background 0.15s ease;
+    }
+    .toggle-track.on { background: var(--primary-default); }
+    .toggle-knob {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--text-inverse);
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      transition: left 0.15s ease;
+      box-shadow: 0 1px 2px rgba(55,53,47,0.15);
+    }
+    .toggle-track.on .toggle-knob { left: 16px; }
+    .status-coord { font-family: var(--font-mono); color: var(--text-tertiary); }
+
+    /* Responsive utility */
+    @media (max-width: 1024px) {
+      .sidebar { width: 56px; }
+      .sidebar-tabs, .sidebar-section-header, .sidebar-search, .annotation-list, .group-list { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hidden SVG icon library -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute; width:0; height:0; overflow:hidden;" aria-hidden="true">
+    <defs>
+      <symbol id="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+      </symbol>
+      <symbol id="icon-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14M5 12h14"/>
+      </symbol>
+      <symbol id="icon-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10 17l-5-5 5-5M19 12H5"/>
+      </symbol>
+      <symbol id="icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
+      </symbol>
+      <symbol id="icon-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 16.5-12.5z"/>
+      </symbol>
+      <symbol id="icon-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+        <path d="M8.5 13.5l7-5M8.5 10.5l7 5"/>
+      </symbol>
+      <symbol id="icon-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+      </symbol>
+      <symbol id="icon-map-pin" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+        <path d="M12 2C9 2 6.5 4.2 6.5 7.2c0 1.8 1 3.4 2.5 4.6V20l3 3 3-3v-8.2c1.5-1.2 2.5-2.8 2.5-4.6C17.5 4.2 15 2 12 2z"/>
+      </symbol>
+      <symbol id="icon-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </symbol>
+      <symbol id="icon-hand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 11V6a2 2 0 0 0-4 0v5M14 10V4a2 2 0 0 0-4 0v6M10 10.5V6a2 2 0 0 0-4 0v9.5a7 7 0 0 0 14 0v-3"/>
+      </symbol>
+      <symbol id="icon-point" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+        <circle cx="12" cy="12" r="5"/>
+      </symbol>
+      <symbol id="icon-line" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 19l5-10 6 4 3-7"/>
+      </symbol>
+      <symbol id="icon-polygon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2l9 5v10l-9 5-9-5V7l9-5z"/>
+      </symbol>
+      <symbol id="icon-ruler" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 7h18M3 7v10M21 7v10M7 7v4M11 7v6M15 7v2"/>
+      </symbol>
+      <symbol id="icon-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 7V5h16v2M12 5v14M9 19h6"/>
+      </symbol>
+      <symbol id="icon-import" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 15V3m0 0l-4 4m4-4l4 4M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      </symbol>
+      <symbol id="icon-export" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3v12m0 0l-4-4m4 4l4-4M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      </symbol>
+      <symbol id="icon-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+      </symbol>
+      <symbol id="icon-zoom-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5M8 11h6M11 8v6"/>
+      </symbol>
+      <symbol id="icon-zoom-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5M8 11h6"/>
+      </symbol>
+      <symbol id="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 6L6 18M6 6l12 12"/>
+      </symbol>
+      <symbol id="icon-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.3 3.9L1.8 18A2 2 0 0 0 3.5 21h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v5M12 17h.01"/>
+      </symbol>
+      <symbol id="icon-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 9l6 6 6-6"/>
+      </symbol>
+      <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5v.3a2 2 0 1 1-4 0v-.3a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1h-.3a2 2 0 1 1 0-4h.3a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3h.1a1.6 1.6 0 0 0 1-1.5v-.3a2 2 0 1 1 4 0v.3a1.6 1.6 0 0 0 1 1.5h.1a1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8v.1a1.6 1.6 0 0 0 1.5 1h.3a2 2 0 1 1 0 4h-.3a1.6 1.6 0 0 0-1.5 1z"/>
+      </symbol>
+      <symbol id="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12h18M3 6h18M3 18h18"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <!-- Prototype switcher -->
+  <div class="prototype-switcher">
+    <div class="title">
+      <svg class="icon icon-18" aria-hidden="true"><use href="#icon-map-pin"/></svg>
+      MapMark 原型预览
+    </div>
+    <div class="switcher-actions">
+      <button id="switch-admin" class="btn btn-default" onclick="showView('admin')">Admin 地图列表</button>
+      <button id="switch-editor" class="btn btn-ghost" onclick="showView('editor')">地图编辑器</button>
+    </div>
+  </div>
+
+  <!-- ================= Admin Dashboard ================= -->
+  <div id="admin-view" class="view admin-view active">
+    <header class="admin-header">
+      <div class="admin-header-left">
+        <div class="admin-logo">
+          <svg class="icon icon-16" aria-hidden="true"><use href="#icon-map-pin"/></svg>
+        </div>
+        <div class="admin-title">MapMark 控制台</div>
+      </div>
+      <div class="admin-header-center">
+        <div class="input-with-icon">
+          <svg class="icon icon-16" aria-hidden="true"><use href="#icon-search"/></svg>
+          <input type="text" class="input" placeholder="搜索地图名称…">
+        </div>
+      </div>
+      <div class="admin-header-right">
+        <button class="btn btn-primary" onclick="openDialog('create-dialog')">
+          <svg class="icon icon-16" aria-hidden="true"><use href="#icon-plus"/></svg>
+          新建地图
+        </button>
+        <div class="avatar" title="当前用户">BM</div>
+        <button class="btn btn-ghost" title="退出登录">
+          <svg class="icon icon-16" aria-hidden="true"><use href="#icon-logout"/></svg>
+          退出
+        </button>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <section class="admin-utility">
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="label">地图总数</div>
+            <div class="value">12</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">标注总数</div>
+            <div class="value">486</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">当前结果</div>
+            <div class="value">3</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="map-grid">
+        <!-- Card 1 -->
+        <article class="card map-card" onclick="showView('editor')">
+          <div class="map-card-thumb">
+            <svg viewBox="0 0 400 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="400" height="200" fill="#f1f1ef"/>
+              <path d="M0 60 Q100 40 200 70 T400 55" stroke="#e9e9e7" stroke-width="18" fill="none"/>
+              <path d="M140 0 V200" stroke="#e9e9e7" stroke-width="12" fill="none"/>
+              <path d="M260 0 V200" stroke="#e9e9e7" stroke-width="10" fill="none"/>
+              <path d="M0 140 H400" stroke="#e9e9e7" stroke-width="8" fill="none"/>
+              <rect x="40" y="20" width="80" height="60" rx="3" fill="#e3f5fa"/>
+              <rect x="200" y="100" width="120" height="80" rx="3" fill="#e6f4f1"/>
+              <rect x="40" y="120" width="70" height="60" rx="3" fill="#fbf3db"/>
+            </svg>
+            <div class="map-card-actions">
+              <button class="btn btn-icon btn-icon-danger" title="删除" onclick="event.stopPropagation(); openDialog('delete-dialog')">
+                <svg class="icon icon-16" aria-hidden="true"><use href="#icon-trash"/></svg>
+              </button>
+            </div>
+            <div class="map-card-badge">24 标注</div>
+          </div>
+          <div class="map-card-body">
+            <div class="map-card-title">李沧、西海岸新区土地</div>
+            <div class="map-card-desc">2025 年青岛第二批住宅用地出让数据，含容积率、成交总价、竞得人等信息。</div>
+            <div class="map-card-meta">
+              <div class="map-card-meta-left">
+                <span>24 条标注</span>
+                <span>2026-06-24 更新</span>
+              </div>
+            </div>
+          </div>
+          <div class="map-card-footer">
+            <div class="map-card-meta-left" style="color:var(--text-tertiary)">
+              <span class="tag tag-blue">住宅</span>
+              <span class="tag tag-gray">点/面</span>
+            </div>
+            <div class="map-card-actions-row">
+              <button class="btn btn-icon" title="编辑" onclick="event.stopPropagation(); showView('editor')">
+                <svg class="icon icon-16" aria-hidden="true"><use href="#icon-edit"/></svg>
+              </button>
+              <button class="btn btn-icon" title="分享" onclick="event.stopPropagation()">
+                <svg class="icon icon-16" aria-hidden="true"><use href="#icon-share"/></svg>
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Card 2 -->
+        <article class="card map-card" onclick="showView('editor')">
+          <div class="map-card-thumb">
+            <svg viewBox="0 0 400 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="400" height="200" fill="#f1f1ef"/>
+              <path d="M0 90 Q120 120 240 85 T400 95" stroke="#e9e9e7" stroke-width="16" fill="none"/>
+              <path d="M80 0 V200" stroke="#e9e9e7" stroke-width="10" fill="none"/>
+              <path d="M320 0 V200" stroke="#e9e9e7" stroke-width="12" fill="none"/>
+              <path d="M0 160 H400" stroke="#e9e9e7" stroke-width="8" fill="none"/>
+              <rect x="110" y="30" width="90" height="70" rx="3" fill="#e6f4f1"/>
+              <rect x="250" y="120" width="100" height="60" rx="3" fill="#faeadd"/>
+              <rect x="20" y="120" width="70" height="60" rx="3" fill="#e3f5fa"/>
+            </svg>
+            <div class="map-card-actions">
+              <button class="btn btn-icon btn-icon-danger" title="删除" onclick="event.stopPropagation(); openDialog('delete-dialog')">
+                <svg class="icon icon-16" aria-hidden="true"><use href="#icon-trash"/></svg>
+              </button>
+            </div>
+            <div class="map-card-badge">8 标注</div>
+          </div>
+          <div class="map-card-body">
+            <div class="map-card-title">青岛主城区商业用地</div>
+            <div class="map-card-desc">市南、市北、崂山核心商圈地块信息汇总。</div>
+            <div class="map-card-meta">
+              <div class="map-card-meta-left">
+                <span>8 条标注</span>
+                <span>2026-06-20 更新</span>
+              </div>
+            </div>
+          </div>
+          <div class="map-card-footer">
+            <div class="map-card-meta-left" style="color:var(--text-tertiary)">
+              <span class="tag tag-orange">商业</span>
+              <span class="tag tag-gray">点</span>
+            </div>
+            <div class="map-card-actions-row">
+              <button class="btn btn-icon" title="编辑" onclick="event.stopPropagation(); showView('editor')">
+                <svg class="icon icon-16" aria-hidden="true"><use href="#icon-edit"/></svg>
+              </button>
+              <button class="btn btn-icon" title="分享" onclick="event.stopPropagation()">
+                <svg class="icon icon-16" aria-hidden="true"><use href="#icon-share"/></svg>
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Card 3 -->
+        <article class="card map-card" onclick="showView('editor')">
+          <div class="map-card-thumb">
+            <svg viewBox="0 0 400 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="400" height="200" fill="#f1f1ef"/>
+              <path d="M0 120 Q150 90 300 130 T400 110" stroke="#e9e9e7" stroke-width="18" fill="none"/>
+              <path d="M180 0 V200" stroke="#e9e9e7" stroke-width="12" fill="none"/>
+              <path d="M0 50 H400" stroke="#e9e9e7" stroke-width="8" fill="none"/>
+              <path d="M0 170 H400" stroke="#e9e9e7" stroke-width="10" fill="none"/>
+              <rect x="30" y="70" width="100" height="80" rx="3" fill="#f0e6fa"/>
+              <rect x="220" y="20" width="120" height="80" rx="3" fill="#e6f4f1"/>
+              <rect x="280" y="140" width="90" height="50" rx="3" fill="#fae6f2"/>
+            </svg>
+            <div class="map-card-actions">
+              <button class="btn btn-icon btn-icon-danger" title="删除" onclick="event.stopPropagation(); openDialog('delete-dialog')">
+                <svg class="icon icon-16" aria-hidden="true"><use href="#icon-trash"/></svg>
+              </button>
+            </div>
+            <div class="map-card-badge">16 标注</div>
+          </div>
+          <div class="map-card-body">
+            <div class="map-card-title">西海岸新区在售楼盘</div>
+            <div class="map-card-desc">薛家岛、灵山卫、胶南板块新房项目分布，含均价、户型、开盘时间。</div>
+            <div class="map-card-meta">
+              <div class="map-card-meta-left">
+                <span>16 条标注</span>
+                <span>2026-06-18 更新</span>
+              </div>
+            </div>
+          </div>
+          <div class="map-card-footer">
+            <div class="map-card-meta-left" style="color:var(--text-tertiary)">
+              <span class="tag tag-blue">住宅</span>
+              <span class="tag tag-gray">点/线</span>
+            </div>
+            <div class="map-card-actions-row">
+              <button class="btn btn-icon" title="编辑" onclick="event.stopPropagation(); showView('editor')">
+                <svg class="icon icon-16" aria-hidden="true"><use href="#icon-edit"/></svg>
+              </button>
+              <button class="btn btn-icon" title="分享" onclick="event.stopPropagation()">
+                <svg class="icon icon-16" aria-hidden="true"><use href="#icon-share"/></svg>
+              </button>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <!-- Create map dialog -->
+    <div id="create-dialog" class="dialog-overlay" onclick="if(event.target===this) closeDialog('create-dialog')">
+      <div class="dialog">
+        <div class="dialog-header">
+          <div class="dialog-title">新建地图</div>
+          <button class="btn btn-icon" onclick="closeDialog('create-dialog')">
+            <svg class="icon icon-16" aria-hidden="true"><use href="#icon-close"/></svg>
+          </button>
+        </div>
+        <div class="dialog-body">
+          <div class="form-field">
+            <label class="form-label">地图名称 <span class="form-required">*</span></label>
+            <input type="text" class="input" placeholder="例如：土地成交数据" value="">
+          </div>
+          <div class="form-field">
+            <label class="form-label">备注（可选）</label>
+            <textarea class="input" rows="3" placeholder="地图用途说明…"></textarea>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button class="btn btn-ghost" onclick="closeDialog('create-dialog')">取消</button>
+          <button class="btn btn-primary" onclick="closeDialog('create-dialog')">创建地图</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete confirm dialog -->
+    <div id="delete-dialog" class="dialog-overlay" onclick="if(event.target===this) closeDialog('delete-dialog')">
+      <div class="dialog dialog-narrow">
+        <div class="dialog-body">
+          <div class="dialog-alert">
+            <div class="dialog-alert-icon">
+              <svg class="icon icon-18" aria-hidden="true"><use href="#icon-alert"/></svg>
+            </div>
+            <div class="dialog-alert-text">
+              <h3>确认删除</h3>
+              <p>此操作不可撤销，地图及所有标注将永久删除。</p>
+            </div>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button class="btn btn-ghost" onclick="closeDialog('delete-dialog')">取消</button>
+          <button class="btn btn-primary" style="background:var(--danger-text); color:var(--text-inverse);" onclick="closeDialog('delete-dialog')">确认删除</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Map Editor ================= -->
+  <div id="editor-view" class="view editor-view">
+    <header class="app-bar">
+      <div class="app-bar-left">
+        <button class="btn btn-icon" title="返回列表" onclick="showView('admin')">
+          <svg class="icon icon-16" aria-hidden="true"><use href="#icon-arrow-left"/></svg>
+        </button>
+        <div class="admin-logo" style="width:24px;height:24px;">
+          <svg class="icon icon-14" style="width:14px;height:14px;" aria-hidden="true"><use href="#icon-map-pin"/></svg>
+        </div>
+        <div class="app-title">
+          李沧、西海岸新区土地
+          <span class="app-title-tag">编辑中</span>
+        </div>
+      </div>
+      <div class="app-bar-center">
+        <div class="toolbar-group">
+          <button class="btn tool-btn btn-active" title="选择">
+            <svg class="icon icon-16" aria-hidden="true"><use href="#icon-hand"/></svg>
+            选择
+          </button>
+          <button class="btn tool-btn" title="添加点标注">
+            <svg class="icon icon-16" aria-hidden="true"><use href="#icon-point"/></svg>
+            点
+          </button>
+          <button class="btn tool-btn" title="添加线标注">
+            <svg class="icon icon-16" aria-hidden="true"><use href="#icon-line"/></svg>
+            线
+          </button>
+          <button class="btn tool-btn" title="添加面标注">
+            <svg class="icon icon-16" aria-hidden="true"><use href="#icon-polygon"/></svg>
+            面
+          </button>
+        </div>
+        <div class="toolbar-divider"></div>
+        <div class="toolbar-group">
+          <button class="btn tool-btn" title="测距">
+            <svg class="icon icon-16" aria-hidden="true"><use href="#icon-ruler"/></svg>
+            测距
+          </button>
+          <button class="btn tool-btn" title="文字标注">
+            <svg class="icon icon-16" aria-hidden="true"><use href="#icon-text"/></svg>
+            文字
+          </button>
+        </div>
+        <div class="toolbar-divider"></div>
+        <div class="toolbar-group">
+          <button class="btn tool-btn" title="导入数据">
+            <svg class="icon icon-16" aria-hidden="true"><use href="#icon-import"/></svg>
+            导入
+          </button>
+          <button class="btn tool-btn" title="导出数据">
+            <svg class="icon icon-16" aria-hidden="true"><use href="#icon-export"/></svg>
+            导出
+          </button>
+        </div>
+      </div>
+      <div class="app-bar-right">
+        <button class="btn btn-ghost" title="图层">
+          <svg class="icon icon-16" aria-hidden="true"><use href="#icon-layers"/></svg>
+          图层
+        </button>
+        <div class="avatar" title="当前用户">BM</div>
+        <button class="btn btn-ghost" title="退出">
+          <svg class="icon icon-16" aria-hidden="true"><use href="#icon-logout"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="editor-body">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <nav class="sidebar-tabs">
+          <button class="sidebar-tab active" onclick="switchTab(this, 'annotations')">标注</button>
+          <button class="sidebar-tab" onclick="switchTab(this, 'groups')">分组</button>
+          <button class="sidebar-tab" onclick="switchTab(this, 'categories')">分类</button>
+          <button class="sidebar-tab" onclick="switchTab(this, 'filter')">筛选</button>
+        </nav>
+
+        <div id="panel-annotations" class="sidebar-panel active">
+          <div class="sidebar-section-header">
+            <span class="sidebar-section-title">全部标注</span>
+            <span class="type-caption type-mono" style="color:var(--text-tertiary)">33</span>
+          </div>
+          <div class="sidebar-search">
+            <div class="input-with-icon">
+              <svg class="icon icon-16" aria-hidden="true"><use href="#icon-search"/></svg>
+              <input type="text" class="input" placeholder="搜索编号、位置…">
+            </div>
+          </div>
+          <div class="annotation-list">
+            <div class="annotation-item active">
+              <div class="marker-dot" style="background:var(--danger-text)"></div>
+              <div class="info">
+                <div class="name">青岛西海岸新区-01地块</div>
+                <div class="desc">住宅用地 · 容积率 2.5</div>
+              </div>
+              <span class="tag tag-blue" style="padding:1px 6px;font-size:11px">住宅</span>
+            </div>
+            <div class="annotation-item">
+              <div class="marker-dot" style="background:var(--danger-text)"></div>
+              <div class="info">
+                <div class="name">青岛西海岸新区-02地块</div>
+                <div class="desc">商住混合 · 容积率 3.0</div>
+              </div>
+              <span class="tag tag-orange" style="padding:1px 6px;font-size:11px">商业</span>
+            </div>
+            <div class="annotation-item">
+              <div class="marker-dot" style="background:var(--success-text)"></div>
+              <div class="info">
+                <div class="name">李沧区核心开发区</div>
+                <div class="desc">总占地 120 亩</div>
+              </div>
+              <span class="tag tag-blue" style="padding:1px 6px;font-size:11px">住宅</span>
+            </div>
+            <div class="annotation-item">
+              <div class="marker-dot" style="background:var(--accent-default)"></div>
+              <div class="info">
+                <div class="name">滨海大道沿线</div>
+                <div class="desc">东西走向 · 全长 4.2 km</div>
+              </div>
+              <span class="tag tag-gray" style="padding:1px 6px;font-size:11px">交通</span>
+            </div>
+            <div class="annotation-item">
+              <div class="marker-dot" style="background:var(--danger-text)"></div>
+              <div class="info">
+                <div class="name">灵山卫-住宅地块</div>
+                <div class="desc">容积率 2.0 · 限高 60 m</div>
+              </div>
+              <span class="tag tag-blue" style="padding:1px 6px;font-size:11px">住宅</span>
+            </div>
+            <div class="annotation-item">
+              <div class="marker-dot" style="background:var(--danger-text)"></div>
+              <div class="info">
+                <div class="name">薛家岛-商业地块</div>
+                <div class="desc">容积率 3.5 · 限高 100 m</div>
+              </div>
+              <span class="tag tag-orange" style="padding:1px 6px;font-size:11px">商业</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="panel-groups" class="sidebar-panel">
+          <div class="sidebar-section-header">
+            <span class="sidebar-section-title">分组</span>
+          </div>
+          <div class="group-list">
+            <div class="group-item">
+              <div class="group-color" style="background:var(--success-text)"></div>
+              <div class="group-name">住宅用地</div>
+              <div class="group-count">18</div>
+            </div>
+            <div class="group-item">
+              <div class="group-color" style="background:var(--warning-text)"></div>
+              <div class="group-name">商业用地</div>
+              <div class="group-count">9</div>
+            </div>
+            <div class="group-item">
+              <div class="group-color" style="background:var(--accent-default)"></div>
+              <div class="group-name">交通设施</div>
+              <div class="group-count">6</div>
+            </div>
+            <div class="group-item">
+              <div class="group-color" style="background:var(--text-tertiary)"></div>
+              <div class="group-name">未分组</div>
+              <div class="group-count">0</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="panel-categories" class="sidebar-panel">
+          <div class="sidebar-section-header">
+            <span class="sidebar-section-title">分类</span>
+          </div>
+          <div class="group-list">
+            <div class="group-item">
+              <div class="group-color" style="background:var(--danger-text)"></div>
+              <div class="group-name">点</div>
+              <div class="group-count">24</div>
+            </div>
+            <div class="group-item">
+              <div class="group-color" style="background:var(--accent-default)"></div>
+              <div class="group-name">线</div>
+              <div class="group-count">3</div>
+            </div>
+            <div class="group-item">
+              <div class="group-color" style="background:var(--success-text)"></div>
+              <div class="group-name">面</div>
+              <div class="group-count">6</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="panel-filter" class="sidebar-panel">
+          <div class="sidebar-section-header">
+            <span class="sidebar-section-title">筛选</span>
+          </div>
+          <div class="group-list" style="font-size:13px;color:var(--text-secondary)">
+            <div class="group-item">
+              <input type="checkbox" checked style="accent-color:var(--primary-default)">
+              <div class="group-name">住宅</div>
+            </div>
+            <div class="group-item">
+              <input type="checkbox" checked style="accent-color:var(--primary-default)">
+              <div class="group-name">商业</div>
+            </div>
+            <div class="group-item">
+              <input type="checkbox" checked style="accent-color:var(--primary-default)">
+              <div class="group-name">交通</div>
+            </div>
+            <div class="group-item">
+              <input type="checkbox" style="accent-color:var(--primary-default)">
+              <div class="group-name">仅显示未分组</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Map canvas -->
+      <div class="map-canvas">
+        <svg class="map-bg" viewBox="0 0 800 600" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="800" height="600" fill="#f1f1ef"/>
+          <!-- Water -->
+          <path d="M0 180 Q200 120 400 170 T800 150 V600 H0 Z" fill="#e3f5fa"/>
+          <path d="M550 0 Q600 120 650 250 T700 600 H800 V0 Z" fill="#e3f5fa"/>
+          <!-- Parks -->
+          <rect x="80" y="320" width="160" height="120" rx="4" fill="#e6f4f1"/>
+          <rect x="520" y="420" width="120" height="100" rx="4" fill="#e6f4f1"/>
+          <!-- Roads -->
+          <path d="M0 300 H800" stroke="#ffffff" stroke-width="22" fill="none"/>
+          <path d="M0 300 H800" stroke="#e9e9e7" stroke-width="2" fill="none" stroke-dasharray="8 8"/>
+          <path d="M400 0 V600" stroke="#ffffff" stroke-width="20" fill="none"/>
+          <path d="M0 120 H800" stroke="#ffffff" stroke-width="14" fill="none"/>
+          <path d="M200 0 V600" stroke="#ffffff" stroke-width="12" fill="none"/>
+          <path d="M600 0 V600" stroke="#ffffff" stroke-width="14" fill="none"/>
+          <path d="M0 500 H800" stroke="#ffffff" stroke-width="12" fill="none"/>
+          <!-- Secondary blocks -->
+          <rect x="430" y="60" width="120" height="80" rx="3" fill="#fbf3db"/>
+          <rect x="60" y="60" width="100" height="80" rx="3" fill="#faeadd"/>
+          <rect x="280" y="450" width="140" height="90" rx="3" fill="#f0e6fa"/>
+        </svg>
+
+        <!-- Markers -->
+        <div class="map-marker" style="left:34%;top:38%;color:var(--danger-text)">
+          <svg viewBox="0 0 24 24"><use href="#icon-map-pin"/></svg>
+          <div class="map-marker-label">01 地块</div>
+        </div>
+        <div class="map-marker" style="left:42%;top:30%;color:var(--primary-default)">
+          <svg viewBox="0 0 24 24"><use href="#icon-map-pin"/></svg>
+        </div>
+        <div class="map-marker" style="left:48%;top:44%;color:var(--accent-default)">
+          <svg viewBox="0 0 24 24"><use href="#icon-map-pin"/></svg>
+        </div>
+        <div class="map-marker" style="left:58%;top:36%;color:var(--warning-text)">
+          <svg viewBox="0 0 24 24"><use href="#icon-map-pin"/></svg>
+        </div>
+        <div class="map-marker" style="left:38%;top:54%;color:var(--primary-default)">
+          <svg viewBox="0 0 24 24"><use href="#icon-map-pin"/></svg>
+        </div>
+        <div class="map-marker" style="left:52%;top:50%;color:var(--danger-text)">
+          <svg viewBox="0 0 24 24"><use href="#icon-map-pin"/></svg>
+        </div>
+        <div class="map-marker" style="left:30%;top:48%;color:var(--accent-default)">
+          <svg viewBox="0 0 24 24"><use href="#icon-map-pin"/></svg>
+        </div>
+
+        <!-- Measure banner -->
+        <div class="measure-banner">
+          <span>测距模式</span>
+          <span class="dist">已测量 1,284 m</span>
+          <span class="hint">点击添加测量点 · 双击结束</span>
+          <button class="btn btn-ghost" style="height:24px;padding:0 8px;font-size:12px">取消</button>
+        </div>
+
+        <!-- Layer switch -->
+        <div class="layer-switch">
+          <button class="layer-btn active">矢量</button>
+          <button class="layer-btn">卫星</button>
+          <button class="layer-btn">地形</button>
+        </div>
+
+        <!-- InfoCard -->
+        <div class="info-card">
+          <div class="info-card-header">
+            <div class="info-card-title">
+              <span class="tag tag-blue">点</span>
+              <span class="tag tag-gray" style="font-size:11px;padding:1px 6px">住宅</span>
+            </div>
+            <button class="info-card-close" aria-label="关闭">
+              <svg class="icon icon-16" aria-hidden="true"><use href="#icon-close"/></svg>
+            </button>
+          </div>
+          <div class="info-card-body">
+            <div class="info-field">
+              <div class="info-field-label">名称</div>
+              <div class="info-field-value">青岛西海岸新区-01地块</div>
+            </div>
+            <div class="info-field">
+              <div class="info-field-label">描述</div>
+              <div class="info-field-value muted">住宅用地，容积率 2.5，限高 60 m</div>
+            </div>
+            <div class="info-field">
+              <div class="info-field-label">坐标</div>
+              <div class="info-coord">120.3456, 36.7890</div>
+            </div>
+            <div class="info-field">
+              <div class="info-field-label">自定义属性</div>
+              <div class="info-tags">
+                <span class="tag tag-gray" style="font-size:11px">成交总价: 2.5亿</span>
+                <span class="tag tag-gray" style="font-size:11px">竞得人: 城投集团</span>
+                <span class="tag tag-gray" style="font-size:11px">容积率: 2.5</span>
+                <span class="tag tag-gray" style="font-size:11px">用途: 住宅</span>
+              </div>
+            </div>
+          </div>
+          <div class="info-card-footer">
+            <button class="btn btn-primary">编辑</button>
+            <button class="btn btn-icon btn-icon-danger" title="删除">
+              <svg class="icon icon-16" aria-hidden="true"><use href="#icon-trash"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Zoom controls -->
+        <div class="map-controls">
+          <button class="map-control-btn" title="放大">
+            <svg class="icon icon-16" aria-hidden="true"><use href="#icon-zoom-in"/></svg>
+          </button>
+          <button class="map-control-btn" title="缩小">
+            <svg class="icon icon-16" aria-hidden="true"><use href="#icon-zoom-out"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="status-bar">
+      <div class="status-left">
+        <label class="toggle">
+          <div class="toggle-track on"><div class="toggle-knob"></div></div>
+          热力图
+        </label>
+        <label class="toggle">
+          <div class="toggle-track"><div class="toggle-knob"></div></div>
+          显示名称
+        </label>
+        <span class="status-item">
+          <svg class="icon icon-16" aria-hidden="true"><use href="#icon-layers"/></svg>
+          天地图 · 矢量
+        </span>
+      </div>
+      <div class="status-right">
+        <span class="status-item">33 个标注</span>
+        <span class="status-item status-coord">经度 120.3456° 纬度 36.7890°</span>
+        <span class="status-item" style="color:var(--text-tertiary)">MapMark</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    function showView(name) {
+      const admin = document.getElementById('admin-view');
+      const editor = document.getElementById('editor-view');
+      const btnAdmin = document.getElementById('switch-admin');
+      const btnEditor = document.getElementById('switch-editor');
+      if (name === 'admin') {
+        admin.classList.add('active');
+        editor.classList.remove('active');
+        btnAdmin.className = 'btn btn-default';
+        btnEditor.className = 'btn btn-ghost';
+      } else {
+        admin.classList.remove('active');
+        editor.classList.add('active');
+        btnAdmin.className = 'btn btn-ghost';
+        btnEditor.className = 'btn btn-default';
+      }
+    }
+
+    function openDialog(id) {
+      document.getElementById(id).classList.add('open');
+    }
+    function closeDialog(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+
+    function switchTab(btn, panelId) {
+      document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.sidebar-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('panel-' + panelId).classList.add('active');
+    }
+
+    // Toggle switches
+    document.querySelectorAll('.toggle-track').forEach(track => {
+      track.addEventListener('click', () => track.classList.toggle('on'));
+    });
+
+    // Tool buttons active state
+    document.querySelectorAll('.tool-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        this.parentElement.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('btn-active'));
+        this.classList.add('btn-active');
+      });
+    });
+  </script>
+</body>
+</html>

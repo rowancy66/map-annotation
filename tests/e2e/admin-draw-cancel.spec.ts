@@ -192,6 +192,33 @@ test('修改地图公开状态后会写入审计记录', async ({ page }) => {
   expect(auditData.audits[0].next_value).toContain('"isPublic":false');
 });
 
+test('后台支持修改地图名称并提供可用的账户菜单', async ({ page }) => {
+  const appRequest = page.context().request;
+
+  await ensureLoggedIn(appRequest);
+  const mapProject = await createMap(appRequest);
+  const renamedMapName = `已改名地图 ${Date.now()}`;
+
+  await page.goto(`/admin?mapId=${mapProject.id}`);
+  await expect(page.getByRole('heading', { name: mapProject.name })).toBeVisible({ timeout: 15000 });
+
+  await page.getByRole('button', { name: '编辑地图名称' }).click();
+  const renameInput = page.getByLabel('地图名称');
+  await renameInput.fill(renamedMapName);
+  await page.getByRole('button', { name: '保存地图名称' }).click();
+
+  await expect(page.getByRole('heading', { name: renamedMapName })).toBeVisible();
+
+  const updatedMapResponse = await appRequest.get(`/api/maps/${mapProject.id}`);
+  expect(updatedMapResponse.ok(), await updatedMapResponse.text()).toBeTruthy();
+  await expect(updatedMapResponse.json()).resolves.toMatchObject({
+    mapProject: { name: renamedMapName },
+  });
+
+  await page.getByRole('button', { name: '账户' }).click();
+  await expect(page.getByRole('button', { name: '退出登录' })).toBeVisible();
+});
+
 test('setup 状态、登录登出与重复 setup 拒绝正常工作', async ({ page }) => {
   const appRequest = page.context().request;
 
