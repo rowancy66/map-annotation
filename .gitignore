@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# agent / local tool state
+.superpowers/
+.workbuddy/
+
+# test and runtime artifacts
+/test-results/
+/tmp/
+
+# transient comparison screenshots
+A_clean_*_comparison_*.png

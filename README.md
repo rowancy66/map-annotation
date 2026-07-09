@@ -117,7 +117,14 @@ src/
 └── app/api/
 docs/
 ├── plans/                           # 实现计划
-└── superpowers/specs/               # 设计规格文档
+└── superpowers/                     # AI 设计迭代文档
+    ├── plans/                       # 实现计划（按迭代）
+    └── specs/                       # 设计规格与决策
+
+设计交付物：
+├── design-tokens.md                 # Notion 风格设计令牌
+├── DESIGN-DELIVERY.md               # 原型交付说明
+└── notion-style-preview.html        # 高保真交互原型
 ```
 
 ## 🎯 使用指南
