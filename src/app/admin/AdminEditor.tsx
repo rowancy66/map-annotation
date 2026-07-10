@@ -275,6 +275,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
       const response = await fetch('/api/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ mapId: mapProject.id, format }),
       });
 

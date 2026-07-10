@@ -112,6 +112,7 @@ export default function MapView({
     marker: L.Marker;
   } | null>(null);
   const [measureDistance, setMeasureDistance] = useState<number>(0);
+  const [measureComplete, setMeasureComplete] = useState(false);
   const [showTextInput, setShowTextInput] = useState<L.LatLng | null>(null);
   const [textValue, setTextValue] = useState('');
   const heatLayerRef = useRef<L.Layer | null>(null);
@@ -134,6 +135,8 @@ export default function MapView({
 
   const lastClickTimeRef = useRef(0);
   const previousDrawModeRef = useRef<DrawMode>('none');
+  const measureCompletedRef = useRef(false);
+  const measureFinishTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const syncAnnotationLabel = useCallback((layer: L.Layer, annotation: Annotation) => {
     const labelLayer = layer as L.Layer & {
@@ -534,6 +537,9 @@ export default function MapView({
       // 测距模式
       if (drawMode === 'measure') {
         const points = tempPointsRef.current;
+        // 双击结束后的完成态，忽略后续点击
+        if (measureCompletedRef.current) return;
+
         // 检测双击（< 400ms）
         const now = Date.now();
         if (now - lastClickTimeRef.current < 400 && points.length >= 1) {
@@ -547,7 +553,15 @@ export default function MapView({
             setMeasureDistance(total);
           }
           cleanupTempDrawing();
-          onDrawModeChange('none');
+          // 延迟关闭，让用户看到最终距离后再收起
+          measureCompletedRef.current = true;
+          setMeasureComplete(true);
+          measureFinishTimeoutRef.current = setTimeout(() => {
+            measureCompletedRef.current = false;
+            setMeasureComplete(false);
+            setMeasureDistance(0);
+            onDrawModeChange('none');
+          }, 2000);
           return;
         }
         lastClickTimeRef.current = now;
@@ -625,6 +639,14 @@ export default function MapView({
 
     if (drawMode === previousDrawMode) return;
 
+    // 清理测距完成延时
+    if (measureFinishTimeoutRef.current) {
+      clearTimeout(measureFinishTimeoutRef.current);
+      measureFinishTimeoutRef.current = undefined;
+    }
+    measureCompletedRef.current = false;
+    setMeasureComplete(false);
+
     if (previousDrawMode !== 'none') {
       cleanupTempDrawing();
       lastClickTimeRef.current = 0;
@@ -641,6 +663,12 @@ export default function MapView({
           return;
         }
         if (drawMode !== 'none') {
+          if (measureFinishTimeoutRef.current) {
+            clearTimeout(measureFinishTimeoutRef.current);
+            measureFinishTimeoutRef.current = undefined;
+          }
+          measureCompletedRef.current = false;
+          setMeasureComplete(false);
           cleanupTempDrawing();
           onDrawModeChange('none');
         }
@@ -791,9 +819,17 @@ export default function MapView({
           <span className="font-semibold" style={{ color: '#93c5a2' }}>
             {measureDistance > 0 ? `${(measureDistance / 1000).toFixed(2)} km` : '点击起点'}
           </span>
-          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>点击添加测量点 · 双击结束</span>
+          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>
+            {measureComplete ? '测距完成' : '点击添加测量点 · 双击结束'}
+          </span>
           <button
             onClick={() => {
+              if (measureFinishTimeoutRef.current) {
+                clearTimeout(measureFinishTimeoutRef.current);
+                measureFinishTimeoutRef.current = undefined;
+              }
+              measureCompletedRef.current = false;
+              setMeasureComplete(false);
               cleanupTempDrawing();
               setMeasureDistance(0);
               onDrawModeChange('none');
@@ -801,7 +837,7 @@ export default function MapView({
             className="ml-1 px-2.5 py-1 text-xs transition"
             style={{ background: 'rgba(255,255,255,0.15)' }}
           >
-            取消
+            {measureComplete ? '关闭' : '取消'}
           </button>
         </div>
       )}

@@ -341,7 +341,6 @@ body::before { display: none; }
   gap: 14px;
   min-height: 48px;
   padding: 0 16px;
-  overflow-x: auto;
   background: var(--surface-primary);
 }
 
