@@ -937,7 +937,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
         <WorkbenchSidebarToggle
           open={sidebarOpen}
           onToggle={() => setSidebarOpen(!sidebarOpen)}
-          offset={396}
+          offset={368}
         />
 
         <div className="flex-1 relative min-w-0 bg-white">
