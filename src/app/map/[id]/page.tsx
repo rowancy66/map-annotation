@@ -168,7 +168,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
           )}
         />
 
-        <div className="relative flex flex-1 overflow-hidden p-1.5">
+        <div className="relative flex flex-1 overflow-hidden">
           <div
             className={`relative z-30 shrink-0 overflow-hidden transition-all duration-300 ${
               sidebarOpen ? 'w-[304px] opacity-100' : 'w-0 opacity-0'
