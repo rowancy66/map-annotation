@@ -77,6 +77,7 @@ interface MapViewProps {
   showHeatmap?: boolean;
   showNames?: boolean;
   searchOverlayClassName?: string;
+  sidebarOpen?: boolean;
 }
 
 export default function MapView({
@@ -96,6 +97,7 @@ export default function MapView({
   showHeatmap = false,
   showNames = true,
   searchOverlayClassName,
+  sidebarOpen,
 }: MapViewProps) {
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -298,6 +300,27 @@ export default function MapView({
       mapRef.current = null;
     };
   }, []);
+
+  // 监听容器尺寸变化，自动重绘地图
+  useEffect(() => {
+    if (!mapContainerRef.current || !mapRef.current) return;
+
+    const observer = new ResizeObserver(() => {
+      mapRef.current?.invalidateSize({ debounceMoveend: true });
+    });
+
+    observer.observe(mapContainerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  // 侧边栏展开/收起后，等过渡动画完成再重绘地图
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const timer = setTimeout(() => {
+      mapRef.current?.invalidateSize({ debounceMoveend: true });
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [sidebarOpen]);
 
   useEffect(() => {
     if (!mapRef.current) return;

@@ -1030,6 +1030,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             showHeatmap={showHeatmap}
             showNames={showNamesEnabled}
             searchOverlayClassName="left-3 top-16"
+            sidebarOpen={sidebarOpen}
           />
 
           <div className="absolute right-5 top-16 z-[1000]">

@@ -10,7 +10,7 @@ import WorkbenchHeader from '@/components/map/workbench/WorkbenchHeader';
 import WorkbenchSidebarToggle from '@/components/map/workbench/WorkbenchSidebarToggle';
 
 import { Annotation } from '@/lib/types';
-import { Loader2, LogIn, Search, X, ArrowLeft, MapPin, ScanSearch, Tag } from 'lucide-react';
+import { Loader2, LogIn, Search, X, ArrowLeft, MapPin, Tag } from 'lucide-react';
 
 const MapView = dynamic(() => import('@/components/map/MapView'), {
   ssr: false,
@@ -220,6 +220,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
               editable={false}
               showNames={showNames}
               searchOverlayClassName="left-14 sm:left-16"
+              sidebarOpen={sidebarOpen}
             />
 
             <div className="absolute right-5 top-16 z-[1000]">
