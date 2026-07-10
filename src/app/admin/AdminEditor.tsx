@@ -29,7 +29,6 @@ import {
   CheckSquare,
   Square,
   AlertTriangle,
-  Home,
   Search,
   RefreshCcw,
   Eye,
@@ -707,20 +706,12 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             <div className="map-workbench-brand">
               <div className="map-workbench-brand-lockup">
                 <Link
-                  href="/admin"
+                  href="/map"
                   className="map-workbench-back"
-                  title="返回地图列表"
-                  aria-label="返回地图列表"
+                  title="返回地图页"
+                  aria-label="返回地图页"
                 >
                   <ChevronLeft className="w-4 h-4" aria-hidden="true" />
-                </Link>
-                <Link
-                  href="/"
-                  className="map-workbench-back"
-                  title="返回前台"
-                  aria-label="返回前台"
-                >
-                  <Home className="w-4 h-4" aria-hidden="true" />
                 </Link>
                 </div>
               <div className="map-workbench-brand-mark">
