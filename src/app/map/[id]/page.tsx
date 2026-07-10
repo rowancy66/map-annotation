@@ -9,7 +9,7 @@ import WorkbenchHeader from '@/components/map/workbench/WorkbenchHeader';
 import WorkbenchSidebarToggle from '@/components/map/workbench/WorkbenchSidebarToggle';
 
 import { Annotation } from '@/lib/types';
-import { Loader2, LogIn, Search, X, ArrowLeft, MapPin, ScanSearch } from 'lucide-react';
+import { Loader2, LogIn, Search, X, ArrowLeft, MapPin, ScanSearch, Tag } from 'lucide-react';
 
 const MapView = dynamic(() => import('@/components/map/MapView'), {
   ssr: false,
@@ -29,6 +29,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
   const [selectedAnnotation, setSelectedAnnotation] = useState<Annotation | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showNames, setShowNames] = useState(true);
   const listItemRefs = useRef(new Map<string, HTMLDivElement>());
 
   const filteredAnnotations = useMemo(() => {
@@ -39,6 +40,13 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
       (a.description && a.description.toLowerCase().includes(q))
     );
   }, [annotations, searchQuery]);
+
+  // Sync showNames from map settings once loaded
+  useEffect(() => {
+    if (mapProject) {
+      setShowNames(mapProject.settings.showNames !== false);
+    }
+  }, [mapProject]);
 
   const annotationTypeCounts = useMemo(() => {
     return annotations.reduce(
@@ -132,8 +140,31 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
           )}
           right={(
             <>
-              <div className="hidden text-[11px] font-medium uppercase tracking-[0.08em] md:block" style={{ color: 'var(--faint)' }}>
-                {annotations.length} 项标注
+              <div className="flex items-center gap-2.5">
+                <button
+                  onClick={() => setShowNames(!showNames)}
+                  className="flex items-center gap-1.5 text-xs font-medium transition-colors workbench-hard-edge"
+                  style={{ color: showNames ? 'var(--primary)' : 'var(--text-tertiary)' }}
+                  aria-label={showNames ? '隐藏标注名称' : '显示标注名称'}
+                >
+                  <Tag className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span className="hidden sm:inline">名称</span>
+                  <span
+                    className="relative inline-block h-4 w-7 shrink-0 rounded-full border transition-colors duration-200"
+                    style={{
+                      background: showNames ? 'var(--primary)' : 'rgba(0,0,0,0.06)',
+                      borderColor: showNames ? 'var(--primary)' : 'var(--border)',
+                    }}
+                  >
+                    <span
+                      className="absolute top-[2px] block h-[10px] w-[10px] rounded-full bg-white transition-all duration-200 shadow-sm"
+                      style={{ left: showNames ? 'calc(100% - 12px)' : '2px' }}
+                    />
+                  </span>
+                </button>
+                <div className="hidden text-[11px] font-medium uppercase tracking-[0.08em] md:block" style={{ color: 'var(--faint)' }}>
+                  {annotations.length} 项标注
+                </div>
               </div>
               <Link
                 href={`/admin?mapId=${id}`}
@@ -286,7 +317,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
               onDrawModeChange={() => {}}
               selectedAnnotation={selectedAnnotation}
               editable={false}
-              showNames={mapProject?.settings.showNames !== false}
+              showNames={showNames}
               searchOverlayClassName="left-14 sm:left-16"
             />
 
