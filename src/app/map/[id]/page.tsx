@@ -88,18 +88,16 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
           left={(
             <>
               <Link
-                href="/"
-                className="ghost-button workbench-hard-edge p-2"
-                title="返回地图目录"
-                aria-label="返回地图目录"
+                href="/map"
+                className="ghost-button workbench-hard-edge flex items-center gap-2.5 px-2.5 py-2"
+                title="返回地图页"
+                aria-label="返回地图页"
               >
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              </Link>
-              <div className="flex min-w-0 items-center gap-3">
+                <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
                 <div className="flex h-8 w-8 items-center justify-center border" style={{ background: 'rgba(10,75,63,0.08)', borderColor: 'var(--border-strong)' }}>
                   <MapPin className="h-4 w-4" style={{ color: 'var(--primary)' }} aria-hidden="true" />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 text-left">
                   <h1 className="truncate text-[13px] font-semibold md:text-[14px]" style={{ color: 'var(--ink)' }}>
                     {mapProject?.name || '地图标注平台'}
                   </h1>
@@ -107,7 +105,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
                     地图浏览
                   </div>
                 </div>
-              </div>
+              </Link>
             </>
           )}
           center={(
