@@ -9,16 +9,16 @@ import { X, Save, Trash2, Loader2, Upload, Link2, Plus } from 'lucide-react';
 import { uploadAnnotationImage, deleteAnnotationImage, validateAnnotationImage } from '@/lib/supabase';
 
 const colors = {
-  surface: '#ffffff',
-  bg: '#f4f5f1',
-  border: 'rgba(22,24,22,0.1)',
-  ink: '#161816',
-  muted: '#5c615c',
-  faint: '#868a84',
-  placeholder: '#a0a49e',
-  accent: '#0b4f45',
-  accentSoft: 'rgba(11,79,69,0.08)',
-  danger: '#b95749',
+  surface: '#faf7f2',
+  bg: '#f2ede7',
+  border: 'rgba(80,60,40,0.1)',
+  ink: '#3d3832',
+  muted: '#78706a',
+  faint: '#a39990',
+  placeholder: '#b0a69d',
+  accent: '#0a4b3f',
+  accentSoft: 'rgba(10,75,63,0.08)',
+  danger: '#c0392b',
 };
 
 function sanitizeExternalUrl(url: unknown): string | null {
@@ -129,7 +129,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
 
   const typeMeta = {
     point: { label: '点', accent: '#1a4735', bg: 'rgba(26,71,53,0.08)' },
-    line: { label: '线', accent: '#2c6fbb', bg: 'rgba(44,111,187,0.08)' },
+    line: { label: '线', accent: '#7a6b55', bg: 'rgba(122,107,85,0.08)' },
     polygon: { label: '面', accent: '#cfb08a', bg: 'rgba(207,176,138,0.16)' },
     text: { label: '文字', accent: '#d4954e', bg: 'rgba(212,148,78,0.08)' },
   };
@@ -151,7 +151,7 @@ export default function InfoCard({ annotation, fieldTemplates, onClose, onSave, 
       className="w-[284px] max-w-[calc(100vw-2rem)] overflow-hidden animate-fade-slide-up"
       style={{ transform: `translate(${dragOffset.x}px, ${dragOffset.y}px)` }}
     >
-      <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, boxShadow: '0 8px 18px rgba(17,24,22,0.08)' }}>
+      <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, boxShadow: '0 8px 18px rgba(80,60,40,0.08)' }}>
 
         {/* 标题栏 */}
         <div

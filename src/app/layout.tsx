@@ -6,13 +6,13 @@ import { AuthProvider } from "@/components/auth/AuthProvider";
 const bodyFont = IBM_Plex_Sans({
   variable: "--font-body",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["300", "400", "500"],
 });
 
 const displayFont = Noto_Sans_SC({
   variable: "--font-display",
   subsets: ["latin"],
-  weight: ["500", "700"],
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {

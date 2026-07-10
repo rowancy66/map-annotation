@@ -190,7 +190,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
         geometry: { type: 'LineString', coordinates },
         name: '新线路',
         description: '',
-        style: { color: '#2c6fbb', width: 3 },
+        style: { color: '#7a6b55', width: 3 },
         custom_fields: [],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),

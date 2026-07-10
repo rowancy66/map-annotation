@@ -222,7 +222,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
                             <div className="flex items-center gap-2.5">
                               <span className="h-2 w-2 shrink-0" style={{
                                 background: anno.type === 'point' ? '#c0392b' :
-                                  anno.type === 'line' ? '#2c6fbb' :
+                                  anno.type === 'line' ? '#7a6b55' :
                                     anno.type === 'text' ? '#d4954e' : '#1a4735'
                               }} />
                               <div className="min-w-0 flex-1">
@@ -238,10 +238,10 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
                               </div>
                               <span className="shrink-0 px-2 py-1 text-[10px] font-medium" style={{
                                 background: anno.type === 'point' ? 'rgba(192,57,43,0.08)' :
-                                  anno.type === 'line' ? 'rgba(44,111,187,0.08)' :
+                                  anno.type === 'line' ? 'rgba(122,107,85,0.08)' :
                                     anno.type === 'text' ? 'rgba(212,148,78,0.08)' : 'rgba(26,71,53,0.08)',
                                 color: anno.type === 'point' ? '#c0392b' :
-                                  anno.type === 'line' ? '#2c6fbb' :
+                                  anno.type === 'line' ? '#7a6b55' :
                                     anno.type === 'text' ? '#d4954e' : '#1a4735'
                               }}>
                                 {anno.type === 'point' ? '点' : anno.type === 'line' ? '线' : anno.type === 'text' ? '文字' : '面'}

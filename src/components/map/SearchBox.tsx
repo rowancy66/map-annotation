@@ -132,10 +132,10 @@ export default function SearchBox({ map }: SearchBoxProps) {
       className: 'search-result-marker',
       html: `<div style="
         width: 32px; height: 32px;
-        background: #3B82F6;
+        background: #c8913a;
         border: 3px solid white;
         border-radius: 50%;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        box-shadow: 0 2px 8px rgba(80,60,40,0.3);
         display: flex; align-items: center; justify-content: center;
         animation: searchPulse 1.5s ease-in-out infinite;
       ">
@@ -199,7 +199,7 @@ export default function SearchBox({ map }: SearchBoxProps) {
         {showResults && (
           <div
             className="absolute top-full left-0 right-0 z-[1001] mt-1 max-h-72 overflow-y-auto border"
-            style={{ background: 'var(--surface-strong)', borderColor: 'var(--border)', boxShadow: '0 12px 32px rgba(17,24,22,0.08)' }}
+            style={{ background: 'var(--surface-strong)', borderColor: 'var(--border)', boxShadow: '0 12px 32px rgba(80,60,40,0.08)' }}
           >
             {results.length === 0 && !loading && (
               <div className="px-4 py-3 text-center text-sm" style={{ color: error ? 'var(--danger)' : 'var(--faint)' }}>
@@ -242,7 +242,7 @@ export default function SearchBox({ map }: SearchBoxProps) {
 
         <div
           className="flex items-center overflow-hidden border"
-          style={{ background: 'rgba(252,253,250,0.96)', borderColor: 'var(--border)', boxShadow: '0 8px 20px rgba(17,24,22,0.06)' }}
+          style={{ background: 'rgba(250,247,242,0.96)', borderColor: 'var(--border)', boxShadow: '0 8px 20px rgba(80,60,40,0.06)' }}
         >
           <div className="pl-3 pr-1" style={{ color: 'var(--faint)' }}>
             {loading ? (

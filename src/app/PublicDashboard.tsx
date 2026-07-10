@@ -33,11 +33,11 @@ export default function PublicDashboard() {
   }, []);
 
   const thumbGradients = [
-    'linear-gradient(135deg, #f7f6f3 0%, #efece3 58%, #e6e2d6 100%)',
-    'linear-gradient(135deg, #f3f6f5 0%, #e7edea 58%, #dbe3de 100%)',
-    'linear-gradient(135deg, #f4f6f8 0%, #e9eef3 58%, #dde4ec 100%)',
-    'linear-gradient(135deg, #f6f4f1 0%, #ece7e0 58%, #e0d8cd 100%)',
-    'linear-gradient(135deg, #edf0f1 0%, #dce1e4 58%, #c6ced4 100%)',
+    'linear-gradient(135deg, #f0ebe4 0%, #e5ddd2 58%, #d9cec0 100%)',
+    'linear-gradient(135deg, #e8ede6 0%, #dbe3d8 58%, #cbd7c6 100%)',
+    'linear-gradient(135deg, #ece8e8 0%, #e3dedc 58%, #d7d0cc 100%)',
+    'linear-gradient(135deg, #eceae4 0%, #e0d9ce 58%, #d2c9bb 100%)',
+    'linear-gradient(135deg, #e5e3de 0%, #d7d4ce 58%, #c7c2ba 100%)',
   ];
 
   const totalAnnotations = maps.reduce((sum, map) => sum + map.annotation_count, 0);
@@ -140,7 +140,7 @@ export default function PublicDashboard() {
                   className="flex items-center justify-center min-h-[104px] mx-3.5 mt-2.5 border border-[var(--border-subtle)] rounded-[var(--radius-md)]"
                   style={{ background: thumbGradients[idx % thumbGradients.length] }}
                 >
-                  <MapPinned className="h-5 w-5 text-[rgba(55,53,47,0.32)]" />
+                  <MapPinned className="h-5 w-5 text-[rgba(80,60,40,0.32)]" />
                 </div>
                 <div className="p-3.5 flex-1">
                   <h4 className="line-clamp-1 text-[16px] leading-tight text-[var(--text-primary)]">{map.name}</h4>

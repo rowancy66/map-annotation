@@ -119,7 +119,7 @@ function normalizeStyle(type: Annotation['type'], value: unknown): Annotation['s
 
   if (type === 'line') {
     return {
-      color: typeof parsed.color === 'string' ? parsed.color : '#2c6fbb',
+      color: typeof parsed.color === 'string' ? parsed.color : '#7a6b55',
       width: typeof parsed.width === 'number' ? parsed.width : 3,
       dashArray: typeof parsed.dashArray === 'string' ? parsed.dashArray : undefined,
     };

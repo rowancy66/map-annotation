@@ -151,10 +151,10 @@ export const PRESET_COLORS = [
   { name: '橙色', value: '#F97316' },
   { name: '黄色', value: '#EAB308' },
   { name: '绿色', value: '#22C55E' },
-  { name: '蓝色', value: '#3B82F6' },
-  { name: '紫色', value: '#8B5CF6' },
+  { name: '蓝色', value: '#7a6b55' },
+  { name: '紫色', value: '#8b7a6b' },
   { name: '粉色', value: '#EC4899' },
-  { name: '青色', value: '#06B6D4' },
+  { name: '青色', value: '#2d6b52' },
   { name: '白色', value: '#FFFFFF' },
   { name: '黑色', value: '#000000' },
 ];

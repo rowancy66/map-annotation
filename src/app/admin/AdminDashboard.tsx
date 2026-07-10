@@ -111,10 +111,10 @@ export default function AdminDashboard() {
   }, [showFeedback]);
 
   const thumbGradients = [
-    'linear-gradient(135deg, #f7f6f3 0%, #efece3 58%, #e6e2d6 100%)',
-    'linear-gradient(135deg, #f3f6f5 0%, #e7edea 58%, #dbe3de 100%)',
-    'linear-gradient(135deg, #f4f6f8 0%, #e9eef3 58%, #dde4ec 100%)',
-    'linear-gradient(135deg, #f6f4f1 0%, #ece7e0 58%, #e0d8cd 100%)',
+    'linear-gradient(135deg, #f0ebe4 0%, #e5ddd2 58%, #d9cec0 100%)',
+    'linear-gradient(135deg, #e8ede6 0%, #dbe3d8 58%, #cbd7c6 100%)',
+    'linear-gradient(135deg, #ece8e8 0%, #e3dedc 58%, #d7d0cc 100%)',
+    'linear-gradient(135deg, #eceae4 0%, #e0d9ce 58%, #d2c9bb 100%)',
   ];
 
   const totalAnnotations = maps.reduce((sum, map) => sum + map.annotation_count, 0);
@@ -137,7 +137,7 @@ export default function AdminDashboard() {
       {feedbackMessage && (
         <div
           className="fixed left-1/2 top-6 z-[9999] -translate-x-1/2 px-4 py-2 text-sm rounded-[var(--radius-md)] animate-fade-in"
-          style={{ background: 'rgba(55,53,47,0.92)', color: 'white', boxShadow: 'var(--shadow-overlay)' }}
+          style={{ background: 'rgba(61,56,50,0.92)', color: 'white', boxShadow: 'var(--shadow-overlay)' }}
         >
           {feedbackMessage}
         </div>
@@ -227,9 +227,9 @@ export default function AdminDashboard() {
                     style={{ background: thumbGradients[idx % thumbGradients.length] }}
                   >
                     <div className="absolute inset-0 flex items-start justify-center pt-8">
-                      <MapPinned className="h-7 w-7" style={{ color: 'rgba(55,53,47,0.28)' }} />
+                      <MapPinned className="h-7 w-7" style={{ color: 'rgba(80,60,40,0.28)' }} />
                     </div>
-                    <div className="absolute top-2 right-2 px-2 py-0.5 text-xs font-medium rounded-[var(--radius-sm)] text-[var(--text-inverse)]" style={{ background: 'rgba(55,53,47,0.72)' }}>
+                    <div className="absolute top-2 right-2 px-2 py-0.5 text-xs font-medium rounded-[var(--radius-sm)] text-[var(--text-inverse)]" style={{ background: 'rgba(80,60,40,0.72)' }}>
                       {map.annotation_count} 标注
                     </div>
                     <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

@@ -17,7 +17,7 @@ interface GroupTreeProps {
   annotationCountByGroup: Record<string, number>;
 }
 
-const GROUP_COLORS = ['#1a4735', '#2d6b52', '#c0392b', '#2c6fbb', '#d4954e', '#6b7280', '#7c3aed', '#db2777', '#ea580c', '#0891b2'];
+const GROUP_COLORS = ['#1a4735', '#2d6b52', '#c0392b', '#7a6b55', '#d4954e', '#6b7280', '#7a5a3a', '#b04a5a', '#ea580c', '#2d6b52'];
 
 export default function GroupTree({
   groups,

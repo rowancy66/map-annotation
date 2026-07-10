@@ -181,7 +181,7 @@ export default function MapView({
           background-color: ${safeColor};
           border-radius: 50%;
           border: ${highlighted ? '3px solid #fff' : '2px solid white'};
-          box-shadow: ${highlighted ? '0 0 12px rgba(59,130,246,0.6)' : '0 1px 4px rgba(0,0,0,0.3)'};
+          box-shadow: ${highlighted ? '0 0 12px rgba(200,145,58,0.5)' : '0 1px 4px rgba(80,60,40,0.3)'};
           display: flex;
           align-items: center;
           justify-content: center;
@@ -215,8 +215,8 @@ export default function MapView({
     points.forEach((p) => {
       L.circleMarker(p, {
         radius: 4,
-        color: '#3B82F6',
-        fillColor: '#3B82F6',
+        color: '#c8913a',
+        fillColor: '#c8913a',
         fillOpacity: 1,
         weight: 2,
       }).addTo(drawLayerRef.current!);
@@ -229,7 +229,7 @@ export default function MapView({
         linePoints.push(linePoints[0]);
       }
       L.polyline(linePoints, {
-        color: '#3B82F6',
+        color: '#c8913a',
         weight: 2,
         dashArray: '6, 6',
       }).addTo(drawLayerRef.current!);
@@ -728,11 +728,11 @@ export default function MapView({
           transform: scale(1.15) !important;
         }
         .annotation-name-tooltip {
-          background: rgba(255,255,255,0.92);
-          border: 1px solid rgba(26, 71, 53, 0.12);
+          background: rgba(250,247,242,0.92);
+          border: 1px solid rgba(10, 75, 63, 0.12);
           border-radius: 8px;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-          color: #1f2937;
+          box-shadow: 0 4px 12px rgba(80,60,40,0.08);
+          color: #3d3832;
           font-size: 12px;
           font-weight: 600;
           padding: 3px 8px;
@@ -758,7 +758,7 @@ export default function MapView({
 
       <div className="absolute top-3 right-3 z-[1000]">
         <div className="overflow-hidden flex border"
-          style={{ background: 'rgba(244,242,236,0.94)', borderColor: 'var(--border)', boxShadow: '0 8px 18px rgba(17,24,22,0.08)' }}>
+          style={{ background: 'rgba(245,240,235,0.94)', borderColor: 'var(--border)', boxShadow: '0 8px 18px rgba(80,60,40,0.08)' }}>
           <button
             onClick={() => setMapType('vec')}
             className={`px-3.5 py-2 text-xs font-medium transition-all duration-200 ${
@@ -791,7 +791,7 @@ export default function MapView({
 
       {drawMode !== 'none' && drawMode !== 'measure' && drawMode !== 'text' && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] px-4 py-2.5 border text-sm flex items-center gap-3 animate-fade-slide-up"
-          style={{ background: 'rgba(17,24,22,0.84)', color: 'white', borderColor: 'rgba(255,255,255,0.1)' }}>
+          style={{ background: 'rgba(45,38,32,0.88)', color: 'white', borderColor: 'rgba(255,255,255,0.1)' }}>
           <span className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 animate-pulse" style={{ background: '#2d6b52' }} />
             {drawMode === 'point' && '点击地图放置标注点'}
@@ -814,7 +814,7 @@ export default function MapView({
       {/* 测距模式浮动条 */}
       {drawMode === 'measure' && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] px-4 py-2.5 border text-sm flex items-center gap-3 animate-fade-slide-up"
-          style={{ background: 'rgba(17,24,22,0.84)', color: 'white', borderColor: 'rgba(255,255,255,0.1)' }}>
+          style={{ background: 'rgba(45,38,32,0.88)', color: 'white', borderColor: 'rgba(255,255,255,0.1)' }}>
           <span>📏 测距</span>
           <span className="font-semibold" style={{ color: '#93c5a2' }}>
             {measureDistance > 0 ? `${(measureDistance / 1000).toFixed(2)} km` : '点击起点'}
@@ -846,15 +846,15 @@ export default function MapView({
 	      {contextMenu && (
 	        <div
 	          className="fixed z-[5000] shadow-xl border py-1 min-w-[160px] backdrop-blur-sm animate-fade-in"
-	          style={{ left: contextMenu.x, top: contextMenu.y, background: 'rgba(250,248,244,0.96)', borderColor: '#e3ddd0' }}
+	          style={{ left: contextMenu.x, top: contextMenu.y, background: 'rgba(250,247,242,0.96)', borderColor: '#e3ddd0' }}
 	          onClick={(e) => e.stopPropagation()}
 	        >
 	          <button
 	            onClick={() => { onAnnotationClickRef.current?.(contextMenu.annotation); setContextMenu(null); }}
 	            className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 transition-colors"
 	            style={{ color: '#2c2416' }}
-	            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(59,130,246,0.08)'; e.currentTarget.style.color = '#3b82f6'; }}
-	            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#2c2416'; }}
+onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(200,145,58,0.08)'; e.currentTarget.style.color = '#c8913a'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#2c2416'; }}
 	          >
 	            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
 	            编辑属性
