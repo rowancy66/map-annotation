@@ -234,6 +234,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
             selectedAnnotation={selectedAnnotation}
             editable={false}
             showNames={effectiveShowNames}
+            sidebarOpen={sidebarOpen}
           />
 
           {/* InfoCard */}

@@ -890,6 +890,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             groups={groups}
             showHeatmap={showHeatmap}
             showNames={mapProject?.settings.showNames !== false}
+            sidebarOpen={sidebarOpen}
           />
 
           {/* InfoCard */}
