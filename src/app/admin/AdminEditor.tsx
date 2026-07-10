@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/auth/AuthProvider';
 import InfoCard from '@/components/map/InfoCard';
@@ -9,6 +9,9 @@ import ImportDialog from '@/components/import/ImportDialog';
 import GroupTree from '@/components/map/GroupTree';
 import AnnotationFilterPanel from '@/components/map/AnnotationFilterPanel';
 import WorkbenchSidebarToggle from '@/components/map/workbench/WorkbenchSidebarToggle';
+import WorkbenchHeader from '@/components/map/workbench/WorkbenchHeader';
+import AnnotationList from '@/components/map/AnnotationList';
+import DrawingToolbar from '@/components/map/DrawingToolbar';
 import { useMapData } from '@/hooks/useMapData';
 import { useAnnotationActions } from '@/hooks/useAnnotationActions';
 import { apiSend } from '@/lib/api';
@@ -25,18 +28,15 @@ import {
   MapPin,
   ChevronLeft,
   Loader2,
-  Trash2,
-  CheckSquare,
-  Square,
+Trash2,
+	  CheckSquare,
   AlertTriangle,
   Search,
-  RefreshCcw,
-  Eye,
-  WandSparkles,
-  Wrench,
-  User,
-  Upload,
-  PanelLeft,
+RefreshCcw,
+	  WandSparkles,
+	  User,
+	  Upload,
+	  PanelLeft,
 } from 'lucide-react';
 import L from 'leaflet';
 import Link from 'next/link';
@@ -113,7 +113,6 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
   const [editingMapName, setEditingMapName] = useState(false);
   const [mapNameDraft, setMapNameDraft] = useState('');
   const [savingMapName, setSavingMapName] = useState(false);
-  const listItemRefs = useRef(new Map<string, HTMLDivElement>());
 
   // 分组标注计数
   const annotationCountByGroup = useMemo(() => {
@@ -387,13 +386,6 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
   }, [loadData, setAnnotations]);
 
   useEffect(() => {
-    if (!selectedAnnotation || panelMode !== 'annotations') return;
-    const element = listItemRefs.current.get(selectedAnnotation.id);
-    if (!element) return;
-    element.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }, [selectedAnnotation, panelMode, filteredByGroup]);
-
-  useEffect(() => {
     if (!showExportMenu && !showToolMenu && !showAccountMenu) return;
 
     const handleClose = () => {
@@ -434,8 +426,14 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--primary)' }} />
+      <div className="h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
+        <div className="h-12 shrink-0 border-b" style={{ background: 'var(--surface-strong)', borderColor: 'var(--border)' }} />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-10 h-10 skeleton-shimmer" />
+            <div className="w-40 h-4 skeleton-shimmer" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -461,83 +459,6 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
       ...prev,
       selectedTypes: [type],
     }));
-  };
-
-  const renderAnnotationRows = () => {
-    if (filteredByGroup.length === 0) {
-      return (
-        <div className="map-directory-empty">
-          <MapPin className="mx-auto mb-3 h-8 w-8" style={{ color: 'var(--faint)', opacity: 0.35 }} />
-          <p>暂无查询结果</p>
-          <span>{annotations.length > 0 ? '调整筛选条件后重试' : '还没有标注内容'}</span>
-        </div>
-      );
-    }
-
-    return (
-      <div className="map-directory-list">
-        {filteredByGroup.map((anno) => {
-          const groupColor = anno.group_id ? groupColorMap.get(anno.group_id) : null;
-          const groupName = anno.group_id ? groupNameMap.get(anno.group_id) : null;
-          return (
-            <div
-              key={anno.id}
-              ref={(node) => {
-                if (node) listItemRefs.current.set(anno.id, node);
-                else listItemRefs.current.delete(anno.id);
-              }}
-              onClick={() => handleAnnotationClick(anno)}
-              className="map-directory-row"
-              data-active={selectedAnnotation?.id === anno.id}
-            >
-                  <div className="map-directory-row-main">
-                    {batchMode && (
-                  <button
-                    className="shrink-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const next = new Set(selectedIds);
-                      if (next.has(anno.id)) next.delete(anno.id);
-                      else next.add(anno.id);
-                      setSelectedIds(next);
-                    }}
-                    aria-label={selectedIds.has(anno.id) ? '取消选择' : '选择'}
-                  >
-                    {selectedIds.has(anno.id) ? (
-                      <CheckSquare className="w-4 h-4" style={{ color: 'var(--primary)' }} aria-hidden="true" />
-                    ) : (
-                      <Square className="w-4 h-4" style={{ color: 'var(--faint)' }} aria-hidden="true" />
-                    )}
-                  </button>
-                )}
-                <span className={`map-directory-dot map-directory-dot-${anno.type}`} />
-                <div className="min-w-0 flex-1">
-                  <div className="map-directory-title">{anno.name || '未命名'}</div>
-                  {anno.description && (
-                    <div className="map-directory-subtitle">{anno.description}</div>
-                  )}
-                </div>
-                {groupName && (
-                  <span
-                    className="map-directory-group"
-                    style={{
-                      background: groupColor ? `${groupColor}12` : 'var(--primary-soft)',
-                      color: groupColor || 'var(--primary)',
-                      borderColor: groupColor ? `${groupColor}2d` : 'rgba(10,75,63,0.16)',
-                    }}
-                  >
-                    {groupName}
-                  </span>
-                )}
-                <span className="map-directory-type">
-                  {anno.type === 'point' ? '点' : anno.type === 'line' ? '线' : anno.type === 'text' ? '文字' : '面'}
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
   };
 
   const renderPanelContent = () => {
@@ -693,7 +614,22 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
           </div>
         )}
 
-        {renderAnnotationRows()}
+        <AnnotationList
+          annotations={filteredByGroup}
+          selectedAnnotation={selectedAnnotation}
+          onAnnotationClick={handleAnnotationClick}
+          readOnly={false}
+          batchMode={batchMode}
+          selectedIds={selectedIds}
+          onBatchSelect={(id) => {
+            const next = new Set(selectedIds);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            setSelectedIds(next);
+          }}
+          groupColorMap={groupColorMap}
+          groupNameMap={groupNameMap}
+        />
       </div>
     );
   };
@@ -701,26 +637,24 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
   return (
     <div className="workbench-shell">
       <div className="paper-panel workbench-frame">
-        <header className="map-workbench-header shrink-0">
-          <div className="map-workbench-topline">
-            <div className="map-workbench-brand">
-              <div className="map-workbench-brand-lockup">
-                <Link
-                  href="/map"
-                  className="map-workbench-back"
-                  title="返回地图页"
-                  aria-label="返回地图页"
-                >
-                  <ChevronLeft className="w-4 h-4" aria-hidden="true" />
-                </Link>
-                </div>
-              <div className="map-workbench-brand-mark">
+        <WorkbenchHeader
+          left={(
+            <div className="flex items-center gap-3 min-w-0">
+              <Link
+                href="/map"
+                className="map-workbench-back"
+                title="返回地图页"
+                aria-label="返回地图页"
+              >
+                <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+              </Link>
+              <div className="flex items-center gap-2.5 min-w-0">
                 <div className="map-workbench-brand-icon">
                   <MapPin className="w-4 h-4" style={{ color: 'var(--primary)' }} aria-hidden="true" />
                 </div>
                 <div className="min-w-0">
                   <div className="map-workbench-brand-eyebrow">KANVON MAP</div>
-                  <div className="map-workbench-brand-title-row">
+                  <div className="flex items-center gap-2 min-w-0">
                     {editingMapName ? (
                       <>
                         <label className="sr-only" htmlFor="map-name-input">地图名称</label>
@@ -738,7 +672,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                           onClick={() => void handleSaveMapName()}
                           disabled={savingMapName}
                         >
-                          {savingMapName ? '保存中' : '保存地图名称'}
+                          {savingMapName ? '保存中' : '保存'}
                         </button>
                       </>
                     ) : (
@@ -763,205 +697,177 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
                 </div>
               </div>
             </div>
-
-            <div className="map-workbench-search">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: 'var(--faint)' }} aria-hidden="true" />
-                <input
-                  type="text"
-                  value={filters.keyword}
-                  onChange={(e) => setFilters({ ...filters, keyword: e.target.value })}
-                  placeholder="搜索标注名称、描述或字段值"
-                  className="map-workbench-search-input"
-                />
-              </div>
+          )}
+          center={(
+            <div className="relative w-full max-w-xl">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: 'var(--faint)' }} aria-hidden="true" />
+              <input
+                type="text"
+                value={filters.keyword}
+                onChange={(e) => setFilters({ ...filters, keyword: e.target.value })}
+                placeholder="搜索标注名称、描述或字段值"
+                className="w-full py-2.5 pl-10 pr-10 text-sm outline-none transition workbench-hard-edge workbench-field"
+              />
             </div>
-
-            <div className="map-workbench-account">
-              <div className="relative">
-                <button
-                  className={`map-workbench-account-button ${showAccountMenu ? 'is-active' : ''}`}
-                  type="button"
-                  aria-label="账户"
-                  aria-expanded={showAccountMenu}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowAccountMenu((prev) => !prev);
-                  }}
-                >
-                  <User className="h-4 w-4" aria-hidden="true" />
-                  <span>账户</span>
-                </button>
-                {showAccountMenu && (
-                  <div className="map-workbench-menu" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      className="map-workbench-menu-item"
-                      onClick={() => {
-                        setShowAccountMenu(false);
-                        void logout();
-                      }}
-                    >
-                      退出登录
-                    </button>
-                  </div>
-                )}
-              </div>
+          )}
+          right={(
+            <div className="relative">
+              <button
+                className={`map-workbench-account-button ${showAccountMenu ? 'is-active' : ''}`}
+                type="button"
+                aria-label="账户"
+                aria-expanded={showAccountMenu}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAccountMenu((prev) => !prev);
+                }}
+              >
+                <User className="h-4 w-4" aria-hidden="true" />
+                <span>账户</span>
+              </button>
+              {showAccountMenu && (
+                <div className="map-workbench-menu" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    className="map-workbench-menu-item"
+                    onClick={() => {
+                      setShowAccountMenu(false);
+                      void logout();
+                    }}
+                  >
+                    退出登录
+                  </button>
+                </div>
+              )}
             </div>
+          )}
+        />
+
+        <div className="map-workbench-toolbar">
+          <div className="map-workbench-toolbar-group">
+            <button
+              onClick={() => setSidebarOpen((prev) => !prev)}
+              className={`map-workbench-tool ${sidebarOpen ? 'is-active' : ''}`}
+              title={sidebarOpen ? '收起目录' : '展开目录'}
+              aria-label={sidebarOpen ? '收起目录' : '展开目录'}
+            >
+              <PanelLeft className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>目录</span>
+            </button>
           </div>
 
-          <div className="map-workbench-toolbar">
-            <div className="map-workbench-toolbar-group">
-              <button
-                onClick={() => setSidebarOpen((prev) => !prev)}
-                className={`map-workbench-tool ${sidebarOpen ? 'is-active' : ''}`}
-                title={sidebarOpen ? '收起目录' : '展开目录'}
-                aria-label={sidebarOpen ? '收起目录' : '展开目录'}
-              >
-                <PanelLeft className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>目录</span>
-              </button>
-            </div>
+          <DrawingToolbar
+            drawMode={drawMode}
+            onDrawModeChange={setDrawMode}
+            annotationCount={annotationCount}
+            showNames={showNamesEnabled}
+            onShowNamesToggle={() => setShowNamesOverride((prev) => !(prev ?? (mapProject?.settings.showNames !== false)))}
+            showHeatmap={showHeatmap}
+            onShowHeatmapToggle={() => setShowHeatmap((prev) => !prev)}
+          />
 
-            <div className="map-workbench-toolbar-group">
+          <div className="map-workbench-toolbar-group">
+            <button
+              onClick={() => setImportOpen(true)}
+              className="map-workbench-tool hidden md:inline-flex"
+            >
+              <Upload className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>导入</span>
+            </button>
+            <div className="relative hidden md:block">
               <button
-                onClick={() => setImportOpen(true)}
-                className="map-workbench-tool"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (exporting) return;
+                  setShowExportMenu((prev) => !prev);
+                }}
+                disabled={exporting}
+                className={`map-workbench-tool ${showExportMenu ? 'is-active' : ''}`}
               >
-                <Upload className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>导入</span>
+                <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>{exporting ? '导出中' : '导出'}</span>
               </button>
-              <div className="relative">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (exporting) return;
-                    setShowExportMenu((prev) => !prev);
-                  }}
-                  disabled={exporting}
-                  className={`map-workbench-tool ${showExportMenu ? 'is-active' : ''}`}
-                >
-                  <Download className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span>{exporting ? '导出中' : '导出'}</span>
-                </button>
-                {showExportMenu && !exporting && (
-                  <div className="map-workbench-menu" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => { void handleExport('xlsx'); }} className="map-workbench-menu-item">
-                      导出 Excel
-                    </button>
-                    <button onClick={() => { void handleExport('csv'); }} className="map-workbench-menu-item">
-                      导出 CSV
-                    </button>
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={handleSmartAnnotation}
-                className="map-workbench-tool"
-              >
-                <WandSparkles className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>智能标注</span>
-              </button>
-              <button
-                onClick={() => setShowNamesOverride((prev) => !(prev ?? (mapProject?.settings.showNames !== false)))}
-                className={`map-workbench-tool ${showNamesEnabled ? 'is-active' : ''}`}
-                title="切换名称显示"
-                aria-label="切换名称显示"
-              >
-                <Eye className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>显示名称</span>
-              </button>
+              {showExportMenu && !exporting && (
+                <div className="map-workbench-menu" onClick={(e) => e.stopPropagation()}>
+                  <button onClick={() => { void handleExport('xlsx'); }} className="map-workbench-menu-item">
+                    导出 Excel
+                  </button>
+                  <button onClick={() => { void handleExport('csv'); }} className="map-workbench-menu-item">
+                    导出 CSV
+                  </button>
+                </div>
+              )}
             </div>
+            <button
+              onClick={handleSmartAnnotation}
+              className="map-workbench-tool hidden md:inline-flex"
+            >
+              <WandSparkles className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>智能标注</span>
+            </button>
+          </div>
 
-            <div className="map-workbench-toolbar-group">
-              <button
-                onClick={() => setDrawMode(drawMode === 'point' ? 'none' : 'point')}
-                className={`map-workbench-tool ${drawMode === 'point' ? 'is-primary' : ''}`}
-              >
-                <span>点标注</span>
-              </button>
-              <button
-                onClick={() => setDrawMode(drawMode === 'line' ? 'none' : 'line')}
-                className={`map-workbench-tool ${drawMode === 'line' ? 'is-primary' : ''}`}
-              >
-                <span>线标注</span>
-              </button>
-              <button
-                onClick={() => setDrawMode(drawMode === 'polygon' ? 'none' : 'polygon')}
-                className={`map-workbench-tool ${drawMode === 'polygon' ? 'is-primary' : ''}`}
-              >
-                <span>面标注</span>
-              </button>
-              <div className="relative">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowToolMenu((prev) => !prev);
-                  }}
-                  className={`map-workbench-tool ${showToolMenu ? 'is-active' : ''}`}
-                >
-                  <Wrench className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span>工具</span>
-                </button>
-                {showToolMenu && (
-                  <div className="map-workbench-menu" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={() => {
-                        setDrawMode(drawMode === 'measure' ? 'none' : 'measure');
-                        setShowToolMenu(false);
-                      }}
-                      className="map-workbench-menu-item"
-                    >
-                      测距
-                    </button>
-                    <button
-                      onClick={() => {
-                        setDrawMode(drawMode === 'text' ? 'none' : 'text');
-                        setShowToolMenu(false);
-                      }}
-                      className="map-workbench-menu-item"
-                    >
-                      文字
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowHeatmap((prev) => !prev);
-                        setShowToolMenu(false);
-                      }}
-                      className="map-workbench-menu-item"
-                    >
-                      {showHeatmap ? '关闭热力' : '开启热力'}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
+          <div className="map-workbench-toolbar-group">
+            <button
+              onClick={() => void loadData()}
+              className="map-workbench-tool hidden md:inline-flex"
+            >
+              <RefreshCcw className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>刷新</span>
+            </button>
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className={`map-workbench-tool hidden md:inline-flex ${showSettings ? 'is-active' : ''}`}
+            >
+              <Settings className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>设置</span>
+            </button>
+            <button
+              onClick={logout}
+              className="map-workbench-tool"
+            >
+              <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>退出</span>
+            </button>
+          </div>
 
-            <div className="map-workbench-toolbar-group">
+          {/* 移动端更多操作下拉 */}
+          <div className="map-workbench-toolbar-group md:hidden">
+            <div className="relative">
               <button
-                onClick={() => void loadData()}
-                className="map-workbench-tool"
-              >
-                <RefreshCcw className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>刷新</span>
-              </button>
-              <button
-                onClick={() => setShowSettings(!showSettings)}
-                className={`map-workbench-tool ${showSettings ? 'is-active' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowToolMenu((prev) => !prev);
+                }}
+                className={`map-workbench-tool ${showToolMenu ? 'is-active' : ''}`}
+                title="更多操作"
+                aria-label="更多操作"
               >
                 <Settings className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>设置</span>
+                <span>更多</span>
               </button>
-              <button
-                onClick={logout}
-                className="map-workbench-tool"
-              >
-                <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>退出</span>
-              </button>
+              {showToolMenu && (
+                <div className="map-workbench-menu" onClick={(e) => e.stopPropagation()} style={{ right: 'auto', left: '0' }}>
+                  <button onClick={() => { setShowToolMenu(false); setImportOpen(true); }} className="map-workbench-menu-item">
+                    <Upload className="h-3.5 w-3.5 inline mr-2" aria-hidden="true" />导入
+                  </button>
+                  <button onClick={() => { setShowToolMenu(false); setShowExportMenu(true); }} className="map-workbench-menu-item">
+                    <Download className="h-3.5 w-3.5 inline mr-2" aria-hidden="true" />导出
+                  </button>
+                  <button onClick={() => { setShowToolMenu(false); handleSmartAnnotation(); }} className="map-workbench-menu-item">
+                    <WandSparkles className="h-3.5 w-3.5 inline mr-2" aria-hidden="true" />智能标注
+                  </button>
+                  <button onClick={() => { setShowToolMenu(false); void loadData(); }} className="map-workbench-menu-item">
+                    <RefreshCcw className="h-3.5 w-3.5 inline mr-2" aria-hidden="true" />刷新
+                  </button>
+                  <button onClick={() => { setShowToolMenu(false); setShowSettings(true); }} className="map-workbench-menu-item">
+                    <Settings className="h-3.5 w-3.5 inline mr-2" aria-hidden="true" />设置
+                  </button>
+                </div>
+              )}
             </div>
           </div>
-        </header>
+        </div>
 
       {/* 反馈消息 */}
       {feedbackMessage && (
@@ -1126,7 +1032,7 @@ export default function AdminEditor({ mapId }: { mapId?: string }) {
             searchOverlayClassName="left-3 top-16"
           />
 
-          <div className="absolute right-3 top-[56px] z-[1000]">
+          <div className="absolute right-5 top-16 z-[1000]">
             {selectedAnnotation && mapProject && !batchMode && (
               <InfoCard
                 annotation={selectedAnnotation}

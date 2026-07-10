@@ -1828,21 +1828,6 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
 }
 
-.annotation-name-tooltip {
-  background: rgba(255, 255, 255, 0.92) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 2px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
-  color: var(--ink) !important;
-  font-family: var(--font-body), sans-serif !important;
-  font-size: 11px !important;
-  font-weight: 500 !important;
-  padding: 2px 4px !important;
-}
-
-.annotation-name-tooltip::before {
-  display: none !important;
-}
 
 @keyframes fadeSlideUp {
   from { opacity: 0; transform: translateY(20px); }

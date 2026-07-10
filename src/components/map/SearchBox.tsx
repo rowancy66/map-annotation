@@ -15,9 +15,10 @@ interface SearchResult {
 
 interface SearchBoxProps {
   map: L.Map | null;
+  placeholder?: string;
 }
 
-export default function SearchBox({ map }: SearchBoxProps) {
+export default function SearchBox({ map, placeholder }: SearchBoxProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -258,7 +259,7 @@ export default function SearchBox({ map }: SearchBoxProps) {
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onFocus={() => (results.length > 0 || error) && setShowResults(true)}
-            placeholder={HAS_TIANDITU_KEY ? '搜索地址、路名…' : '未配置地图搜索'}
+            placeholder={placeholder || (HAS_TIANDITU_KEY ? '搜索地址、路名…' : '未配置地图搜索')}
             disabled={!HAS_TIANDITU_KEY}
             className="flex-1 py-2 pr-2 text-sm outline-none disabled:cursor-not-allowed"
             style={{ color: 'var(--ink)' }}

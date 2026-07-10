@@ -752,11 +752,11 @@ export default function MapView({
         }
       `}</style>
 
-      <div className={`absolute top-3 z-[1000] ${searchOverlayClassName ?? 'left-3'}`}>
-        <SearchBox map={mapInstance} />
-      </div>
-
-      <div className="absolute top-3 right-3 z-[1000]">
+<div className={`absolute top-3 z-[1000] ${searchOverlayClassName ?? 'left-3'}`}>
+	        <SearchBox map={mapInstance} placeholder="搜索地址、地名…" />
+	      </div>
+	
+	      <div className="absolute top-3 right-3 z-[1000]">
         <div className="overflow-hidden flex border"
           style={{ background: 'rgba(245,240,235,0.94)', borderColor: 'var(--border)', boxShadow: '0 8px 18px rgba(80,60,40,0.08)' }}>
           <button
