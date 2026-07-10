@@ -9,16 +9,16 @@ import { X, Save, Trash2, Loader2, Upload, Link2, Plus } from 'lucide-react';
 import { uploadAnnotationImage, deleteAnnotationImage, validateAnnotationImage } from '@/lib/supabase';
 
 const colors = {
-  surface: '#faf7f2',
-  bg: '#f2ede7',
-  border: 'rgba(80,60,40,0.1)',
-  ink: '#3d3832',
-  muted: '#78706a',
-  faint: '#a39990',
-  placeholder: '#b0a69d',
-  accent: '#0a4b3f',
-  accentSoft: 'rgba(10,75,63,0.08)',
-  danger: '#c0392b',
+  surface: 'var(--surface-primary)',
+  bg: 'var(--surface-secondary)',
+  border: 'var(--border-subtle)',
+  ink: 'var(--text-primary)',
+  muted: 'var(--text-secondary)',
+  faint: 'var(--text-tertiary)',
+  placeholder: 'var(--text-tertiary)',
+  accent: 'var(--primary-default)',
+  accentSoft: 'var(--primary-soft)',
+  danger: 'var(--danger-text)',
 };
 
 function sanitizeExternalUrl(url: unknown): string | null {
@@ -478,7 +478,7 @@ function getCustomFieldDisplayValue(value: string | number | null): string {
 function focusStyle(e: React.FocusEvent<HTMLElement>) {
   const el = e.currentTarget as HTMLElement;
   el.style.borderColor = colors.accent;
-  el.style.boxShadow = 'inset 0 0 0 1px rgba(11,79,69,0.75)';
+  el.style.boxShadow = `inset 0 0 0 1px ${colors.accent}`;
 }
 function blurStyle(e: React.FocusEvent<HTMLElement>) {
   const el = e.currentTarget as HTMLElement;
@@ -490,7 +490,7 @@ function StyleEditor({ type, style, onChange }: {
   type: string; style: PointStyle | LineStyle | PolygonStyle | TextStyle;
   onChange: (s: any) => void;
 }) {
-  const c = { accent: '#0b4f45', border: 'rgba(23,33,28,0.12)', bg: 'rgba(255,255,255,0.7)', muted: '#55615a' };
+  const c = { accent: 'var(--primary-default)', border: 'var(--border-subtle)', bg: 'var(--surface-primary)', muted: 'var(--text-secondary)' };
 
   if (type === 'point') {
     const s = style as PointStyle;
