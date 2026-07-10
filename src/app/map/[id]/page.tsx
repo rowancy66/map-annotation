@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo, use, useEffect } from 'react';
+import { useState, useCallback, useMemo, use } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useMapData } from '@/hooks/useMapData';
@@ -30,7 +30,11 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
   const [selectedAnnotation, setSelectedAnnotation] = useState<Annotation | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showNames, setShowNames] = useState(true);
+  const [showNamesOverride, setShowNamesOverride] = useState<boolean | null>(null);
+
+  const showNames = useMemo(() => {
+    return showNamesOverride ?? (mapProject?.settings.showNames !== false);
+  }, [showNamesOverride, mapProject]);
 
   const filteredAnnotations = useMemo(() => {
     if (!searchQuery.trim()) return annotations;
@@ -40,13 +44,6 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
       (a.description && a.description.toLowerCase().includes(q))
     );
   }, [annotations, searchQuery]);
-
-  // Sync showNames from map settings once loaded
-  useEffect(() => {
-    if (mapProject) {
-      setShowNames(mapProject.settings.showNames !== false);
-    }
-  }, [mapProject]);
 
   const annotationTypeCounts = useMemo(() => {
     return annotations.reduce(
@@ -133,7 +130,7 @@ export default function PublicMapPage({ params }: { params: Promise<{ id: string
             <>
               <div className="flex items-center gap-2.5">
                 <button
-                  onClick={() => setShowNames(!showNames)}
+                  onClick={() => setShowNamesOverride((prev) => !(prev ?? (mapProject?.settings.showNames !== false)))}
                   className="flex items-center gap-1.5 text-xs font-medium transition-colors workbench-hard-edge"
                   style={{ color: showNames ? 'var(--primary)' : 'var(--text-tertiary)' }}
                   aria-label={showNames ? '隐藏标注名称' : '显示标注名称'}
